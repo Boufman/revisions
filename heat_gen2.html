@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedAR: Heat Transfer Trainer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    #quiz-container {
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 2rem;
+      border-radius: 1rem;
+      max-width: 90vw;
+      width: 600px;
+      text-align: center;
+      margin: 1rem;
+    }
+    h1, p {
+      margin: 0 0 1rem 0;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 1rem;
+      font-size: 1.1rem;
+      background-color: #333;
+      color: #f1f1f1;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn:hover {
+      background-color: #555;
+    }
+    #score {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    #ugc-container {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9);
+      padding: 2rem;
+      z-index: 100;
+      border-radius: 1rem;
+    }
+    #ar-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10;
+      padding: 10px 15px;
+      background: #007AFF;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="animation"></canvas>
+<div id="quiz-container">
+  <h1>MedAR Heat Transfer</h1>
+  <div id="question-box"></div>
+  <div id="score"></div>
+</div>
+
+<!-- UGC Upload Panel -->
+<div id="ugc-container">
+  <h3>Create New Scenario</h3>
+  <input type="text" id="scenario-title" placeholder="Scenario title" style="width:100%; margin:10px 0; padding:8px;">
+  <textarea id="scenario-question" placeholder="Enter your question..." style="width:100%; height:100px; margin:10px 0; padding:8px;"></textarea>
+  <input type="file" id="scenario-image" accept="image/*" style="margin:10px 0;">
+  <button class="btn" onclick="submitScenario()">Submit</button>
+  <button class="btn" onclick="closeUGC()">Cancel</button>
+</div>
+
+<!-- AR Toggle -->
+<button id="ar-toggle" onclick="toggleAR()">AR Mode</button>
+
+<script>
+// Core Quiz Logic (unchanged)
+const canvas = document.getElementById("animation");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+function clearAnimation() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function animateConduction() {
+  clearAnimation();
+  let x = 50;
+  const interval = setInterval(() => {
+    ctx.fillStyle = "#ff4444";
+    ctx.fillRect(x, 100, 50, 50);
+    x += 5;
+    if (x > 300) clearInterval(interval);
+  }, 50);
+}
+
+function animateConvection() {
+  clearAnimation();
+  let y = canvas.height;
+  const interval = setInterval(() => {
+    ctx.fillStyle = "#44ffdd";
+    ctx.beginPath();
+    ctx.arc(200, y, 20, 0, Math.PI * 2);
+    ctx.fill();
+    y -= 10;
+    if (y < 100) clearInterval(interval);
+  }, 50);
+}
+
+function animateRadiation() {
+  clearAnimation();
+  let radius = 10;
+  const interval = setInterval(() => {
+    ctx.strokeStyle = "#ffff00";
+    ctx.beginPath();
+    ctx.arc(300, 200, radius, 0, 2 * Math.PI);
+    ctx.stroke();
+    radius += 5;
+    if (radius > 100) clearInterval(interval);
+  }, 60);
+}
+
+// Enhanced Medical Scenarios
+const questions = [
+  {
+    type: "mcq",
+    question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
+    options: ["Conduction", "Convection", "Radiation"],
+    answer: "Conduction",
+    animate: animateConduction,
+    category: "trauma"
+  },
+  {
+    type: "mcq",
+    question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
+    options: ["Radiation", "Convection", "Conduction"],
+    answer: "Convection",
+    animate: animateConvection,
+    category: "fever"
+  },
+  {
+    type: "mcq",
+    question: "A burn patient is treated with a silver-coated dressing. What heat transfer does this primarily affect?",
+    options: ["Radiation", "Conduction", "Convection"],
+    answer: "Radiation",
+    animate: animateRadiation,
+    category: "burns"
+  },
+  {
+    type: "mcq",
+    question: "During hypothermia treatment, warm IV fluids help via:",
+    options: ["Conduction", "Convection", "Both"],
+    answer: "Both",
+    animate: animateConduction,
+    category: "hypothermia"
+  },
+  {
+    type: "mcq",
+    question: "A neonatal incubator prevents heat loss mainly through:",
+    options: ["Reducing convection", "Blocking radiation", "Both"],
+    answer: "Both",
+    animate: animateRadiation,
+    category: "neonatal"
+  }
+];
+
+let currentQuestion = 0;
+let score = 0;
+let startTime = Date.now();
+
+function showQuestion() {
+  const box = document.getElementById("question-box");
+  box.innerHTML = "";
+  clearAnimation();
+  const q = questions[currentQuestion];
+
+  const p = document.createElement("p");
+  p.textContent = q.question;
+  box.appendChild(p);
+
+  q.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.className = "btn";
+    btn.onclick = () => handleAnswer(opt);
+    box.appendChild(btn);
+  });
+}
+
+function handleAnswer(choice) {
+  const q = questions[currentQuestion];
+  if (choice === q.answer) {
+    score++;
+    if (q.animate) q.animate();
+  }
+  currentQuestion++;
+  if (currentQuestion < questions.length) {
+    setTimeout(showQuestion, 1200);
+  } else {
+    endQuiz();
+  }
+}
+
+function endQuiz() {
+  clearAnimation();
+  const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+  const box = document.getElementById("question-box");
+  box.innerHTML = `<h2>Quiz Complete!</h2>
+                  <p>Score: ${score}/${questions.length}</p>
+                  <p>Time: ${timeTaken} sec</p>
+                  <button class="btn" onclick="showUGC()">Create Your Own Scenario</button>`;
+  document.getElementById("score").textContent = "Well done!";
+}
+
+// Stage 1 MVP Additions
+let arActive = false;
+
+function toggleAR() {
+  arActive = !arActive;
+  document.getElementById("ar-toggle").textContent = arActive ? "Exit AR" : "AR Mode";
+  if (arActive) initWebXR();
+}
+
+function initWebXR() {
+  // Placeholder for WebXR implementation
+  alert("AR mode would activate here in production (using 8th Wall or similar)");
+}
+
+function showUGC() {
+  document.getElementById("ugc-container").style.display = "block";
+}
+
+function closeUGC() {
+  document.getElementById("ugc-container").style.display = "none";
+}
+
+function submitScenario() {
+  const title = document.getElementById("scenario-title").value;
+  const question = document.getElementById("scenario-question").value;
+  const image = document.getElementById("scenario-image").files[0];
+  
+  if (!title || !question) {
+    alert("Please fill all fields");
+    return;
+  }
+  
+  // In production: Upload to Firebase/storage
+  console.log("New scenario:", { title, question, image });
+  
+  alert("Scenario submitted for review!");
+  closeUGC();
+}
+
+// Initialize
+showQuestion();
+
+// Simulate AR capability check
+if (navigator.xr) {
+  document.getElementById("ar-toggle").style.display = "block";
+}
+</script>
+</body>
+</html>
