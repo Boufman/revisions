@@ -1,131 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Heat Transfer Revision Quiz</title>
-<style>
-  /* Reset and base */
-  body, html {
-    margin: 0; padding: 0; overflow: hidden;
-    font-family: Arial, sans-serif;
-    height: 100vh; width: 100vw;
-    background: #000;
-    color: white;
-  }
-  /* Video background */
-  #video {
-    position: absolute;
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover;
-    z-index: 1;
-  }
-  /* Canvas overlay */
-  #overlay {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    pointer-events: none;
-    z-index: 2;
-  }
-  /* Quiz container on top */
-  #quiz-container {
-    position: absolute;
-    top: 10px; left: 50%;
-    transform: translateX(-50%);
-    background: rgba(42, 75, 171, 0.9);
-    padding: 25px 30px;
-    border-radius: 15px;
-    width: 90vw;
-    max-width: 600px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
-    z-index: 3;
-    user-select: none;
-  }
-  #timer {
-    font-size: 20px;
-    text-align: right;
-    margin-bottom: 15px;
-  }
-  #question {
-    font-size: 24px;
-    min-height: 70px;
-    margin-bottom: 20px;
-  }
-  #answers button {
-    background: #5a8dee;
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-size: 20px;
-    padding: 15px 20px;
-    width: 100%;
-    margin: 10px 0;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  #answers button:hover:not(:disabled) {
-    background: #4171d2;
-  }
-  #answers button.correct {
-    background: #28a745 !important;
-    cursor: default;
-  }
-  #answers button.incorrect {
-    background: #dc3545 !important;
-    cursor: default;
-  }
-  #next-btn, #restart-btn {
-    background: #ffc107;
-    border: none;
-    border-radius: 12px;
-    color: #222;
-    font-size: 20px;
-    padding: 15px 30px;
-    cursor: pointer;
-    margin-top: 25px;
-    display: none;
-    width: 100%;
-  }
-  #restart-btn {
-    background: #007bff;
-    color: white;
-  }
-  #scoreboard {
-    font-size: 22px;
-    margin-top: 30px;
-    text-align: center;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Heat Transfer Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+      background: #000;
+      color: #fff;
+    }
+    #video {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+    }
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #questionBox {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 90vw;
+      text-align: center;
+      font-size: 20px;
+      z-index: 20;
+    }
+    .answerBtn {
+      display: block;
+      margin: 10px auto;
+      padding: 14px 18px;
+      font-size: 18px;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 80%;
+    }
+    .answerBtn:hover {
+      background: #ddd;
+    }
+    #startScreen, #scoreScreen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.9);
+      padding: 20px;
+      border-radius: 10px;
+      color: #000;
+      text-align: center;
+      z-index: 30;
+    }
+    #startScreen input {
+      font-size: 18px;
+      padding: 10px;
+      margin: 10px 0;
+      width: 80%;
+    }
+  </style>
 </head>
 <body>
 
-<video id="video" autoplay playsinline muted></video>
+<video id="video" autoplay playsinline></video>
 <canvas id="overlay"></canvas>
-
-<div id="quiz-container">
-  <div id="timer">Time: <span id="time-remaining">15</span>s</div>
-  <div id="question">Loading question...</div>
-  <div id="answers"></div>
-  <button id="next-btn">Next Question</button>
-  <button id="restart-btn">Restart Quiz</button>
-  <div id="scoreboard"></div>
+<div id="startScreen">
+  <h2>Enter your name to start:</h2>
+  <input type="text" id="playerName" placeholder="Your name">
+  <br>
+  <button onclick="startGame()">Start Quiz</button>
 </div>
+<div id="questionBox" style="display:none;"></div>
+<div id="scoreScreen" style="display:none;"></div>
 
 <script>
-  // Video setup (camera)
   const video = document.getElementById('video');
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => {
-      video.srcObject = stream;
-    }).catch(err => {
-      console.warn("Camera access denied or unavailable.", err);
-    });
-
-  // Canvas overlay setup (optional for future animations)
   const overlay = document.getElementById('overlay');
   const ctx = overlay.getContext('2d');
+  const questionBox = document.getElementById('questionBox');
+  const scoreScreen = document.getElementById('scoreScreen');
+  let playerName = "";
+  let currentQ = 0;
+  let score = 0;
+  let startTime;
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => video.srcObject = stream);
+
   function resizeCanvas() {
     overlay.width = window.innerWidth;
     overlay.height = window.innerHeight;
@@ -133,177 +108,161 @@
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
-  // Quiz questions — combined from your earlier and added examples
   const questions = [
-    {
-      question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
-      options: ["Conduction", "Convection", "Radiation"],
-      answer: "Conduction"
-    },
-    {
-      question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
-      options: ["Radiation", "Convection", "Conduction"],
-      answer: "Convection"
-    },
-    {
-      question: "A neonate loses heat inside an incubator to the walls. What type of transfer is this?",
-      options: ["Convection", "Radiation", "Conduction"],
-      answer: "Radiation"
-    },
-    {
-      question: "Why do premature babies need skin-to-skin contact (kangaroo care)?",
-      options: ["Conduction", "Radiation", "Evaporation"],
-      answer: "Conduction"
-    },
-    {
-      question: "Why is running cool water better than ice for treating burns?",
-      options: ["Conduction", "Convection", "Radiation"],
-      answer: "Convection"
-    },
-    {
-      question: "Why does a patient near a window feel warmer?",
-      options: ["Radiation", "Conduction", "Evaporation"],
-      answer: "Radiation"
-    },
-    {
-      question: "Why shouldn't you cover a sweating patient with blankets?",
-      options: ["Evaporation", "Conduction", "Convection"],
-      answer: "Evaporation"
-    },
-    {
-      question: "What causes goosebumps to reduce heat loss?",
-      options: ["Evaporation", "Radiation", "Conduction"],
-      answer: "Conduction"
-    },
-    {
-      question: "How do nurses detect fever by touching the patient’s skin?",
-      options: ["Radiation", "Conduction", "Evaporation"],
-      answer: "Conduction"
-    },
-    {
-      question: "What is the body doing when it shivers?",
-      options: ["Producing heat", "Losing heat", "Cooling down"],
-      answer: "Producing heat"
-    }
+    { question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?", options: ["Conduction", "Convection", "Radiation"], answer: "Conduction", animate: animateConduction },
+    { question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?", options: ["Radiation", "Convection", "Conduction"], answer: "Convection", animate: animateConvection },
+    { question: "A neonate loses heat inside an incubator to the walls. What type of transfer is this?", options: ["Convection", "Radiation", "Conduction"], answer: "Radiation", animate: animateRadiation },
+    { question: "Why do premature babies need skin-to-skin contact (kangaroo care)?", options: ["Conduction", "Radiation", "Evaporation"], answer: "Conduction", animate: animateConduction },
+    { question: "Why is running cool water better than ice for treating burns?", options: ["Conduction", "Convection", "Radiation"], answer: "Convection", animate: animateConvection },
+    { question: "Why does a patient near a window feel warmer?", options: ["Radiation", "Conduction", "Evaporation"], answer: "Radiation", animate: animateRadiation },
+    { question: "Why shouldn't you cover a sweating patient with blankets?", options: ["Evaporation", "Conduction", "Convection"], answer: "Evaporation", animate: animateEvaporation },
+    { question: "What causes goosebumps to reduce heat loss?", options: ["Evaporation", "Radiation", "Conduction"], answer: "Conduction", animate: animateConduction },
+    { question: "How do nurses detect fever by touching the patient’s skin?", options: ["Radiation", "Conduction", "Evaporation"], answer: "Conduction", animate: animateConduction },
+    { question: "What is the body doing when it shivers?", options: ["Producing heat", "Losing heat", "Cooling down"], answer: "Producing heat", animate: clearCanvas }
   ];
 
-  // Quiz variables
-  const totalTime = 15; // seconds per question
-  let currentQuestionIndex = 0;
-  let score = 0;
-  let timerInterval = null;
-  let timeLeft = totalTime;
-  let answered = false;
-
-  // DOM elements
-  const questionEl = document.getElementById('question');
-  const answersEl = document.getElementById('answers');
-  const timerEl = document.getElementById('time-remaining');
-  const nextBtn = document.getElementById('next-btn');
-  const restartBtn = document.getElementById('restart-btn');
-  const scoreboardEl = document.getElementById('scoreboard');
-
-  function startTimer() {
-    timeLeft = totalTime;
-    timerEl.textContent = timeLeft;
-    timerInterval = setInterval(() => {
-      timeLeft--;
-      timerEl.textContent = timeLeft;
-      if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        if (!answered) {
-          answered = true;
-          showCorrectAnswer();
-          nextBtn.style.display = 'block';
-        }
-      }
-    }, 1000);
+  function startGame() {
+    playerName = document.getElementById('playerName').value;
+    if (!playerName) return;
+    document.getElementById('startScreen').style.display = 'none';
+    startTime = Date.now();
+    showQuestion();
   }
 
   function showQuestion() {
-    answered = false;
-    nextBtn.style.display = 'none';
-    restartBtn.style.display = 'none';
-    scoreboardEl.textContent = '';
-    const q = questions[currentQuestionIndex];
-    questionEl.textContent = q.question;
-
-    answersEl.innerHTML = '';
-    q.options.forEach(option => {
-      const btn = document.createElement('button');
-      btn.classList.add('answer-btn');
-      btn.textContent = option;
-      btn.onclick = () => selectAnswer(option);
-      answersEl.appendChild(btn);
-    });
-
-    startTimer();
+    clearCanvas();
+    const q = questions[currentQ];
+    questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+      q.options.map(opt => `<button class='answerBtn' onclick="checkAnswer('${opt}')">${opt}</button>`).join('');
+    questionBox.style.display = 'block';
   }
 
-  function selectAnswer(selected) {
-    if (answered) return;
-    answered = true;
-    clearInterval(timerInterval);
-
-    const q = questions[currentQuestionIndex];
-    const buttons = answersEl.querySelectorAll('button');
-
-    buttons.forEach(btn => {
-      btn.disabled = true;
-      if (btn.textContent === q.answer) {
-        btn.classList.add('correct');
-      }
-      if (btn.textContent === selected && selected !== q.answer) {
-        btn.classList.add('incorrect');
-      }
-    });
-
-    // Score: base 100 points + bonus 10 * time left
+  function checkAnswer(selected) {
+    const q = questions[currentQ];
     if (selected === q.answer) {
-      score += 100 + (timeLeft * 10);
-    }
-
-    nextBtn.style.display = 'block';
-  }
-
-  function showCorrectAnswer() {
-    const q = questions[currentQuestionIndex];
-    const buttons = answersEl.querySelectorAll('button');
-    buttons.forEach(btn => {
-      btn.disabled = true;
-      if (btn.textContent === q.answer) {
-        btn.classList.add('correct');
-      }
-    });
-  }
-
-  nextBtn.onclick = () => {
-    currentQuestionIndex++;
-    if (currentQuestionIndex >= questions.length) {
-      showFinalScore();
+      score++;
+      playSound('correct');
+      q.animate();
     } else {
-      showQuestion();
+      playSound('wrong');
     }
-  };
-
-  restartBtn.onclick = () => {
-    currentQuestionIndex = 0;
-    score = 0;
-    showQuestion();
-  };
-
-  function showFinalScore() {
-    questionEl.textContent = "Quiz Complete!";
-    answersEl.innerHTML = '';
-    timerEl.textContent = '';
-    scoreboardEl.textContent = `Your final score: ${score} points`;
-    restartBtn.style.display = 'block';
-    nextBtn.style.display = 'none';
+    setTimeout(() => {
+      questionBox.style.display = 'none';
+      clearCanvas();
+      currentQ++;
+      if (currentQ < questions.length) {
+        showQuestion();
+      } else {
+        endGame();
+      }
+    }, 3000);
   }
 
-  // Initialize quiz
-  showQuestion();
+  function endGame() {
+    const timeTaken = Math.round((Date.now() - startTime) / 1000);
+    scoreScreen.innerHTML = `<h2>Well done, ${playerName}!</h2><p>Score: ${score}/${questions.length}</p><p>Time: ${timeTaken}s</p>`;
+    scoreScreen.style.display = 'block';
+  }
 
+  function playSound(type) {
+    const sound = new Audio(type === 'correct' ? 'https://www.soundjay.com/buttons/sounds/button-4.mp3' : 'https://www.soundjay.com/buttons/sounds/button-10.mp3');
+    sound.play();
+  }
+
+  function clearCanvas() {
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+  }
+
+  function animateConduction() {
+    let radius = 0;
+    const centerX = overlay.width / 2;
+    const centerY = overlay.height / 2;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+      gradient.addColorStop(0, 'rgba(0, 150, 255, 0.6)');
+      gradient.addColorStop(1, 'rgba(0, 150, 255, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, overlay.width, overlay.height);
+      radius += 10;
+      if (radius < overlay.width * 0.7) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateConvection() {
+    let particles = Array.from({length: 30}, () => ({
+      x: Math.random() * overlay.width,
+      y: overlay.height,
+      size: 10 + Math.random() * 10
+    }));
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      ctx.fillStyle = 'rgba(255, 100, 100, 0.5)';
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        p.y -= 2 + Math.random() * 2;
+        p.x += Math.sin(p.y / 20) * 1.5;
+        if (p.y < -20) {
+          p.y = overlay.height + Math.random() * 100;
+          p.x = Math.random() * overlay.width;
+        }
+      });
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateRadiation() {
+    let angle = 0;
+    const centerX = overlay.width / 2;
+    const centerY = overlay.height / 2;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      ctx.strokeStyle = 'rgba(255, 200, 0, 0.8)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 20; i++) {
+        let a = angle + (i * Math.PI / 10);
+        let x = centerX + Math.cos(a) * 100;
+        let y = centerY + Math.sin(a) * 100;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+      angle += 0.02;
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateEvaporation() {
+    let drops = Array.from({length: 30}, () => ({
+      x: Math.random() * overlay.width,
+      y: Math.random() * overlay.height,
+      size: 5 + Math.random() * 5
+    }));
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+      drops.forEach(d => {
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+        ctx.fill();
+        d.size -= 0.1;
+        if (d.size <= 0) {
+          d.x = Math.random() * overlay.width;
+          d.y = Math.random() * overlay.height;
+          d.size = 5 + Math.random() * 5;
+        }
+      });
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
 </script>
+
 </body>
 </html>
