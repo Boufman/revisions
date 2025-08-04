@@ -2,43 +2,84 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>AR Heat Transfer Trainer</title>
-  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heat Transfer Practice</title>
+  <!-- Use latest A-Frame version -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <!-- Use stable AR.js version with WebXR support -->
+  <script src="https://unpkg.com/aframe@1.6.0/dist/aframe.min.js"></script>
+  <script src="https://unpkg.com/@ar-js-org/ar.js@2.2.2/three.js/build/ar-threex.js"></script>
+  <script src="https://unpkg.com/@ar-js-org/ar.js@2.2.2/aframe/build/aframe-ar.js"></script>
   <style>
     body { margin: 0; overflow: hidden; }
     #info {
       position: absolute;
       bottom: 20px;
       left: 10px;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.7);
       color: white;
       padding: 10px;
       border-radius: 5px;
       z-index: 100;
     }
+    #start-ar {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 15px 30px;
+      font-size: 18px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      z-index: 200;
+    }
+    a-scene { 
+      width: 100%; 
+      height: 100vh; 
+      display: block; 
+    }
   </style>
 </head>
 <body>
+  <!-- Start AR button for iOS WebXR -->
+  <button id="start-ar">Start AR Experience</button>
+
   <!-- AR Scene -->
-  <a-scene embedded arjs="trackingMethod: best;">
-    <!-- Heat Visualization (Appears when markers are detected) -->
-    <a-entity id="heat-overlay" material="color: red; opacity: 0.5" 
-              geometry="primitive: plane; width: 0.3; height: 0.3" 
-              position="0 0 -0.5" visible="false">
-    </a-entity>
-    
+  <a-scene
+    vr-mode-ui="enabled: false"
+    arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;"
+    renderer="logarithmicDepthBuffer: true;"
+    embedded
+    webxr="optionalFeatures: hit-test, local-floor"
+  >
+    <!-- Heat Visualization -->
+    <a-entity
+      id="heat-overlay"
+      material="color: red; opacity: 0.5"
+      geometry="primitive: plane; width: 0.3; height: 0.3"
+      position="0 0 -0.5"
+      visible="false"
+    ></a-entity>
+
     <!-- UI for AR interactions -->
     <a-entity id="ar-ui">
-      <a-text value="Tap to place thermal object" 
-              position="0 -0.3 -0.5" 
-              align="center" color="white" visible="false"></a-text>
+      <a-text
+        value="Tap to place thermal object"
+        position="0 -0.3 -0.5"
+        align="center"
+        color="white"
+        visible="false"
+      ></a-text>
     </a-entity>
+
+    <!-- Camera -->
+    <a-camera position="0 1.6 0"></a-camera>
   </a-scene>
 
   <!-- Instructions -->
-  <div id="info">
+  <div id="info" style="display: none;">
     <strong>Clinical AR Trainer</strong><br>
     Point your camera at a flat surface. Tap to simulate:
     <button onclick="placeObject('ice')">Ice Pack</button>
@@ -49,74 +90,98 @@
     const scene = document.querySelector('a-scene');
     const heatOverlay = document.querySelector('#heat-overlay');
     const arUI = document.querySelector('#ar-ui');
+    const startButton = document.querySelector('#start-ar');
+    const infoDiv = document.querySelector('#info');
+
+    // Start AR session on button click (required for iOS)
+    startButton.addEventListener('click', () => {
+      // Request WebXR session
+      scene
+        .enterVR()
+        .then(() => {
+          startButton.style.display = 'none'; // Hide button
+          infoDiv.style.display = 'block'; // Show instructions
+        })
+        .catch((err) => {
+          console.error('Failed to start AR:', err);
+          alert('Failed to start AR. Ensure you are using HTTPS and have camera permissions.');
+        });
+    });
 
     // AR Object Placement
     function placeObject(type) {
-      // Show AR prompt
       arUI.setAttribute('visible', 'true');
-      
-      // Handle screen tap
-      scene.addEventListener('click', (e) => {
-        const position = e.detail.intersection.point;
-        
-        // Create object
-        const obj = document.createElement('a-entity');
-        obj.setAttribute('position', position);
-        
-        switch(type) {
-          case 'ice':
-            obj.setAttribute('geometry', 'primitive: box; width: 0.1; height: 0.1; depth: 0.1');
-            obj.setAttribute('material', 'color: blue; opacity: 0.7');
-            obj.setAttribute('class', 'conduction');
-            break;
-          case 'fan':
-            obj.setAttribute('geometry', 'primitive: circle; radius: 0.15');
-            obj.setAttribute('material', 'color: gray; opacity: 0.5');
-            obj.setAttribute('class', 'convection');
-            break;
-        }
-        
-        scene.appendChild(obj);
-        simulateHeatTransfer(type, position);
-      }, { once: true });
+
+      // Use touchstart for iOS compatibility
+      scene.addEventListener(
+        'touchstart',
+        (e) => {
+          // Use WebXR hit-test for accurate placement
+          const hitTestResults = scene.components['webxr'].getHitTestResults(e);
+          if (hitTestResults.length > 0) {
+            const hit = hitTestResults[0];
+            const position = hit.getPose(scene.components['webxr'].referenceSpace).transform.position;
+            const pos = `${position.x} ${position.y} ${position.z}`;
+
+            // Create object
+            const obj = document.createElement('a-entity');
+            obj.setAttribute('position', pos);
+
+            switch (type) {
+              case 'ice':
+                obj.setAttribute('geometry', 'primitive: box; width: 0.1; height: 0.1; depth: 0.1');
+                obj.setAttribute('material', 'color: blue; opacity: 0.7');
+                obj.setAttribute('class', 'conduction');
+                break;
+              case 'fan':
+                obj.setAttribute('geometry', 'primitive: circle; radius: 0.15');
+                obj.setAttribute('material', 'color: gray; opacity: 0.5');
+                obj.setAttribute('class', 'convection');
+                break;
+            }
+
+            scene.appendChild(obj);
+            simulateHeatTransfer(type, pos);
+          }
+        },
+        { once: true }
+      );
     }
 
     // Dynamic Heat Simulation
     function simulateHeatTransfer(type, position) {
       heatOverlay.setAttribute('visible', 'true');
       heatOverlay.setAttribute('position', position);
-      
+
       if (type === 'ice') {
-        // Conduction effect (blue cooling spread)
         heatOverlay.setAttribute('animation', {
           property: 'scale',
           to: '2 2 1',
           dur: 3000,
-          easing: 'linear'
+          easing: 'linear',
         });
         heatOverlay.setAttribute('material', 'color: blue; opacity: 0.4');
       } else if (type === 'fan') {
-        // Convection effect (rising heat waves)
+        const pos = position.split(' ').map(Number);
         heatOverlay.setAttribute('animation', {
           property: 'position',
-          to: `${position.x} ${position.y + 0.5} ${position.z}`,
+          to: `${pos[0]} ${pos[1] + 0.5} ${pos[2]}`,
           dur: 2000,
-          easing: 'easeOutQuad'
+          easing: 'easeOutQuad',
         });
         heatOverlay.setAttribute('material', 'color: red; opacity: 0.3');
       }
-      
-      // Show quiz after 3 seconds
+
       setTimeout(() => askQuestion(type), 3000);
     }
 
-    // Quiz Logic (same as before)
+    // Quiz Logic
     function askQuestion(type) {
       const questions = {
-        ice: "The blue spread shows heat transfer via:",
-        fan: "The rising red waves demonstrate:"
+        ice: 'The blue spread shows heat transfer via:',
+        fan: 'The rising red waves demonstrate:',
       };
-      alert(questions[type] + "\n\nA) Conduction\nB) Convection\nC) Radiation");
+      alert(questions[type] + '\n\nA) Conduction\nB) Convection\nC) Radiation');
     }
   </script>
 </body>
