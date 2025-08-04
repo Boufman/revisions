@@ -1,221 +1,202 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Heat Transfer Quiz</title>
   <style>
-    html, body {
+    body {
       margin: 0;
       padding: 0;
-      height: 100%;
-      font-family: sans-serif;
-      background: #000;
-      color: #fff;
-    }
-    #quizApp {
+      background-color: #111;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', sans-serif;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       align-items: center;
+      justify-content: center;
       height: 100vh;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    #question {
-      font-size: 1.5em;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .options button, #submitBtn {
-      font-size: 1em;
-      margin: 10px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 10px;
-      background: #333;
-      color: #fff;
-      cursor: pointer;
-    }
-    .options button:hover, #submitBtn:hover {
-      background: #555;
-    }
-    #feedback {
-      margin-top: 10px;
-      font-size: 1.2em;
-    }
-    #scoreDisplay {
-      font-size: 1.2em;
-      margin-bottom: 10px;
+      overflow: hidden;
     }
     canvas {
-      position: fixed;
+      position: absolute;
       top: 0;
       left: 0;
-      z-index: -1;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    #quiz-container {
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 2rem;
+      border-radius: 1rem;
+      max-width: 90vw;
+      width: 600px;
+      text-align: center;
+    }
+    h1, p {
+      margin: 0 0 1rem 0;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 1rem;
+      font-size: 1.1rem;
+      background-color: #333;
+      color: #f1f1f1;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn:hover {
+      background-color: #555;
+    }
+    #score {
+      margin-top: 1rem;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-
-<div id="quizApp">
-  <div id="scoreDisplay"></div>
-  <div id="question"></div>
-  <div class="options" id="options"></div>
-  <input type="text" id="textAnswer" style="display:none; padding: 10px; font-size: 1em;" placeholder="Type your answer here">
-  <button id="submitBtn" style="display:none;">Submit</button>
-  <div id="feedback"></div>
+<canvas id="animation"></canvas>
+<div id="quiz-container">
+  <h1>Heat Transfer Quiz</h1>
+  <div id="question-box"></div>
+  <div id="score"></div>
 </div>
-<canvas id="animationCanvas"></canvas>
 
 <script>
-const questions = [
-  {
-    type: "mc",
-    question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
-    options: ["Conduction", "Convection", "Radiation"],
-    answer: "Conduction",
-    animation: "conduction"
-  },
-  {
-    type: "mc",
-    question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
-    options: ["Radiation", "Convection", "Conduction"],
-    answer: "Convection",
-    animation: "convection"
-  },
-  {
-    type: "mc",
-    question: "A neonate loses heat inside an incubator to the walls. What type of transfer?",
-    options: ["Convection", "Radiation", "Conduction"],
-    answer: "Radiation",
-    animation: "radiation"
-  },
-  {
-    type: "written",
-    question: "What is the main form of heat loss when a baby is placed on a cold weighing scale?",
-    answer: "conduction"
-  },
-  {
-    type: "written",
-    question: "What type of heat transfer occurs when heat is lost to surrounding cooler air?",
-    answer: "convection"
-  },
-  {
-    type: "written",
-    question: "Name the heat transfer where infrared rays are emitted without contact.",
-    answer: "radiation"
-  },
-  {
-    type: "mc",
-    question: "A baby in a cot near an open window experiences which heat transfer?",
-    options: ["Convection", "Radiation", "Evaporation"],
-    answer: "Convection",
-    animation: "convection"
-  },
-  {
-    type: "mc",
-    question: "Drying of sweat from the body is an example of what type of heat loss?",
-    options: ["Conduction", "Evaporation", "Radiation"],
-    answer: "Evaporation"
-  }
-];
-
-let current = 0;
-let score = 0;
-let startTime = Date.now();
-const questionEl = document.getElementById("question");
-const optionsEl = document.getElementById("options");
-const feedbackEl = document.getElementById("feedback");
-const scoreDisplay = document.getElementById("scoreDisplay");
-const textAnswer = document.getElementById("textAnswer");
-const submitBtn = document.getElementById("submitBtn");
-const canvas = document.getElementById("animationCanvas");
+const canvas = document.getElementById("animation");
 const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
-
-function clearCanvas() {
+function clearAnimation() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-function drawAnimation(type) {
-  clearCanvas();
-  if (type === "conduction") {
-    ctx.fillStyle = "red";
-    ctx.fillRect(canvas.width/2 - 100, canvas.height/2 - 20, 200, 40);
-    ctx.fillStyle = "white";
-    ctx.fillText("Heat Flow →", canvas.width/2 - 40, canvas.height/2);
-  } else if (type === "convection") {
-    for (let i = 0; i < 10; i++) {
-      ctx.beginPath();
-      ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 5, 0, 2 * Math.PI);
-      ctx.fillStyle = "blue";
-      ctx.fill();
-    }
-  } else if (type === "radiation") {
-    for (let i = 0; i < 8; i++) {
-      ctx.beginPath();
-      ctx.moveTo(canvas.width/2, canvas.height/2);
-      const angle = i * (Math.PI / 4);
-      ctx.lineTo(canvas.width/2 + 150 * Math.cos(angle), canvas.height/2 + 150 * Math.sin(angle));
-      ctx.strokeStyle = "orange";
-      ctx.stroke();
-    }
-  }
-  setTimeout(clearCanvas, 2000);
+function animateConduction() {
+  clearAnimation();
+  let x = 50;
+  const interval = setInterval(() => {
+    ctx.fillStyle = "#ff4444";
+    ctx.fillRect(x, 100, 50, 50);
+    x += 5;
+    if (x > 300) clearInterval(interval);
+  }, 50);
 }
+
+function animateConvection() {
+  clearAnimation();
+  let y = canvas.height;
+  const interval = setInterval(() => {
+    ctx.fillStyle = "#44ffdd";
+    ctx.beginPath();
+    ctx.arc(200, y, 20, 0, Math.PI * 2);
+    ctx.fill();
+    y -= 10;
+    if (y < 100) clearInterval(interval);
+  }, 50);
+}
+
+function animateRadiation() {
+  clearAnimation();
+  let radius = 10;
+  const interval = setInterval(() => {
+    ctx.strokeStyle = "#ffff00";
+    ctx.beginPath();
+    ctx.arc(300, 200, radius, 0, 2 * Math.PI);
+    ctx.stroke();
+    radius += 5;
+    if (radius > 100) clearInterval(interval);
+  }, 60);
+}
+
+const questions = [
+  {
+    type: "mcq",
+    question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
+    options: ["Conduction", "Convection", "Radiation"],
+    answer: "Conduction",
+    animate: animateConduction
+  },
+  {
+    type: "mcq",
+    question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
+    options: ["Radiation", "Convection", "Conduction"],
+    answer: "Convection",
+    animate: animateConvection
+  },
+  {
+    type: "mcq",
+    question: "A warm blanket emits infrared rays. What heat transfer method is involved?",
+    options: ["Conduction", "Convection", "Radiation"],
+    answer: "Radiation",
+    animate: animateRadiation
+  },
+  {
+    type: "mcq",
+    question: "Why is metal used in a cold compress?",
+    options: ["Conducts heat away quickly", "Looks clean", "Feels light"],
+    answer: "Conducts heat away quickly",
+    animate: animateConduction
+  },
+  {
+    type: "mcq",
+    question: "Which transfer method is least affected by air flow?",
+    options: ["Convection", "Radiation", "Conduction"],
+    answer: "Conduction",
+    animate: animateConduction
+  }
+];
+
+let currentQuestion = 0;
+let score = 0;
+let startTime = Date.now();
 
 function showQuestion() {
-  feedbackEl.textContent = "";
-  scoreDisplay.textContent = `Score: ${score} / ${questions.length}`;
-  const q = questions[current];
-  questionEl.textContent = q.question;
-  optionsEl.innerHTML = "";
-  textAnswer.style.display = "none";
-  submitBtn.style.display = "none";
+  const box = document.getElementById("question-box");
+  box.innerHTML = "";
+  clearAnimation();
+  const q = questions[currentQuestion];
 
-  if (q.type === "mc") {
-    q.options.forEach(opt => {
-      const btn = document.createElement("button");
-      btn.textContent = opt;
-      btn.onclick = () => checkAnswer(opt);
-      optionsEl.appendChild(btn);
-    });
+  const p = document.createElement("p");
+  p.textContent = q.question;
+  box.appendChild(p);
+
+  q.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.className = "btn";
+    btn.onclick = () => handleAnswer(opt);
+    box.appendChild(btn);
+  });
+}
+
+function handleAnswer(choice) {
+  const q = questions[currentQuestion];
+  if (choice === q.answer) {
+    score++;
+    if (q.animate) q.animate();
+  }
+  currentQuestion++;
+  if (currentQuestion < questions.length) {
+    setTimeout(showQuestion, 1200);
   } else {
-    textAnswer.value = "";
-    textAnswer.style.display = "inline";
-    submitBtn.style.display = "inline";
-    submitBtn.onclick = () => checkAnswer(textAnswer.value);
+    endQuiz();
   }
 }
 
-function checkAnswer(selected) {
-  const q = questions[current];
-  const correct = selected.trim().toLowerCase() === q.answer.toLowerCase();
-  feedbackEl.textContent = correct ? "✅ Correct!" : `❌ Correct Answer: ${q.answer}`;
-  if (correct) {
-    score++;
-    if (q.animation) drawAnimation(q.animation);
-  }
-  current++;
-  setTimeout(() => {
-    if (current < questions.length) {
-      showQuestion();
-    } else {
-      const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-      questionEl.textContent = `Quiz Complete!`;
-      optionsEl.innerHTML = "";
-      textAnswer.style.display = "none";
-      submitBtn.style.display = "none";
-      scoreDisplay.textContent = `Final Score: ${score}/${questions.length}`;
-      feedbackEl.textContent = `⏱️ Time Taken: ${totalTime} seconds`;
-    }
-  }, 2000);
+function endQuiz() {
+  clearAnimation();
+  const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+  const box = document.getElementById("question-box");
+  box.innerHTML = `<h2>Quiz Complete!</h2><p>Score: ${score}/${questions.length}</p><p>Time: ${timeTaken} sec</p>`;
+  document.getElementById("score").textContent = "Well done!";
 }
 
 showQuestion();
