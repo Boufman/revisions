@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Heat Transfer Revision</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    #video {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+    }
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #controls {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(255,255,255,0.9);
+      padding: 10px;
+      border-radius: 10px;
+    }
+    button {
+      margin: 5px;
+      padding: 14px 18px;
+      font-size: 18px;
+    }
+    #questionBox {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 90vw;
+      text-align: center;
+      display: none;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="overlay"></canvas>
+
+<div id="controls">
+  <button onclick="askQuestion('ice')">Ice Pack</button>
+  <button onclick="askQuestion('fan')">Fan</button>
+  <button onclick="askQuestion('incubator')">Incubator</button>
+</div>
+
+<div id="questionBox"></div>
+
+<script>
+  const video = document.getElementById('video');
+  const overlay = document.getElementById('overlay');
+  const ctx = overlay.getContext('2d');
+  const questionBox = document.getElementById('questionBox');
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+      video.srcObject = stream;
+    });
+
+  function resizeCanvas() {
+    overlay.width = window.innerWidth;
+    overlay.height = window.innerHeight;
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const scenarios = {
+    ice: {
+      question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
+      options: ["Conduction", "Convection", "Radiation"],
+      answer: "Conduction",
+      animate: animateConduction
+    },
+    fan: {
+      question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
+      options: ["Radiation", "Convection", "Conduction"],
+      answer: "Convection",
+      animate: clearCanvas
+    },
+    incubator: {
+      question: "A neonate loses heat inside an incubator to the walls. What type of transfer?",
+      options: ["Convection", "Radiation", "Conduction"],
+      answer: "Radiation",
+      animate: clearCanvas
+    }
+  };
+
+  function askQuestion(type) {
+    const q = scenarios[type];
+    questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+      q.options.map(opt =>
+        `<button onclick="checkAnswer('${opt}', '${q.answer}')">${opt}</button>`
+      ).join(" ");
+    questionBox.style.display = "block";
+    q.animate(); // trigger animation
+  }
+
+  function checkAnswer(selected, correct) {
+    questionBox.innerHTML = selected === correct
+      ? `<span style="color:lightgreen;">✅ Correct! That’s ${correct}.</span>`
+      : `<span style="color:tomato;">❌ Not quite. The correct answer is ${correct}.</span>`;
+    setTimeout(() => {
+      questionBox.style.display = 'none';
+      clearCanvas();
+    }, 3000);
+  }
+
+  // 🔵 Conduction animation
+  function animateConduction() {
+    clearCanvas();
+    let radius = 0;
+    const centerX = overlay.width / 2;
+    const centerY = overlay.height / 2;
+
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+      gradient.addColorStop(0, 'rgba(0, 150, 255, 0.6)');
+      gradient.addColorStop(1, 'rgba(0, 150, 255, 0)');
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, overlay.width, overlay.height);
+
+      radius += 10;
+      if (radius < overlay.width * 0.7) {
+        requestAnimationFrame(draw);
+      }
+    }
+
+    draw();
+  }
+
+  // Generic canvas clearer
+  function clearCanvas() {
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+  }
+</script>
+
+</body>
+</html>
