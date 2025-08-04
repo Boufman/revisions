@@ -1,112 +1,131 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Heat Transfer Quiz</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-      background: #111;
-      color: #fff;
-      overflow: hidden;
-    }
-    #video {
-      position: absolute;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      z-index: -1;
-    }
-    #overlay {
-      position: absolute;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none;
-    }
-    #ui {
-      position: absolute;
-      top: 0;
-      width: 100%;
-      padding: 1rem;
-      box-sizing: border-box;
-      text-align: center;
-    }
-    h1 {
-      font-size: 6vw;
-    }
-    button {
-      font-size: 5vw;
-      margin: 0.5rem;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 10px;
-      background: #444;
-      color: white;
-    }
-    button:hover {
-      background: #666;
-    }
-    #questionBox {
-      font-size: 5vw;
-      background: rgba(0,0,0,0.8);
-      padding: 1rem;
-      border-radius: 10px;
-      display: inline-block;
-    }
-    #startScreen {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: #000c;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      z-index: 100;
-    }
-    input {
-      font-size: 5vw;
-      padding: 0.5rem;
-      margin: 1rem;
-      border-radius: 10px;
-      border: none;
-    }
-    #result {
-      font-size: 4vw;
-      margin-top: 1rem;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Heat Transfer Revision Quiz</title>
+<style>
+  /* Reset and base */
+  body, html {
+    margin: 0; padding: 0; overflow: hidden;
+    font-family: Arial, sans-serif;
+    height: 100vh; width: 100vw;
+    background: #000;
+    color: white;
+  }
+  /* Video background */
+  #video {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: 1;
+  }
+  /* Canvas overlay */
+  #overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    pointer-events: none;
+    z-index: 2;
+  }
+  /* Quiz container on top */
+  #quiz-container {
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(42, 75, 171, 0.9);
+    padding: 25px 30px;
+    border-radius: 15px;
+    width: 90vw;
+    max-width: 600px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    z-index: 3;
+    user-select: none;
+  }
+  #timer {
+    font-size: 20px;
+    text-align: right;
+    margin-bottom: 15px;
+  }
+  #question {
+    font-size: 24px;
+    min-height: 70px;
+    margin-bottom: 20px;
+  }
+  #answers button {
+    background: #5a8dee;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 20px;
+    padding: 15px 20px;
+    width: 100%;
+    margin: 10px 0;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  #answers button:hover:not(:disabled) {
+    background: #4171d2;
+  }
+  #answers button.correct {
+    background: #28a745 !important;
+    cursor: default;
+  }
+  #answers button.incorrect {
+    background: #dc3545 !important;
+    cursor: default;
+  }
+  #next-btn, #restart-btn {
+    background: #ffc107;
+    border: none;
+    border-radius: 12px;
+    color: #222;
+    font-size: 20px;
+    padding: 15px 30px;
+    cursor: pointer;
+    margin-top: 25px;
+    display: none;
+    width: 100%;
+  }
+  #restart-btn {
+    background: #007bff;
+    color: white;
+  }
+  #scoreboard {
+    font-size: 22px;
+    margin-top: 30px;
+    text-align: center;
+  }
+</style>
 </head>
 <body>
 
 <video id="video" autoplay playsinline muted></video>
 <canvas id="overlay"></canvas>
 
-<div id="startScreen">
-  <h1>Heat Transfer Quiz</h1>
-  <input type="text" id="username" placeholder="Enter your name">
-  <button onclick="startGame()">Start</button>
-</div>
-
-<div id="ui">
-  <div id="questionBox" style="display:none;"></div>
-  <div id="result"></div>
+<div id="quiz-container">
+  <div id="timer">Time: <span id="time-remaining">15</span>s</div>
+  <div id="question">Loading question...</div>
+  <div id="answers"></div>
+  <button id="next-btn">Next Question</button>
+  <button id="restart-btn">Restart Quiz</button>
+  <div id="scoreboard"></div>
 </div>
 
 <script>
+  // Video setup (camera)
   const video = document.getElementById('video');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+      video.srcObject = stream;
+    }).catch(err => {
+      console.warn("Camera access denied or unavailable.", err);
+    });
+
+  // Canvas overlay setup (optional for future animations)
   const overlay = document.getElementById('overlay');
   const ctx = overlay.getContext('2d');
-  const questionBox = document.getElementById('questionBox');
-  const resultBox = document.getElementById('result');
-
-  // Optional: background camera feed
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => { video.srcObject = stream; })
-    .catch(() => console.warn("Camera not available"));
-
   function resizeCanvas() {
     overlay.width = window.innerWidth;
     overlay.height = window.innerHeight;
@@ -114,139 +133,177 @@
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
+  // Quiz questions — combined from your earlier and added examples
   const questions = [
     {
-      id: 'ice',
       question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
       options: ["Conduction", "Convection", "Radiation"],
       answer: "Conduction"
     },
     {
-      id: 'fan',
       question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
       options: ["Radiation", "Convection", "Conduction"],
       answer: "Convection"
     },
     {
-      id: 'incubator',
-      question: "A neonate loses heat inside an incubator to the walls. What type of transfer?",
+      question: "A neonate loses heat inside an incubator to the walls. What type of transfer is this?",
       options: ["Convection", "Radiation", "Conduction"],
       answer: "Radiation"
     },
     {
-      id: 'blanket',
-      question: "A warm blanket covers a patient in recovery. Which transfer is most involved?",
-      options: ["Conduction", "Evaporation", "Radiation"],
+      question: "Why do premature babies need skin-to-skin contact (kangaroo care)?",
+      options: ["Conduction", "Radiation", "Evaporation"],
       answer: "Conduction"
     },
     {
-      id: 'sweat',
-      question: "A patient sweats profusely after surgery. What kind of heat loss is this?",
-      options: ["Convection", "Radiation", "Evaporation"],
+      question: "Why is running cool water better than ice for treating burns?",
+      options: ["Conduction", "Convection", "Radiation"],
+      answer: "Convection"
+    },
+    {
+      question: "Why does a patient near a window feel warmer?",
+      options: ["Radiation", "Conduction", "Evaporation"],
+      answer: "Radiation"
+    },
+    {
+      question: "Why shouldn't you cover a sweating patient with blankets?",
+      options: ["Evaporation", "Conduction", "Convection"],
       answer: "Evaporation"
     },
     {
-      id: 'baby',
-      question: "A naked baby on a cold metal scale loses heat mostly by?",
-      options: ["Conduction", "Radiation", "Convection"],
+      question: "What causes goosebumps to reduce heat loss?",
+      options: ["Evaporation", "Radiation", "Conduction"],
       answer: "Conduction"
+    },
+    {
+      question: "How do nurses detect fever by touching the patient’s skin?",
+      options: ["Radiation", "Conduction", "Evaporation"],
+      answer: "Conduction"
+    },
+    {
+      question: "What is the body doing when it shivers?",
+      options: ["Producing heat", "Losing heat", "Cooling down"],
+      answer: "Producing heat"
     }
   ];
 
-  let current = 0;
+  // Quiz variables
+  const totalTime = 15; // seconds per question
+  let currentQuestionIndex = 0;
   let score = 0;
-  let startTime = 0;
-  let playerName = "";
+  let timerInterval = null;
+  let timeLeft = totalTime;
+  let answered = false;
 
-  function startGame() {
-    const nameInput = document.getElementById('username');
-    playerName = nameInput.value.trim();
-    if (!playerName) {
-      alert("Please enter your name.");
-      return;
-    }
-    document.getElementById('startScreen').style.display = 'none';
-    score = 0;
-    current = 0;
-    startTime = Date.now();
-    nextQuestion();
-  }
+  // DOM elements
+  const questionEl = document.getElementById('question');
+  const answersEl = document.getElementById('answers');
+  const timerEl = document.getElementById('time-remaining');
+  const nextBtn = document.getElementById('next-btn');
+  const restartBtn = document.getElementById('restart-btn');
+  const scoreboardEl = document.getElementById('scoreboard');
 
-  function nextQuestion() {
-    if (current >= questions.length) {
-      const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
-      questionBox.style.display = 'none';
-      resultBox.innerHTML = `✅ ${playerName}, you got ${score}/${questions.length} correct in ${timeTaken} seconds.`;
-      return;
-    }
-
-    const q = questions[current];
-    questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
-      q.options.map(opt =>
-        `<button onclick="checkAnswer('${opt}', '${q.answer}', '${q.id}')">${opt}</button>`
-      ).join(" ");
-    questionBox.style.display = 'block';
-  }
-
-  function checkAnswer(selected, correct, type) {
-    if (selected === correct) {
-      score++;
-      playAnimation(type);
-    }
-    current++;
-    setTimeout(nextQuestion, 1500);
-  }
-
-  // ANIMATIONS (Canvas drawings)
-  function playAnimation(type) {
-    ctx.clearRect(0, 0, overlay.width, overlay.height);
-    let t = 0;
-    const interval = setInterval(() => {
-      ctx.clearRect(0, 0, overlay.width, overlay.height);
-      if (type === 'ice' || type === 'blanket' || type === 'baby') {
-        // Conduction: lines moving between two rectangles
-        ctx.fillStyle = '#ccc';
-        ctx.fillRect(100, 300, 100, 100);
-        ctx.fillRect(300, 300, 100, 100);
-        ctx.strokeStyle = '#00f';
-        for (let i = 0; i < 5; i++) {
-          ctx.beginPath();
-          ctx.moveTo(110 + i * 20, 320);
-          ctx.lineTo(310 + i * 5 + Math.sin(t / 5) * 10, 320);
-          ctx.stroke();
-        }
-      } else if (type === 'fan') {
-        // Convection: swirls rising
-        ctx.strokeStyle = '#0ff';
-        for (let i = 0; i < 3; i++) {
-          ctx.beginPath();
-          ctx.arc(200 + i * 50, 400 - t % 300, 20, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-      } else if (type === 'incubator') {
-        // Radiation: wavy arrows
-        ctx.strokeStyle = 'orange';
-        for (let x = 100; x < 400; x += 50) {
-          ctx.beginPath();
-          for (let y = 0; y < 100; y += 10) {
-            ctx.lineTo(x + Math.sin((t + y) / 10) * 10, y + 300);
-          }
-          ctx.stroke();
-        }
-      } else if (type === 'sweat') {
-        // Evaporation: droplets rising
-        ctx.fillStyle = '#0cf';
-        for (let i = 0; i < 5; i++) {
-          ctx.beginPath();
-          ctx.arc(200 + i * 30, 400 - (t * 2 + i * 20) % 400, 5, 0, Math.PI * 2);
-          ctx.fill();
+  function startTimer() {
+    timeLeft = totalTime;
+    timerEl.textContent = timeLeft;
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      timerEl.textContent = timeLeft;
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        if (!answered) {
+          answered = true;
+          showCorrectAnswer();
+          nextBtn.style.display = 'block';
         }
       }
-      t++;
-      if (t > 60) clearInterval(interval);
-    }, 30);
+    }, 1000);
   }
-</script>
 
+  function showQuestion() {
+    answered = false;
+    nextBtn.style.display = 'none';
+    restartBtn.style.display = 'none';
+    scoreboardEl.textContent = '';
+    const q = questions[currentQuestionIndex];
+    questionEl.textContent = q.question;
+
+    answersEl.innerHTML = '';
+    q.options.forEach(option => {
+      const btn = document.createElement('button');
+      btn.classList.add('answer-btn');
+      btn.textContent = option;
+      btn.onclick = () => selectAnswer(option);
+      answersEl.appendChild(btn);
+    });
+
+    startTimer();
+  }
+
+  function selectAnswer(selected) {
+    if (answered) return;
+    answered = true;
+    clearInterval(timerInterval);
+
+    const q = questions[currentQuestionIndex];
+    const buttons = answersEl.querySelectorAll('button');
+
+    buttons.forEach(btn => {
+      btn.disabled = true;
+      if (btn.textContent === q.answer) {
+        btn.classList.add('correct');
+      }
+      if (btn.textContent === selected && selected !== q.answer) {
+        btn.classList.add('incorrect');
+      }
+    });
+
+    // Score: base 100 points + bonus 10 * time left
+    if (selected === q.answer) {
+      score += 100 + (timeLeft * 10);
+    }
+
+    nextBtn.style.display = 'block';
+  }
+
+  function showCorrectAnswer() {
+    const q = questions[currentQuestionIndex];
+    const buttons = answersEl.querySelectorAll('button');
+    buttons.forEach(btn => {
+      btn.disabled = true;
+      if (btn.textContent === q.answer) {
+        btn.classList.add('correct');
+      }
+    });
+  }
+
+  nextBtn.onclick = () => {
+    currentQuestionIndex++;
+    if (currentQuestionIndex >= questions.length) {
+      showFinalScore();
+    } else {
+      showQuestion();
+    }
+  };
+
+  restartBtn.onclick = () => {
+    currentQuestionIndex = 0;
+    score = 0;
+    showQuestion();
+  };
+
+  function showFinalScore() {
+    questionEl.textContent = "Quiz Complete!";
+    answersEl.innerHTML = '';
+    timerEl.textContent = '';
+    scoreboardEl.textContent = `Your final score: ${score} points`;
+    restartBtn.style.display = 'block';
+    nextBtn.style.display = 'none';
+  }
+
+  // Initialize quiz
+  showQuestion();
+
+</script>
 </body>
 </html>
