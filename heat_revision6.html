@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Heat Transfer Quiz</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: #fff;
+      overflow: hidden;
+    }
+    #video {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: -1;
+    }
+    #overlay {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #ui {
+      position: absolute;
+      top: 0;
+      width: 100%;
+      padding: 1rem;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    h1 {
+      font-size: 6vw;
+    }
+    button {
+      font-size: 5vw;
+      margin: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 10px;
+      background: #444;
+      color: white;
+    }
+    button:hover {
+      background: #666;
+    }
+    #questionBox {
+      font-size: 5vw;
+      background: rgba(0,0,0,0.8);
+      padding: 1rem;
+      border-radius: 10px;
+      display: inline-block;
+    }
+    #startScreen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: #000c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 100;
+    }
+    input {
+      font-size: 5vw;
+      padding: 0.5rem;
+      margin: 1rem;
+      border-radius: 10px;
+      border: none;
+    }
+    #result {
+      font-size: 4vw;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline muted></video>
+<canvas id="overlay"></canvas>
+
+<div id="startScreen">
+  <h1>Heat Transfer Quiz</h1>
+  <input type="text" id="username" placeholder="Enter your name">
+  <button onclick="startGame()">Start</button>
+</div>
+
+<div id="ui">
+  <div id="questionBox" style="display:none;"></div>
+  <div id="result"></div>
+</div>
+
+<script>
+  const video = document.getElementById('video');
+  const overlay = document.getElementById('overlay');
+  const ctx = overlay.getContext('2d');
+  const questionBox = document.getElementById('questionBox');
+  const resultBox = document.getElementById('result');
+
+  // Optional: background camera feed
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => { video.srcObject = stream; })
+    .catch(() => console.warn("Camera not available"));
+
+  function resizeCanvas() {
+    overlay.width = window.innerWidth;
+    overlay.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const questions = [
+    {
+      id: 'ice',
+      question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
+      options: ["Conduction", "Convection", "Radiation"],
+      answer: "Conduction"
+    },
+    {
+      id: 'fan',
+      question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
+      options: ["Radiation", "Convection", "Conduction"],
+      answer: "Convection"
+    },
+    {
+      id: 'incubator',
+      question: "A neonate loses heat inside an incubator to the walls. What type of transfer?",
+      options: ["Convection", "Radiation", "Conduction"],
+      answer: "Radiation"
+    },
+    {
+      id: 'blanket',
+      question: "A warm blanket covers a patient in recovery. Which transfer is most involved?",
+      options: ["Conduction", "Evaporation", "Radiation"],
+      answer: "Conduction"
+    },
+    {
+      id: 'sweat',
+      question: "A patient sweats profusely after surgery. What kind of heat loss is this?",
+      options: ["Convection", "Radiation", "Evaporation"],
+      answer: "Evaporation"
+    },
+    {
+      id: 'baby',
+      question: "A naked baby on a cold metal scale loses heat mostly by?",
+      options: ["Conduction", "Radiation", "Convection"],
+      answer: "Conduction"
+    }
+  ];
+
+  let current = 0;
+  let score = 0;
+  let startTime = 0;
+  let playerName = "";
+
+  function startGame() {
+    const nameInput = document.getElementById('username');
+    playerName = nameInput.value.trim();
+    if (!playerName) {
+      alert("Please enter your name.");
+      return;
+    }
+    document.getElementById('startScreen').style.display = 'none';
+    score = 0;
+    current = 0;
+    startTime = Date.now();
+    nextQuestion();
+  }
+
+  function nextQuestion() {
+    if (current >= questions.length) {
+      const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+      questionBox.style.display = 'none';
+      resultBox.innerHTML = `✅ ${playerName}, you got ${score}/${questions.length} correct in ${timeTaken} seconds.`;
+      return;
+    }
+
+    const q = questions[current];
+    questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+      q.options.map(opt =>
+        `<button onclick="checkAnswer('${opt}', '${q.answer}', '${q.id}')">${opt}</button>`
+      ).join(" ");
+    questionBox.style.display = 'block';
+  }
+
+  function checkAnswer(selected, correct, type) {
+    if (selected === correct) {
+      score++;
+      playAnimation(type);
+    }
+    current++;
+    setTimeout(nextQuestion, 1500);
+  }
+
+  // ANIMATIONS (Canvas drawings)
+  function playAnimation(type) {
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    let t = 0;
+    const interval = setInterval(() => {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      if (type === 'ice' || type === 'blanket' || type === 'baby') {
+        // Conduction: lines moving between two rectangles
+        ctx.fillStyle = '#ccc';
+        ctx.fillRect(100, 300, 100, 100);
+        ctx.fillRect(300, 300, 100, 100);
+        ctx.strokeStyle = '#00f';
+        for (let i = 0; i < 5; i++) {
+          ctx.beginPath();
+          ctx.moveTo(110 + i * 20, 320);
+          ctx.lineTo(310 + i * 5 + Math.sin(t / 5) * 10, 320);
+          ctx.stroke();
+        }
+      } else if (type === 'fan') {
+        // Convection: swirls rising
+        ctx.strokeStyle = '#0ff';
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.arc(200 + i * 50, 400 - t % 300, 20, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      } else if (type === 'incubator') {
+        // Radiation: wavy arrows
+        ctx.strokeStyle = 'orange';
+        for (let x = 100; x < 400; x += 50) {
+          ctx.beginPath();
+          for (let y = 0; y < 100; y += 10) {
+            ctx.lineTo(x + Math.sin((t + y) / 10) * 10, y + 300);
+          }
+          ctx.stroke();
+        }
+      } else if (type === 'sweat') {
+        // Evaporation: droplets rising
+        ctx.fillStyle = '#0cf';
+        for (let i = 0; i < 5; i++) {
+          ctx.beginPath();
+          ctx.arc(200 + i * 30, 400 - (t * 2 + i * 20) % 400, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      t++;
+      if (t > 60) clearInterval(interval);
+    }, 30);
+  }
+</script>
+
+</body>
+</html>
