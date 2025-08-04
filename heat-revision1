@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Heat Transfer Revision</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    #video {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+    }
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #controls {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(255,255,255,0.8);
+      padding: 10px;
+      border-radius: 10px;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 14px;
+    }
+    #questionBox {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      max-width: 90vw;
+      text-align: center;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="overlay"></canvas>
+
+<div id="controls">
+  <button onclick="askQuestion('ice')">Ice Pack</button>
+  <button onclick="askQuestion('fan')">Fan</button>
+  <button onclick="askQuestion('incubator')">Incubator</button>
+</div>
+
+<div id="questionBox"></div>
+
+<script>
+  const video = document.getElementById('video');
+  const overlay = document.getElementById('overlay');
+  const ctx = overlay.getContext('2d');
+  const questionBox = document.getElementById('questionBox');
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+      video.srcObject = stream;
+    });
+
+  function resizeCanvas() {
+    overlay.width = window.innerWidth;
+    overlay.height = window.innerHeight;
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const scenarios = {
+    ice: {
+      question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
+      options: ["Conduction", "Convection", "Radiation"],
+      answer: "Conduction"
+    },
+    fan: {
+      question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
+      options: ["Radiation", "Convection", "Conduction"],
+      answer: "Convection"
+    },
+    incubator: {
+      question: "A neonate loses heat inside an incubator to the walls. What type of transfer?",
+      options: ["Convection", "Radiation", "Conduction"],
+      answer: "Radiation"
+    }
+  };
+
+  function askQuestion(type) {
+    const q = scenarios[type];
+    questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+      q.options.map(opt =>
+        `<button onclick="checkAnswer('${opt}', '${q.answer}')">${opt}</button>`
+      ).join(" ");
+    questionBox.style.display = "block";
+  }
+
+  function checkAnswer(selected, correct) {
+    questionBox.innerHTML = selected === correct
+      ? `<span style="color:lightgreen;">✅ Correct! That’s ${correct}.</span>`
+      : `<span style="color:tomato;">❌ Not quite. The correct answer is ${correct}.</span>`;
+    setTimeout(() => questionBox.style.display = 'none', 3000);
+  }
+</script>
+
+</body>
+</html>
