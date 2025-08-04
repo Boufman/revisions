@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinical Heat Transfer Quiz</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #animation-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    #quiz-container {
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 2rem;
+      border-radius: 1rem;
+      max-width: 90vw;
+      width: 600px;
+      text-align: center;
+    }
+    h1, p {
+      margin: 0 0 1rem 0;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 1rem;
+      font-size: 1.1rem;
+      background-color: #333;
+      color: #f1f1f1;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn:hover {
+      background-color: #555;
+    }
+    #score {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    #clinical-tip {
+      margin-top: 1rem;
+      padding: 0.8rem;
+      background: rgba(0, 100, 200, 0.3);
+      border-radius: 0.5rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div id="animation-container">
+  <canvas id="animation"></canvas>
+</div>
+
+<div id="quiz-container">
+  <h1>Clinical Heat Transfer Quiz</h1>
+  <div id="question-box"></div>
+  <div id="clinical-tip"></div>
+  <div id="score">Score: 0</div>
+</div>
+
+<script>
+// Initialize canvas
+const canvas = document.getElementById("animation");
+const ctx = canvas.getContext("2d");
+const questionBox = document.getElementById("question-box");
+const tipBox = document.getElementById("clinical-tip");
+const scoreDisplay = document.getElementById("score");
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function clearAnimation() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// Enhanced Animations
+function animateConduction() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  let radius = 10;
+  
+  // Heat source
+  ctx.fillStyle = "rgba(255, 100, 100, 0.8)";
+  ctx.beginPath();
+  ctx.arc(centerX - 100, centerY, 30, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Heat transfer animation
+  const interval = setInterval(() => {
+    ctx.fillStyle = `rgba(255, ${150 - radius * 2}, 50, 0.6)`;
+    ctx.beginPath();
+    ctx.arc(centerX - 100 + radius * 2, centerY, 10, 0, Math.PI * 2);
+    ctx.fill();
+    
+    radius += 2;
+    if (radius > 50) {
+      clearInterval(interval);
+      // Show transferred heat
+      ctx.fillStyle = "rgba(255, 150, 50, 0.4)";
+      ctx.beginPath();
+      ctx.arc(centerX + 50, centerY, 40, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }, 30);
+}
+
+function animateConvection() {
+  clearAnimation();
+  const particles = [];
+  const centerX = canvas.width / 2;
+  
+  // Create blood cells
+  for (let i = 0; i < 15; i++) {
+    particles.push({
+      x: centerX,
+      y: canvas.height + Math.random() * 100,
+      speed: Math.random() * 3 + 2,
+      size: Math.random() * 8 + 5,
+      offset: Math.random() * Math.PI * 2
+    });
+  }
+  
+  const interval = setInterval(() => {
+    clearAnimation();
+    
+    // Draw vessels
+    ctx.strokeStyle = "rgba(200, 50, 50, 0.3)";
+    ctx.lineWidth = 40;
+    ctx.beginPath();
+    ctx.moveTo(centerX - 30, 0);
+    ctx.lineTo(centerX - 30, canvas.height);
+    ctx.moveTo(centerX + 30, 0);
+    ctx.lineTo(centerX + 30, canvas.height);
+    ctx.stroke();
+    
+    // Update and draw particles
+    particles.forEach(p => {
+      p.y -= p.speed;
+      p.x = centerX + Math.sin(Date.now() / 300 + p.offset) * 20;
+      
+      if (p.y < -20) p.y = canvas.height + 20;
+      
+      // Blood cell
+      ctx.fillStyle = "rgba(200, 50, 50, 0.8)";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Heat aura
+      ctx.fillStyle = "rgba(255, 100, 100, 0.2)";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }, 30);
+}
+
+function animateRadiation() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  let alpha = 0.8;
+  let radius = 10;
+  const waves = [];
+  
+  const interval = setInterval(() => {
+    waves.push({
+      radius: radius,
+      alpha: alpha
+    });
+    
+    radius += 6;
+    alpha -= 0.03;
+    
+    clearAnimation();
+    
+    // Heat source
+    ctx.fillStyle = "rgba(255, 200, 100, 0.9)";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw all waves
+    waves.forEach(w => {
+      ctx.strokeStyle = `rgba(255, 150, 50, ${w.alpha})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, w.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      w.alpha -= 0.01;
+    });
+    
+    if (alpha <= 0) {
+      clearInterval(interval);
+    }
+  }, 80);
+}
+
+function animateShivering() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const muscles = [];
+  
+  // Create muscle fibers
+  for (let i = 0; i < 8; i++) {
+    muscles.push({
+      angle: (i / 8) * Math.PI * 2,
+      length: 60 + Math.random() * 30,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+  
+  let time = 0;
+  const interval = setInterval(() => {
+    clearAnimation();
+    
+    // Draw core body
+    ctx.fillStyle = "rgba(150, 150, 255, 0.3)";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw muscles
+    muscles.forEach(m => {
+      const shake = Math.sin(time * 5 + m.phase) * 15;
+      const endX = centerX + Math.cos(m.angle) * (m.length + shake);
+      const endY = centerY + Math.sin(m.angle) * (m.length + shake);
+      
+      ctx.strokeStyle = "rgba(200, 50, 50, 0.8)";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(
+        centerX + Math.cos(m.angle) * 30,
+        centerY + Math.sin(m.angle) * 30
+      );
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      
+      // Muscle striations
+      for (let j = 0; j < 3; j++) {
+        const striationX = centerX + Math.cos(m.angle) * (30 + (m.length * j / 3));
+        const striationY = centerY + Math.sin(m.angle) * (30 + (m.length * j / 3));
+        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+        ctx.beginPath();
+        ctx.arc(striationX, striationY, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    
+    // Heat waves
+    ctx.strokeStyle = "rgba(255, 100, 100, 0.3)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 50 + Math.sin(time * 3) * 10, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    time += 0.05;
+    if (time > 2) clearInterval(interval);
+  }, 30);
+}
+
+function animateVasoconstriction() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  
+  // Initial dilated state
+  ctx.strokeStyle = "rgba(200, 50, 50, 0.8)";
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 80, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  // Capillaries
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(
+      centerX + Math.cos(angle) * 80,
+      centerY + Math.sin(angle) * 80
+    );
+    ctx.lineTo(
+      centerX + Math.cos(angle) * 120,
+      centerY + Math.sin(angle) * 120
+    );
+    ctx.stroke();
+  }
+  
+  setTimeout(() => {
+    // Constricted state
+    clearAnimation();
+    ctx.strokeStyle = "rgba(100, 100, 200, 0.8)";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Reduced capillary flow
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(
+        centerX + Math.cos(angle) * 60,
+        centerY + Math.sin(angle) * 60
+      );
+      ctx.lineTo(
+        centerX + Math.cos(angle) * 90,
+        centerY + Math.sin(angle) * 90
+      );
+      ctx.stroke();
+    }
+    
+    // Show reduced heat radiation
+    for (let r = 10; r < 60; r += 10) {
+      ctx.strokeStyle = `rgba(255, 150, 150, ${0.5 - r/120})`;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }, 800);
+}
+
+// Question Bank
+const questions = [
+  {
+    question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
+    options: ["Conduction", "Convection", "Radiation"],
+    answer: "Conduction",
+    animate: animateConduction,
+    tip: "Direct contact transfers heat from warmer to cooler object"
+  },
+  {
+    question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
+    options: ["Radiation", "Convection", "Conduction"],
+    answer: "Convection",
+    animate: animateConvection,
+    tip: "Moving air carries heat away from the body"
+  },
+  {
+    question: "A neonate loses heat inside an incubator to the walls. What type of transfer is this?",
+    options: ["Convection", "Radiation", "Conduction"],
+    answer: "Radiation",
+    animate: animateRadiation,
+    tip: "Heat travels through space without warming the air"
+  },
+  {
+    question: "Why do premature babies need skin-to-skin contact (kangaroo care)?",
+    options: ["Conduction", "Radiation", "Evaporation"],
+    answer: "Conduction",
+    animate: animateConduction,
+    tip: "Direct contact with caregiver provides steady warmth"
+  },
+  {
+    question: "Why is running cool water better than ice for treating burns?",
+    options: ["Conduction", "Convection", "Radiation"],
+    answer: "Convection",
+    animate: animateConvection,
+    tip: "Continuous flow carries heat away more effectively"
+  },
+  {
+    question: "Why does a patient near a window feel warmer?",
+    options: ["Radiation", "Conduction", "Evaporation"],
+    answer: "Radiation",
+    animate: animateRadiation,
+    tip: "Sunlight transfers heat without heating the air"
+  },
+  {
+    question: "Why shouldn't you cover a sweating patient with blankets?",
+    options: ["Evaporation", "Conduction", "Convection"],
+    answer: "Evaporation",
+    tip: "Sweat needs to vaporize to cool effectively"
+  },
+  {
+    question: "How do nurses detect fever by touching the patient's skin?",
+    options: ["Radiation", "Conduction", "Evaporation"],
+    answer: "Conduction",
+    animate: animateConduction,
+    tip: "Heat transfers directly to your fingers"
+  },
+  {
+    question: "A fan heater warms the room. What type of heat transfer does it primarily use?",
+    options: ["Conduction", "Convection", "Radiation"],
+    answer: "Convection",
+    animate: animateConvection,
+    tip: "Warm air circulation heats the space"
+  },
+  {
+    question: "Which situation best demonstrates radiation?",
+    options: [
+      "Heat from a sunlamp warming the skin",
+      "Touching a warm compress",
+      "Air blowing from a heater"
+    ],
+    answer: "Heat from a sunlamp warming the skin",
+    animate: animateRadiation,
+    tip: "No direct contact or air movement needed"
+  },
+  {
+    question: "A baby is placed in a warm incubator but the door is left open. What type of heat loss is increased?",
+    options: ["Convection", "Conduction", "Radiation"],
+    answer: "Convection",
+    animate: animateConvection,
+    tip: "Warm air escapes and is replaced by cooler air"
+  },
+  {
+    question: "Shivering generates heat mainly through:",
+    options: ["Muscle friction", "Increased blood flow", "Both"],
+    answer: "Both",
+    animate: animateShivering,
+    tip: "Muscle activity produces heat that blood carries"
+  },
+  {
+    question: "Vasoconstriction reduces heat loss by affecting:",
+    options: ["Blood flow only", "Skin radiation only", "Both"],
+    answer: "Both",
+    animate: animateVasoconstriction,
+    tip: "Less blood at surface reduces both conduction and radiation"
+  },
+  {
+    question: "Warm blood circulating from core to extremities demonstrates:",
+    options: ["Conduction", "Convection", "Radiation"],
+    answer: "Convection",
+    animate: animateConvection,
+    tip: "Moving fluids transfer heat efficiently"
+  },
+  {
+    question: "The liver warming nearby organs primarily uses:",
+    options: ["Conduction", "Radiation", "Convection"],
+    answer: "Conduction",
+    tip: "Direct tissue contact transfers metabolic heat"
+  }
+];
+
+let currentQuestion = 0;
+let score = 0;
+let startTime = Date.now();
+
+function showQuestion() {
+  const q = questions[currentQuestion];
+  questionBox.innerHTML = `<p>${q.question}</p>`;
+  
+  q.options.forEach(option => {
+    const button = document.createElement("button");
+    button.className = "btn";
+    button.textContent = option;
+    button.onclick = () => checkAnswer(option);
+    questionBox.appendChild(button);
+  });
+  
+  tipBox.style.display = "none";
+}
+
+function checkAnswer(selected) {
+  const q = questions[currentQuestion];
+  
+  if (selected === q.answer) {
+    score++;
+    scoreDisplay.textContent = `Score: ${score}`;
+    
+    if (q.animate) {
+      q.animate();
+    }
+    
+    tipBox.textContent = q.tip;
+    tipBox.style.display = "block";
+  } else {
+    tipBox.textContent = `Correct answer: ${q.answer}. ${q.tip}`;
+    tipBox.style.display = "block";
+  }
+  
+  currentQuestion++;
+  if (currentQuestion < questions.length) {
+    setTimeout(showQuestion, 2500);
+  } else {
+    const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+    questionBox.innerHTML = `
+      <h2>Quiz Complete!</h2>
+      <p>Final Score: ${score}/${questions.length}</p>
+      <p>Time: ${timeTaken} seconds</p>
+    `;
+    tipBox.style.display = "none";
+  }
+}
+
+// Start the quiz
+showQuestion();
+</script>
+</body>
+</html>
