@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Heat Transfer Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+      overflow: hidden;
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #questionBox {
+      position: absolute;
+      top: 10vh;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 90vw;
+      text-align: center;
+      font-size: 18px;
+    }
+    #startBtn {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 22px;
+      padding: 20px 30px;
+    }
+    button.optionBtn {
+      margin: 10px;
+      padding: 14px 20px;
+      font-size: 16px;
+    }
+    input[type="text"] {
+      font-size: 16px;
+      padding: 8px;
+      width: 80%;
+      margin-top: 15px;
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 18px;
+      background: #fff;
+      padding: 10px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="overlay"></canvas>
+<div id="questionBox" style="display:none;"></div>
+<div id="scoreBoard">Score: 0 | Time: 0s</div>
+<button id="startBtn" onclick="startQuiz()">Start Heat Transfer Quiz</button>
+
+<script>
+  const overlay = document.getElementById('overlay');
+  const ctx = overlay.getContext('2d');
+  const questionBox = document.getElementById('questionBox');
+  const scoreBoard = document.getElementById('scoreBoard');
+  let currentQuestion = 0;
+  let score = 0;
+  let startTime = null;
+
+  function resizeCanvas() {
+    overlay.width = window.innerWidth;
+    overlay.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const questions = [
+    {
+      type: "mcq",
+      question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
+      options: ["Conduction", "Convection", "Radiation"],
+      answer: "Conduction",
+      animate: animateConduction
+    },
+    {
+      type: "mcq",
+      question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
+      options: ["Radiation", "Convection", "Conduction"],
+      answer: "Convection",
+      animate: animateConvection
+    },
+    {
+      type: "mcq",
+      question: "A neonate loses heat to the walls of an incubator. What type of transfer is this?",
+      options: ["Convection", "Radiation", "Conduction"],
+      answer: "Radiation",
+      animate: animateRadiation
+    },
+    {
+      type: "text",
+      question: "A patient lies on a cold operating table and begins to lose heat through their back. What type of transfer is this?",
+      answer: "conduction"
+    },
+    {
+      type: "text",
+      question: "If a patient has a fever and you wet their skin with water, what method of heat transfer occurs as the water evaporates?",
+      answer: "evaporation"
+    },
+    {
+      type: "mcq",
+      question: "Heat transfer by movement of fluid or air is called:",
+      options: ["Conduction", "Radiation", "Convection"],
+      answer: "Convection",
+      animate: animateConvection
+    },
+    {
+      type: "mcq",
+      question: "What heat transfer method occurs when the baby's head is uncovered in a cool room?",
+      options: ["Convection", "Conduction", "Radiation"],
+      answer: "Radiation",
+      animate: animateRadiation
+    },
+    {
+      type: "text",
+      question: "In skin-to-skin contact between mother and baby, what type of heat transfer warms the baby?",
+      answer: "conduction"
+    },
+    {
+      type: "mcq",
+      question: "A fan heater warms the room. What type of heat transfer does the fan heater primarily use?",
+      options: ["Conduction", "Convection", "Radiation"],
+      answer: "Convection",
+      animate: animateConvection
+    },
+    {
+      type: "text",
+      question: "You place a cold stethoscope on a patient’s chest. The patient shivers. What heat transfer caused the chill?",
+      answer: "conduction"
+    },
+    {
+      type: "mcq",
+      question: "Which situation best demonstrates radiation?",
+      options: [
+        "Heat from a sunlamp warming the skin",
+        "Touching a warm compress",
+        "Air blowing from a heater"
+      ],
+      answer: "Heat from a sunlamp warming the skin",
+      animate: animateRadiation
+    },
+    {
+      type: "text",
+      question: "During surgery, why is it important to use warmed IV fluids?",
+      answer: "to prevent hypothermia"
+    },
+    {
+      type: "mcq",
+      question: "A baby is placed in a warm incubator but the door is left open. What type of heat loss is increased?",
+      options: ["Convection", "Conduction", "Radiation"],
+      answer: "Convection",
+      animate: animateConvection
+    },
+    {
+      type: "text",
+      question: "Name one nursing intervention to reduce heat loss in a newborn.",
+      answer: "skin to skin"
+    }
+  ];
+
+  function startQuiz() {
+    document.getElementById('startBtn').style.display = 'none';
+    score = 0;
+    currentQuestion = 0;
+    startTime = Date.now();
+    askNext();
+  }
+
+  function askNext() {
+    if (currentQuestion >= questions.length) {
+      const totalTime = Math.floor((Date.now() - startTime) / 1000);
+      questionBox.innerHTML = `<h2>Quiz Complete!</h2>
+        <p>Score: ${score} / ${questions.length}</p>
+        <p>Time taken: ${totalTime} seconds</p>`;
+      questionBox.style.display = 'block';
+      return;
+    }
+
+    const q = questions[currentQuestion];
+    questionBox.style.display = 'block';
+
+    if (q.type === "mcq") {
+      questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+        q.options.map(opt => `<button class="optionBtn" onclick="checkAnswer('${opt}', '${q.answer}', ${q.animate ? 'true' : 'false'})">${opt}</button>`).join("");
+    } else if (q.type === "text") {
+      questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+        `<input type="text" id="textInput"><br><button class="optionBtn" onclick="checkTextAnswer()">Submit</button>`;
+    }
+
+    updateScore();
+  }
+
+  function checkAnswer(selected, correct, hasAnimation) {
+    const isCorrect = selected === correct;
+    questionBox.innerHTML = isCorrect
+      ? `<span style="color:lightgreen;">✅ Correct!</span>`
+      : `<span style="color:tomato;">❌ The correct answer was <strong>${correct}</strong>.</span>`;
+
+    if (isCorrect) {
+      score++;
+      if (hasAnimation) questions[currentQuestion].animate();
+    }
+
+    setTimeout(() => {
+      currentQuestion++;
+      clearCanvas();
+      askNext();
+    }, 2500);
+  }
+
+  function checkTextAnswer() {
+    const userInput = document.getElementById('textInput').value.trim().toLowerCase();
+    const correct = questions[currentQuestion].answer.toLowerCase();
+    const isCorrect = userInput === correct;
+
+    questionBox.innerHTML = isCorrect
+      ? `<span style="color:lightgreen;">✅ Correct!</span>`
+      : `<span style="color:tomato;">❌ The correct answer was <strong>${questions[currentQuestion].answer}</strong>.</span>`;
+
+    if (isCorrect) score++;
+
+    setTimeout(() => {
+      currentQuestion++;
+      askNext();
+    }, 2500);
+  }
+
+  function updateScore() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    scoreBoard.innerText = `Score: ${score} | Time: ${elapsed}s`;
+  }
+
+  function animateConduction() {
+    clearCanvas();
+    let radius = 0;
+    const centerX = overlay.width / 2;
+    const centerY = overlay.height / 2;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+      gradient.addColorStop(0, 'rgba(0, 150, 255, 0.6)');
+      gradient.addColorStop(1, 'rgba(0, 150, 255, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, overlay.width, overlay.height);
+      radius += 10;
+      if (radius < overlay.width * 0.6) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateConvection() {
+    clearCanvas();
+    let y = overlay.height;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      ctx.fillStyle = 'rgba(255,165,0,0.5)';
+      ctx.beginPath();
+      ctx.moveTo(overlay.width / 2 - 30, y);
+      ctx.lineTo(overlay.width / 2, y - 60);
+      ctx.lineTo(overlay.width / 2 + 30, y);
+      ctx.closePath();
+      ctx.fill();
+      y -= 10;
+      if (y > overlay.height / 2) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateRadiation() {
+    clearCanvas();
+    let alpha = 1.0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(overlay.width / 2, overlay.height / 2, 80, 0, Math.PI * 2);
+      ctx.fill();
+      alpha -= 0.03;
+      if (alpha > 0) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function clearCanvas() {
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+  }
+</script>
+</body>
+</html>
