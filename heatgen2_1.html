@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Heat Transfer Quiz</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+      background: #000;
+      color: #fff;
+    }
+    #quizApp {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #question {
+      font-size: 1.5em;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .options button, #submitBtn {
+      font-size: 1em;
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      background: #333;
+      color: #fff;
+      cursor: pointer;
+    }
+    .options button:hover, #submitBtn:hover {
+      background: #555;
+    }
+    #feedback {
+      margin-top: 10px;
+      font-size: 1.2em;
+    }
+    #scoreDisplay {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body>
+
+<div id="quizApp">
+  <div id="scoreDisplay"></div>
+  <div id="question"></div>
+  <div class="options" id="options"></div>
+  <input type="text" id="textAnswer" style="display:none; padding: 10px; font-size: 1em;" placeholder="Type your answer here">
+  <button id="submitBtn" style="display:none;">Submit</button>
+  <div id="feedback"></div>
+</div>
+<canvas id="animationCanvas"></canvas>
+
+<script>
+const questions = [
+  {
+    type: "mc",
+    question: "An ice pack is placed on a swollen joint. What type of heat transfer occurs?",
+    options: ["Conduction", "Convection", "Radiation"],
+    answer: "Conduction",
+    animation: "conduction"
+  },
+  {
+    type: "mc",
+    question: "A nurse uses a fan to cool a febrile patient. What type of heat transfer is this?",
+    options: ["Radiation", "Convection", "Conduction"],
+    answer: "Convection",
+    animation: "convection"
+  },
+  {
+    type: "mc",
+    question: "A neonate loses heat inside an incubator to the walls. What type of transfer?",
+    options: ["Convection", "Radiation", "Conduction"],
+    answer: "Radiation",
+    animation: "radiation"
+  },
+  {
+    type: "written",
+    question: "What is the main form of heat loss when a baby is placed on a cold weighing scale?",
+    answer: "conduction"
+  },
+  {
+    type: "written",
+    question: "What type of heat transfer occurs when heat is lost to surrounding cooler air?",
+    answer: "convection"
+  },
+  {
+    type: "written",
+    question: "Name the heat transfer where infrared rays are emitted without contact.",
+    answer: "radiation"
+  },
+  {
+    type: "mc",
+    question: "A baby in a cot near an open window experiences which heat transfer?",
+    options: ["Convection", "Radiation", "Evaporation"],
+    answer: "Convection",
+    animation: "convection"
+  },
+  {
+    type: "mc",
+    question: "Drying of sweat from the body is an example of what type of heat loss?",
+    options: ["Conduction", "Evaporation", "Radiation"],
+    answer: "Evaporation"
+  }
+];
+
+let current = 0;
+let score = 0;
+let startTime = Date.now();
+const questionEl = document.getElementById("question");
+const optionsEl = document.getElementById("options");
+const feedbackEl = document.getElementById("feedback");
+const scoreDisplay = document.getElementById("scoreDisplay");
+const textAnswer = document.getElementById("textAnswer");
+const submitBtn = document.getElementById("submitBtn");
+const canvas = document.getElementById("animationCanvas");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawAnimation(type) {
+  clearCanvas();
+  if (type === "conduction") {
+    ctx.fillStyle = "red";
+    ctx.fillRect(canvas.width/2 - 100, canvas.height/2 - 20, 200, 40);
+    ctx.fillStyle = "white";
+    ctx.fillText("Heat Flow →", canvas.width/2 - 40, canvas.height/2);
+  } else if (type === "convection") {
+    for (let i = 0; i < 10; i++) {
+      ctx.beginPath();
+      ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "blue";
+      ctx.fill();
+    }
+  } else if (type === "radiation") {
+    for (let i = 0; i < 8; i++) {
+      ctx.beginPath();
+      ctx.moveTo(canvas.width/2, canvas.height/2);
+      const angle = i * (Math.PI / 4);
+      ctx.lineTo(canvas.width/2 + 150 * Math.cos(angle), canvas.height/2 + 150 * Math.sin(angle));
+      ctx.strokeStyle = "orange";
+      ctx.stroke();
+    }
+  }
+  setTimeout(clearCanvas, 2000);
+}
+
+function showQuestion() {
+  feedbackEl.textContent = "";
+  scoreDisplay.textContent = `Score: ${score} / ${questions.length}`;
+  const q = questions[current];
+  questionEl.textContent = q.question;
+  optionsEl.innerHTML = "";
+  textAnswer.style.display = "none";
+  submitBtn.style.display = "none";
+
+  if (q.type === "mc") {
+    q.options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.textContent = opt;
+      btn.onclick = () => checkAnswer(opt);
+      optionsEl.appendChild(btn);
+    });
+  } else {
+    textAnswer.value = "";
+    textAnswer.style.display = "inline";
+    submitBtn.style.display = "inline";
+    submitBtn.onclick = () => checkAnswer(textAnswer.value);
+  }
+}
+
+function checkAnswer(selected) {
+  const q = questions[current];
+  const correct = selected.trim().toLowerCase() === q.answer.toLowerCase();
+  feedbackEl.textContent = correct ? "✅ Correct!" : `❌ Correct Answer: ${q.answer}`;
+  if (correct) {
+    score++;
+    if (q.animation) drawAnimation(q.animation);
+  }
+  current++;
+  setTimeout(() => {
+    if (current < questions.length) {
+      showQuestion();
+    } else {
+      const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      questionEl.textContent = `Quiz Complete!`;
+      optionsEl.innerHTML = "";
+      textAnswer.style.display = "none";
+      submitBtn.style.display = "none";
+      scoreDisplay.textContent = `Final Score: ${score}/${questions.length}`;
+      feedbackEl.textContent = `⏱️ Time Taken: ${totalTime} seconds`;
+    }
+  }, 2000);
+}
+
+showQuestion();
+</script>
+</body>
+</html>
