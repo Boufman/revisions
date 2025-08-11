@@ -270,72 +270,6 @@ const progressBar = document.getElementById("progress");
 const startScreen = document.getElementById("start-screen");
 const quizContent = document.getElementById("quiz-content");
 
-let audioContext;
-let isAudioInitialized = false;
-
-// Note frequencies (in Hz) for MIDI-like notes
-const noteFrequencies = {
-  'C3': 130.81, 'D3': 146.83, 'F3': 174.61, 'C4': 261.63, 'E4': 329.63,
-  'G4': 392.00, 'C5': 523.25, 'E5': 659.25, 'G5': 783.99
-};
-
-function initializeAudio() {
-  try {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    isAudioInitialized = true;
-  } catch (e) {
-    console.log("AudioContext initialization failed:", e);
-  }
-}
-
-function playNote(note, duration, type = 'sine') {
-  if (!isAudioInitialized) return;
-  const oscillator = audioContext.createOscillator();
-  oscillator.type = type;
-  oscillator.frequency.setValueAtTime(noteFrequencies[note] || 440, audioContext.currentTime);
-  oscillator.connect(audioContext.destination);
-  oscillator.start();
-  oscillator.stop(audioContext.currentTime + duration);
-}
-
-function playFallbackBeep(frequency = 440, duration = 0.5) {
-  if (!isAudioInitialized) return;
-  const oscillator = audioContext.createOscillator();
-  oscillator.type = 'square';
-  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-  oscillator.connect(audioContext.destination);
-  oscillator.start();
-  oscillator.stop(audioContext.currentTime + duration);
-}
-
-
-  function playNextNote() {
-    playNote(melody[noteIndex], 0.5);
-    noteIndex = (noteIndex + 1) % melody.length;
-    setTimeout(playNextNote, 600);
-  }
-  playNextNote();
-}
-
-function playCorrectSound() {
-  if (!isAudioInitialized) {
-    playFallbackBeep(440, 0.5);
-    return;
-  }
-  playNote('C5', 0.2);
-  setTimeout(() => playNote('E5', 0.2), 200);
-  setTimeout(() => playNote('G5', 0.2), 400);
-}
-
-function playIncorrectSound() {
-  if (!isAudioInitialized) {
-    playFallbackBeep(220, 0.5);
-    return;
-  }
-  playNote('F3', 0.3);
-  setTimeout(() => playNote('D3', 0.3), 300);
-}
-
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -763,8 +697,6 @@ let questionsAnswered = 0;
 function startQuiz() {
   startScreen.classList.add("hidden");
   quizContent.classList.remove("hidden");
-  initializeAudio();
-  playBackgroundMusic();
   showQuestion();
 }
 
@@ -800,11 +732,9 @@ function checkAnswer(selected, buttonElement) {
     score++;
     buttonElement.classList.add('correct');
     scoreDisplay.textContent = `Score: ${score}/${questionsAnswered + 1}`;
-    playCorrectSound();
     if (q.animate) q.animate();
   } else {
     buttonElement.classList.add('incorrect');
-    playIncorrectSound();
     allButtons.forEach(btn => {
       if (btn.textContent.includes(q.answer)) {
         btn.classList.add('correct');
@@ -856,7 +786,6 @@ function restartQuiz() {
   startTime = Date.now();
   scoreDisplay.textContent = "Score: 0";
   updateProgress();
-  playBackgroundMusic();
   showQuestion();
 }
 
@@ -865,5 +794,4 @@ startScreen.classList.remove("hidden");
 quizContent.classList.add("hidden");
 </script>
 </body>
-
 </html>
