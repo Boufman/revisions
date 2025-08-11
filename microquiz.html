@@ -308,10 +308,6 @@ function playFallbackBeep(frequency = 440, duration = 0.5) {
   oscillator.stop(audioContext.currentTime + duration);
 }
 
-function playBackgroundMusic() {
-  if (!isAudioInitialized) return;
-  const melody = ['C4', 'Bb4', 'C4', 'G4'];
-  let noteIndex = 0;
 
   function playNextNote() {
     playNote(melody[noteIndex], 0.5);
@@ -869,4 +865,5 @@ startScreen.classList.remove("hidden");
 quizContent.classList.add("hidden");
 </script>
 </body>
+
 </html>
