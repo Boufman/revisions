@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PREMHS402 Microbiology Quiz</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #f1f1f1;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    #animation-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    #quiz-container {
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 2rem;
+      border-radius: 1.5rem;
+      max-width: 90vw;
+      width: 700px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin: 2rem auto;
+    }
+    
+    h1 {
+      margin: 0 0 0.5rem 0;
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    
+    .subtitle {
+      margin: 0 0 1rem 0;
+      color: #b0b0b0;
+      font-size: 0.9rem;
+    }
+    
+    .start-btn {
+      margin: 1rem auto;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+      border: none;
+      border-radius: 0.8rem;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    
+    .start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .question-counter {
+      color: #4ecdc4;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    
+    p {
+      margin: 0 0 1rem 0;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+    
+    .btn {
+      display: block;
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 1rem;
+      font-size: 1rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #f1f1f1;
+      border: none;
+      border-radius: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      background: linear-gradient(135deg, #764ba2, #667eea);
+    }
+    
+    .btn:hover:before {
+      left: 100%;
+    }
+    
+    .btn.correct {
+      background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+      animation: pulse 0.6s ease-in-out;
+    }
+    
+    .btn.incorrect {
+      background: linear-gradient(135deg, #ff416c, #ff4757);
+      animation: shake 0.6s ease-in-out;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    #score {
+      margin-top: 1.5rem;
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #4ecdc4;
+    }
+    
+    #clinical-tip {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(78, 205, 196, 0.2), rgba(255, 107, 107, 0.2));
+      border-radius: 0.8rem;
+      border-left: 4px solid #4ecdc4;
+      display: none;
+      text-align: left;
+      line-height: 1.5;
+    }
+    
+    .final-results {
+      background: linear-gradient(135deg, rgba(86, 171, 47, 0.3), rgba(168, 230, 207, 0.3));
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-top: 1rem;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4ecdc4, #44a08d);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    .microbe-animation {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      opacity: 0.6;
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+    
+    .bacteria { background: radial-gradient(circle, #ff6b6b, #ee5a52); }
+    .virus { background: radial-gradient(circle, #4ecdc4, #44a08d); }
+    .fungi { background: radial-gradient(circle, #ffa726, #ff9800); }
+    .protozoa { background: radial-gradient(circle, #ab47bc, #9c27b0); }
+
+    .restart-btn {
+      margin-top: 1rem;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+      border: none;
+      border-radius: 0.8rem;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .restart-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div id="animation-container">
+  <canvas id="animation"></canvas>
+</div>
+
+<div id="quiz-container">
+  <h1>PREMHS402 Microbiology Quiz</h1>
+  <p class="subtitle">Complete Coverage: Viruses, Fungi, Algae, Protozoa & Chain of Infection</p>
+  
+  <div id="start-screen">
+    <button class="start-btn" onclick="startQuiz()">Start Quiz</button>
+  </div>
+  
+  <div id="quiz-content" class="hidden">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress"></div>
+    </div>
+    
+    <div class="question-counter" id="counter">Question 1 of 30</div>
+    <div id="question-box"></div>
+    <div id="clinical-tip"></div>
+    <div id="score">Score: 0</div>
+  </div>
+</div>
+
+<script>
+// Initialize canvas and elements
+const canvas = document.getElementById("animation");
+const ctx = canvas.getContext("2d");
+const questionBox = document.getElementById("question-box");
+const tipBox = document.getElementById("clinical-tip");
+const scoreDisplay = document.getElementById("score");
+const counterDisplay = document.getElementById("counter");
+const progressBar = document.getElementById("progress");
+const startScreen = document.getElementById("start-screen");
+const quizContent = document.getElementById("quiz-content");
+
+let audioContext;
+let isAudioInitialized = false;
+
+// Note frequencies (in Hz) for MIDI-like notes
+const noteFrequencies = {
+  'C3': 130.81, 'D3': 146.83, 'F3': 174.61, 'C4': 261.63, 'E4': 329.63,
+  'G4': 392.00, 'C5': 523.25, 'E5': 659.25, 'G5': 783.99
+};
+
+function initializeAudio() {
+  try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    isAudioInitialized = true;
+  } catch (e) {
+    console.log("AudioContext initialization failed:", e);
+  }
+}
+
+function playNote(note, duration, type = 'sine') {
+  if (!isAudioInitialized) return;
+  const oscillator = audioContext.createOscillator();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(noteFrequencies[note] || 440, audioContext.currentTime);
+  oscillator.connect(audioContext.destination);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + duration);
+}
+
+function playFallbackBeep(frequency = 440, duration = 0.5) {
+  if (!isAudioInitialized) return;
+  const oscillator = audioContext.createOscillator();
+  oscillator.type = 'square';
+  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+  oscillator.connect(audioContext.destination);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + duration);
+}
+
+function playBackgroundMusic() {
+  if (!isAudioInitialized) return;
+  const melody = ['C4', 'Bb4', 'C4', 'G4'];
+  let noteIndex = 0;
+
+  function playNextNote() {
+    playNote(melody[noteIndex], 0.5);
+    noteIndex = (noteIndex + 1) % melody.length;
+    setTimeout(playNextNote, 600);
+  }
+  playNextNote();
+}
+
+function playCorrectSound() {
+  if (!isAudioInitialized) {
+    playFallbackBeep(440, 0.5);
+    return;
+  }
+  playNote('C5', 0.2);
+  setTimeout(() => playNote('E5', 0.2), 200);
+  setTimeout(() => playNote('G5', 0.2), 400);
+}
+
+function playIncorrectSound() {
+  if (!isAudioInitialized) {
+    playFallbackBeep(220, 0.5);
+    return;
+  }
+  playNote('F3', 0.3);
+  setTimeout(() => playNote('D3', 0.3), 300);
+}
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function clearAnimation() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// Animations for microbiology concepts
+function animateViralAttachment() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  let virusX = centerX + 100;
+  
+  const interval = setInterval(() => {
+    clearAnimation();
+    
+    // Draw host cell
+    ctx.fillStyle = "rgba(50, 150, 255, 0.8)";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 50, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw virus
+    ctx.fillStyle = "rgba(255, 50, 50, 0.8)";
+    ctx.beginPath();
+    ctx.arc(virusX, centerY, 10, 0, Math.PI * 2);
+    ctx.fill();
+    
+    virusX -= 2;
+    if (virusX <= centerX + 50) {
+      clearInterval(interval);
+      ctx.fillStyle = "rgba(255, 255, 100, 0.5)";
+      ctx.beginPath();
+      ctx.arc(centerX + 50, centerY, 15, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }, 30);
+}
+
+function animatePhagocytosis() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  let pathogenX = centerX + 100;
+  let phagocyteSize = 30;
+  
+  const interval = setInterval(() => {
+    clearAnimation();
+    
+    // Draw phagocyte
+    ctx.fillStyle = "rgba(50, 150, 255, 0.8)";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, phagocyteSize, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw pathogen
+    ctx.fillStyle = "rgba(255, 50, 50, 0.8)";
+    ctx.beginPath();
+    ctx.arc(pathogenX, centerY, 10, 0, Math.PI * 2);
+    ctx.fill();
+    
+    pathogenX -= 2;
+    if (pathogenX <= centerX) {
+      phagocyteSize += 5;
+      clearInterval(interval);
+      ctx.fillStyle = "rgba(100, 255, 100, 0.5)";
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, phagocyteSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }, 30);
+}
+
+function animateSporeRelease() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const spores = [];
+  
+  for (let i = 0; i < 10; i++) {
+    spores.push({
+      x: centerX,
+      y: centerY,
+      angle: (i / 10) * Math.PI * 2,
+      speed: 2 + Math.random(),
+      size: 5 + Math.random() * 5
+    });
+  }
+  
+  const interval = setInterval(() => {
+    clearAnimation();
+    
+    // Draw fungus
+    ctx.fillStyle = "rgba(255, 150, 50, 0.8)";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw spores
+    spores.forEach(spore => {
+      spore.x += Math.cos(spore.angle) * spore.speed;
+      spore.y += Math.sin(spore.angle) * spore.speed;
+      
+      ctx.fillStyle = "rgba(255, 200, 100, 0.6)";
+      ctx.beginPath();
+      ctx.arc(spore.x, spore.y, spore.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    
+    if (spores[0].x > centerX + 100) {
+      clearInterval(interval);
+    }
+  }, 30);
+}
+
+function animateBinaryFission() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  let bacteriaSize = 20;
+  let splitProgress = 0;
+  
+  const interval = setInterval(() => {
+    clearAnimation();
+    
+    // Draw original bacterium
+    ctx.fillStyle = "rgba(255, 50, 50, 0.8)";
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, bacteriaSize * (1 + splitProgress), bacteriaSize, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    splitProgress += 0.02;
+    if (splitProgress >= 0.5) {
+      // Draw two bacteria splitting
+      ctx.fillStyle = "rgba(255, 50, 50, 0.8)";
+      ctx.beginPath();
+      ctx.arc(centerX - bacteriaSize * splitProgress * 2, centerY, bacteriaSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(centerX + bacteriaSize * splitProgress * 2, centerY, bacteriaSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    if (splitProgress >= 1) {
+      clearInterval(interval);
+    }
+  }, 30);
+}
+
+// Create floating microorganisms
+function createFloatingMicrobes() {
+  const types = ['bacteria', 'virus', 'fungi', 'protozoa'];
+  
+  for (let i = 0; i < 15; i++) {
+    const microbe = document.createElement('div');
+    microbe.className = 'microbe-animation ' + types[i % 4];
+    microbe.style.left = Math.random() * 100 + '%';
+    microbe.style.top = Math.random() * 100 + '%';
+    microbe.style.animationDelay = Math.random() * 6 + 's';
+    microbe.style.animationDuration = (4 + Math.random() * 4) + 's';
+    document.getElementById("animation-container").appendChild(microbe);
+  }
+}
+
+createFloatingMicrobes();
+
+// Original Question Bank
+const allQuestions = [
+  // VIRUS QUESTIONS
+  {
+    question: "What are the basic components of virus structure?",
+    options: ["Viral genome, capsid, and sometimes viral envelope", "Cell wall, nucleus, and mitochondria", "Hyphae, spores, and fruiting bodies", "Flagella, cilia, and pseudopodia"],
+    answer: "Viral genome, capsid, and sometimes viral envelope",
+    tip: "From slides: Viruses contain nucleic acid (viral genome), a capsid (protective protein layer), and sometimes a viral envelope with spike proteins.",
+    animate: animateViralAttachment
+  },
+  {
+    question: "What is the function of viral envelope spike proteins?",
+    options: ["To protect the virus from heat", "To attach or invade another cell", "To help the virus move through water", "To store genetic material"],
+    answer: "To attach or invade another cell",
+    tip: "From slides: Envelope spike proteins are used by viruses to attach or invade another cell.",
+    animate: animateViralAttachment
+  },
+  {
+    question: "Why are viruses not considered living cells?",
+    options: ["They are too small to be alive", "They don't have DNA", "They cannot reproduce or carry out metabolic reactions on their own", "They don't move"],
+    answer: "They cannot reproduce or carry out metabolic reactions on their own",
+    tip: "From slides: Viruses depend on host cells to grow, sustain, reproduce and transmit themselves - they cannot do this independently.",
+    animate: animateViralAttachment
+  },
+  {
+    question: "What shapes can viruses have?",
+    options: ["Only spherical", "Helical, spherical, polyhedral, and complex", "Only rectangular and triangular", "Only helical and complex"],
+    answer: "Helical, spherical, polyhedral, and complex",
+    tip: "From slides: Viruses have several basic shapes - helical, spherical, polyhedral, and complex.",
+    animate: animateViralAttachment
+  },
+  {
+    question: "How must viruses be cultured for identification?",
+    options: ["In artificial nutrient broths", "In living tissue", "On agar plates", "In salt water"],
+    answer: "In living tissue",
+    tip: "From slides: Because viruses need to live inside a host cell, they need to be cultured in living tissue.",
+    animate: animateViralAttachment
+  },
+  {
+    question: "How do viruses multiply?",
+    options: ["By binary fission like bacteria", "Within host cells", "By budding like fungi", "Through spore formation"],
+    answer: "Within host cells",
+    tip: "From slides: Viruses multiply within host cells, unlike other microorganisms that can reproduce independently.",
+    animate: animateViralAttachment
+  },
+  
+  // FUNGI QUESTIONS
+  {
+    question: "What are the main groups of fungi mentioned in the slides?",
+    options: ["Yeasts, molds, plant rusts, and chytrids", "Bacteria, viruses, and algae", "Flagella, cilia, and spores", "Helical, spherical, and complex forms"],
+    answer: "Yeasts, molds, plant rusts, and chytrids",
+    tip: "From slides: Fungi have many groups including yeasts, molds, plant rusts and chytrids.",
+    animate: animateSporeRelease
+  },
+  {
+    question: "How are molds typically characterized?",
+    options: ["Single-celled, thread-like, white or colorless", "Multicellular, round shapes, different colors, reproduce sexually or asexually", "Only reproduce through spores", "Always live in water"],
+    answer: "Multicellular, round shapes, different colors, reproduce sexually or asexually",
+    tip: "From slides: Molds are usually multicellular, have round shapes, can be different colors, and can reproduce sexually or asexually.",
+    animate: animateSporeRelease
+  },
+  {
+    question: "How are yeasts typically characterized?",
+    options: ["Multicellular with round shapes", "Unicellular, thread-like appearance, white or colorless", "Always form mushrooms", "Only reproduce sexually"],
+    answer: "Unicellular, thread-like appearance, white or colorless",
+    tip: "From slides: Yeast are usually unicellular, are thread-like in appearance, white or colorless, and don't have true hyphae.",
+    animate: animateSporeRelease
+  },
+  {
+    question: "What are hyphae?",
+    options: ["Virus particles", "Thread-like cells that join together to form a mushroom", "Bacterial spores", "Protozoan flagella"],
+    answer: "Thread-like cells that join together to form a mushroom",
+    tip: "From slides: Hyphae are thread-like cells that join together to form a mushroom.",
+    animate: animateSporeRelease
+  },
+  {
+    question: "How do fungi get their nutrients?",
+    options: ["Through photosynthesis", "By consuming other living organisms", "By decomposing organic matter", "From sunlight and air"],
+    answer: "By decomposing organic matter",
+    tip: "From slides: Fungi get their nutrients by decomposing organic matter like decaying leaves and bark.",
+    animate: animateSporeRelease
+  },
+  {
+    question: "How do mushrooms reproduce?",
+    options: ["Through binary fission", "By producing spores", "Through photosynthesis", "By cell division only"],
+    answer: "By producing spores",
+    tip: "From slides: Mushrooms produce spores for reproduction.",
+    animate: animateSporeRelease
+  },
+  {
+    question: "How can fungi reproduce?",
+    options: ["Only sexually", "Only asexually", "Can be sexual or asexual", "Only through spores"],
+    answer: "Can be sexual or asexual",
+    tip: "From slides: Fungi can reproduce sexually or asexually, and can also reproduce by budding.",
+    animate: animateSporeRelease
+  },
+  
+  // ALGAE QUESTIONS
+  {
+    question: "What is a 'thallus' in algae?",
+    options: ["The reproductive structure", "The 'body' that may be single or multiple eukaryotic cells", "The movement structure", "The protective coating"],
+    answer: "The 'body' that may be single or multiple eukaryotic cells",
+    tip: "From slides: A thallus is the 'body' of algae and may be comprised of a single or multiple eukaryotic cells."
+  },
+  {
+    question: "What enables algae to perform photosynthesis?",
+    options: ["Mitochondria", "Chloroplasts containing chlorophyll", "Nucleus", "Cell wall"],
+    answer: "Chloroplasts containing chlorophyll",
+    tip: "From slides: Algae have chloroplasts containing chlorophyll, which enables photosynthesis (making sugars from CO₂, H₂O and sunlight)."
+  },
+  {
+    question: "What external structures help algae move and attach?",
+    options: ["Spores and hyphae", "Pili and flagella", "Capsids and envelopes", "Pseudopodia and cilia"],
+    answer: "Pili and flagella",
+    tip: "From slides: Algae have pili (which help the cell 'grip' to surfaces) and flagella (which enable the cell to move)."
+  },
+  {
+    question: "How do algae make energy?",
+    options: ["By eating bacteria", "By decomposing organic matter", "They use chloroplasts to make energy using sunlight (photosynthesis)", "By absorbing nutrients from soil"],
+    answer: "They use chloroplasts to make energy using sunlight (photosynthesis)",
+    tip: "From slides: Algae use chloroplasts to make energy using sunlight - this is called photosynthesis."
+  },
+  {
+    question: "How do algae interact with humans?",
+    options: ["Always harmful to humans", "Will not harm humans unless ingested", "Only beneficial if consumed", "Always cause infections"],
+    answer: "Will not harm humans unless ingested",
+    tip: "From slides: Algae will not harm humans unless ingested by humans."
+  },
+  
+  // PROTOZOA QUESTIONS
+  {
+    question: "What mobility structures do protozoa have?",
+    options: ["Flagella, cilia, or pseudopodia (false feet)", "Spores and hyphae", "Capsids and spike proteins", "Only flagella"],
+    answer: "Flagella, cilia, or pseudopodia (false feet)",
+    tip: "From slides: Protozoa have mobility structures including flagella, cilia or pseudopodia (false feet), which enable the cell to move.",
+    animate: animatePhagocytosis
+  },
+  {
+    question: "What do protozoa typically eat?",
+    options: ["Sunlight and carbon dioxide", "Bacteria, fungi and algae", "Dead organic matter only", "Nothing - they photosynthesize"],
+    answer: "Bacteria, fungi and algae",
+    tip: "From slides: Protozoa eat bacteria, fungi and algae as their food source.",
+    animate: animatePhagocytosis
+  },
+  {
+    question: "The Plasmodium protozoan that causes malaria changes form during its life cycle. Where does it first live in mosquitoes?",
+    options: ["In the mosquito's blood", "In the mosquito's saliva", "In the mosquito's wings", "In the mosquito's stomach only"],
+    answer: "In the mosquito's saliva",
+    tip: "From slides: The protozoan has one form that lives in the mosquito's saliva, then changes form to live in human red blood cells.",
+    animate: animatePhagocytosis
+  },
+  {
+    question: "Where does the malaria protozoan go first in the human body after injection by a mosquito?",
+    options: ["Directly to red blood cells", "To the human's liver", "To the lungs", "To the brain"],
+    answer: "To the human's liver",
+    tip: "From slides: After injection, the protozoa goes to the human's liver where it will change form and then go into the cardiovascular system using red blood cells.",
+    animate: animatePhagocytosis
+  },
+  {
+    question: "What internal structures do protozoa contain?",
+    options: ["Only a nucleus", "Nucleus, mitochondria, endoplasmic reticulum, and food storage structures", "Only mitochondria", "Just cell walls"],
+    answer: "Nucleus, mitochondria, endoplasmic reticulum, and food storage structures",
+    tip: "From slides: Protozoa have internal structures including nucleus (genetic information), mitochondria (energy), endoplasmic reticulum (protein transport), and food storage structures.",
+    animate: animatePhagocytosis
+  },
+  
+  // MICROBIAL GROWTH QUESTIONS
+  {
+    question: "What physical and chemical requirements do microorganisms that inhabit the human body need?",
+    options: ["Only water and nutrients", "Water, nutrients, oxygen, minerals, vitamins, temperature, pH, and osmotic pressure", "Just the right temperature", "Only oxygen and water"],
+    answer: "Water, nutrients, oxygen, minerals, vitamins, temperature, pH, and osmotic pressure",
+    tip: "From slides: Human body microorganisms need water, nutrients, oxygen, minerals & vitamins, temperature, pH, and proper osmotic pressure.",
+    animate: animateBinaryFission
+  },
+  {
+    question: "What pH range do most bacteria prefer for growth?",
+    options: ["pH 1-3 (very acidic)", "pH 6.5-7.5 (neutrophiles)", "pH 9-11 (very basic)", "pH 5-6 (moderately acidic)"],
+    answer: "pH 6.5-7.5 (neutrophiles)",
+    tip: "From slides: Most bacteria grow best at pH 6.5-7.5 (neutrophiles), while most fungi need pH 5-6.",
+    animate: animateBinaryFission
+  },
+  {
+    question: "What type of osmotic pressure is best for most bacteria?",
+    options: ["Hypertonic", "Hypotonic", "Isotonic to their cytoplasm", "Any osmotic pressure"],
+    answer: "Isotonic to their cytoplasm",
+    tip: "From slides: Best osmotic pressure is isotonic to their cytoplasm, not hypertonic or hypotonic. Salty water can kill some bacteria.",
+    animate: animateBinaryFission
+  },
+  {
+    question: "How do bacteria grow?",
+    options: ["By forming spores", "By dividing cells through binary fission", "By budding like fungi", "Within host cells like viruses"],
+    answer: "By dividing cells through binary fission",
+    tip: "From slides: Bacteria grow by dividing cells through binary fission, different from other microorganisms.",
+    animate: animateBinaryFission
+  },
+  
+  // IDENTIFICATION QUESTIONS
+  {
+    question: "How are fungi, algae, and protozoa identified?",
+    options: ["Only by DNA testing", "By viewing through a microscope and noting distinguishing features", "By smell and color only", "By growing them in specific broths"],
+    answer: "By viewing through a microscope and noting distinguishing features",
+    tip: "From slides: Fungi, algae & protozoa can be identified by viewing them through a microscope and noting their distinguishing features."
+  },
+  {
+    question: "What helps make microbes easier to see during identification?",
+    options: ["Higher temperature", "Staining with chemical dye that attaches to proteins", "Adding salt water", "Removing the cell wall"],
+    answer: "Staining with chemical dye that attaches to proteins",
+    tip: "From slides: Staining (using a chemical dye that selectively attaches to proteins) makes the microbes easier to see."
+  },
+  
+  // CHAIN OF INFECTION QUESTIONS
+  {
+    question: "What is the first component in the chain of infection?",
+    options: ["The susceptible host", "The infectious agent (pathogen)", "The reservoir", "The portal of exit"],
+    answer: "The infectious agent (pathogen)",
+    tip: "From slides: The chain of infection starts with the infective agent - any disease-causing microorganism (pathogen)."
+  },
+  {
+    question: "What can serve as a reservoir in the chain of infection?",
+    options: ["Only sick humans", "Another animal or insect, water source, food, or sick humans", "Only water sources", "Only animals"],
+    answer: "Another animal or insect, water source, food, or sick humans",
+    tip: "From slides: The reservoir is where the microbe lives & reproduces - can include another animal/insect, water source, food, or sick humans."
+  },
+  {
+    question: "What are examples of portals of exit from sick humans?",
+    options: ["Only through breathing", "Respiratory secretions, blood, semen, sweat, vomit, faeces", "Only through blood", "Only through skin contact"],
+    answer: "Respiratory secretions, blood, semen, sweat, vomit, faeces",
+    tip: "From slides: Examples of escape from sick humans include respiratory secretions, blood, semen, sweat, vomit, faeces."
+  },
+  {
+    question: "What are the common modes of transmission mentioned?",
+    options: ["Only direct contact", "Direct patient contact, indirect patient contact, droplet transmission, vector transmission", "Only through air", "Only through water"],
+    answer: "Direct patient contact, indirect patient contact, droplet transmission, vector transmission",
+    tip: "From slides: Common modes of transmission are direct patient contact, indirect patient contact, droplet transmission, and vector transmission."
+  }
+];
+
+// Shuffle the questions array
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[i], shuffled[j]];
+  }
+  return shuffled;
+}
+
+let questions = shuffleArray(allQuestions);
+let currentQuestion = 0;
+let score = 0;
+let startTime = Date.now();
+let questionsAnswered = 0;
+
+function startQuiz() {
+  startScreen.classList.add("hidden");
+  quizContent.classList.remove("hidden");
+  initializeAudio();
+  playBackgroundMusic();
+  showQuestion();
+}
+
+function updateProgress() {
+  const progress = (questionsAnswered / questions.length) * 100;
+  progressBar.style.width = progress + '%';
+}
+
+function showQuestion() {
+  const q = questions[currentQuestion];
+  counterDisplay.textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
+  questionBox.innerHTML = `<p><strong>${q.question}</strong></p>`;
+  
+  q.options.forEach((option, index) => {
+    const button = document.createElement("button");
+    button.className = "btn";
+    button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+    button.onclick = () => checkAnswer(option, button);
+    questionBox.appendChild(button);
+  });
+  
+  tipBox.style.display = "none";
+  updateProgress();
+}
+
+function checkAnswer(selected, buttonElement) {
+  const q = questions[currentQuestion];
+  const allButtons = questionBox.querySelectorAll('.btn');
+  
+  allButtons.forEach(btn => btn.style.pointerEvents = 'none');
+  
+  if (selected === q.answer) {
+    score++;
+    buttonElement.classList.add('correct');
+    scoreDisplay.textContent = `Score: ${score}/${questionsAnswered + 1}`;
+    playCorrectSound();
+    if (q.animate) q.animate();
+  } else {
+    buttonElement.classList.add('incorrect');
+    playIncorrectSound();
+    allButtons.forEach(btn => {
+      if (btn.textContent.includes(q.answer)) {
+        btn.classList.add('correct');
+      }
+    });
+  }
+  
+  questionsAnswered++;
+  
+  tipBox.innerHTML = `<strong>Explanation:</strong> ${q.tip}`;
+  tipBox.style.display = "block";
+  
+  currentQuestion++;
+  if (currentQuestion < questions.length) {
+    setTimeout(showQuestion, 3500);
+  } else {
+    setTimeout(showFinalResults, 3500);
+  }
+}
+
+function showFinalResults() {
+  const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+  const percentage = Math.round((score / questions.length) * 100);
+  
+  let performance = "";
+  if (percentage >= 80) performance = "Excellent! 🌟";
+  else if (percentage >= 70) performance = "Good work! 👍";
+  else if (percentage >= 60) performance = "Satisfactory ✓";
+  else performance = "Needs improvement 📚";
+  
+  questionBox.innerHTML = `
+    <div class="final-results">
+      <h2>Quiz Complete!</h2>
+      <p>Final Score: ${score}/${questions.length} (${percentage}%)</p>
+      <p>Performance: ${performance}</p>
+      <p>Time Taken: ${timeTaken} seconds</p>
+      <button class="restart-btn" onclick="restartQuiz()">Restart Quiz</button>
+    </div>
+  `;
+  tipBox.style.display = "none";
+  progressBar.style.width = '100%';
+}
+
+function restartQuiz() {
+  questions = shuffleArray(allQuestions);
+  currentQuestion = 0;
+  score = 0;
+  questionsAnswered = 0;
+  startTime = Date.now();
+  scoreDisplay.textContent = "Score: 0";
+  updateProgress();
+  playBackgroundMusic();
+  showQuestion();
+}
+
+// Initialize quiz (show start screen)
+startScreen.classList.remove("hidden");
+quizContent.classList.add("hidden");
+</script>
+</body>
+</html>
