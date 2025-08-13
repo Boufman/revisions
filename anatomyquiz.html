@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PREMHS402 Anatomy Revision Quiz</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #a11212, #1e90ff);
+      color: #f1f1f1;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    #animation-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    #quiz-container {
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 2rem;
+      border-radius: 1.5rem;
+      max-width: 90vw;
+      width: 700px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin: 2rem auto;
+    }
+    
+    #station-image {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.8rem;
+      margin-bottom: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: none;
+    }
+    
+    h1 {
+      margin: 0 0 0.5rem 0;
+      background: linear-gradient(45deg, #ff4040, #1e90ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    
+    .subtitle {
+      margin: 0 0 1rem 0;
+      color: #b0b0b0;
+      font-size: 0.9rem;
+    }
+    
+    .start-btn {
+      margin: 1rem auto;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #ff4040, #1e90ff);
+      border: none;
+      border-radius: 0.8rem;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    
+    .start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .question-counter {
+      color: #1e90ff;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    
+    p {
+      margin: 0 0 1rem 0;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+    
+    .btn {
+      display: block;
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 1rem;
+      font-size: 1rem;
+      background: linear-gradient(135deg, #4682b4, #6a5acd);
+      color: #f1f1f1;
+      border: none;
+      border-radius: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      background: linear-gradient(135deg, #6a5acd, #4682b4);
+    }
+    
+    .btn:hover:before {
+      left: 100%;
+    }
+    
+    .btn.correct {
+      background: linear-gradient(135deg, #32cd32, #98fb98);
+      animation: pulse 0.6s ease-in-out;
+    }
+    
+    .btn.incorrect {
+      background: linear-gradient(135deg, #ff4040, #ff6666);
+      animation: shake 0.6s ease-in-out;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    .text-input {
+      width: 100%;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      font-size: 1rem;
+      border-radius: 0.8rem;
+      border: 1px solid #4682b4;
+      background: rgba(255, 255, 255, 0.1);
+      color: #f1f1f1;
+    }
+    
+    .order-select {
+      width: 100%;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      font-size: 1rem;
+      border-radius: 0.8rem;
+      border: 1px solid #4682b4;
+      background: rgba(255, 255, 255, 0.1);
+      color: #f1f1f1;
+    }
+    
+    #score {
+      margin-top: 1.5rem;
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #1e90ff;
+    }
+    
+    #clinical-tip {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(30, 144, 255, 0.2), rgba(255, 64, 64, 0.2));
+      border-radius: 0.8rem;
+      border-left: 4px solid #1e90ff;
+      display: none;
+      text-align: left;
+      line-height: 1.5;
+    }
+    
+    .final-results {
+      background: linear-gradient(135deg, rgba(50, 205, 50, 0.3), rgba(152, 251, 152, 0.3));
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-top: 1rem;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1e90ff, #4682b4);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    .anatomy-animation {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      opacity: 0.6;
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+    
+    .red-blood-cell { background: radial-gradient(circle, #ff4040, #dc143c); }
+    .neuron { background: radial-gradient(circle, #4682b4, #1e90ff); }
+    .bone { background: radial-gradient(circle, #f5f5f5, #d3d3d3); }
+    .muscle { background: radial-gradient(circle, #c71585, #db7093); }
+    
+    .restart-btn {
+      margin-top: 1rem;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #ff4040, #1e90ff);
+      border: none;
+      border-radius: 0.8rem;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    
+    .restart-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div id="animation-container">
+  <canvas id="animation"></canvas>
+</div>
+
+<div id="quiz-container">
+  <h1>PREMHS402 Anatomy Revision Quiz</h1>
+  <p class="subtitle">Explore Anatomical Language, Tissues, Cells, and Integumentary System</p>
+  <img id="station-image" src="" alt="Station Image">
+  
+  <div id="start-screen">
+    <button class="start-btn" onclick="startQuiz()">Start Quiz</button>
+  </div>
+  
+  <div id="quiz-content" class="hidden">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress"></div>
+    </div>
+    
+    <div class="question-counter" id="counter">Question 1 of 34</div>
+    <div id="question-box"></div>
+    <div id="clinical-tip"></div>
+    <div id="score">Score: 0</div>
+  </div>
+</div>
+
+<script>
+// Initialize canvas and elements
+const canvas = document.getElementById("animation");
+const ctx = canvas.getContext("2d");
+const questionBox = document.getElementById("question-box");
+const tipBox = document.getElementById("clinical-tip");
+const scoreDisplay = document.getElementById("score");
+const counterDisplay = document.getElementById("counter");
+const progressBar = document.getElementById("progress");
+const startScreen = document.getElementById("start-screen");
+const quizContent = document.getElementById("quiz-content");
+const stationImage = document.getElementById("station-image");
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function clearAnimation() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// Animations for each station
+function animateBodyPlanes() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  let planeIndex = 0;
+  const planes = [
+    { name: "Frontal", color: "rgba(255, 64, 64, 0.8)", x: -50 },
+    { name: "Sagittal", color: "rgba(30, 144, 255, 0.8)", x: 0 },
+    { name: "Transverse", color: "rgba(50, 205, 50, 0.8)", y: -50 },
+    { name: "Oblique", color: "rgba(255, 215, 0, 0.8)", angle: 45 }
+  ];
+
+  const interval = setInterval(() => {
+    clearAnimation();
+    // Draw body model (simplified as a rectangle)
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.fillRect(centerX - 50, centerY - 100, 100, 200);
+    
+    // Draw current plane
+    const plane = planes[planeIndex];
+    ctx.fillStyle = plane.color;
+    if (plane.name === "Oblique") {
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate((plane.angle * Math.PI) / 180);
+      ctx.fillRect(-50, -100, 100, 200);
+      ctx.restore();
+    } else if (plane.x !== undefined) {
+      ctx.fillRect(centerX + plane.x, centerY - 100, 2, 200);
+    } else {
+      ctx.fillRect(centerX - 50, centerY + plane.y, 100, 2);
+    }
+    
+    planeIndex = (planeIndex + 1) % planes.length;
+  }, 1000);
+  setTimeout(() => clearInterval(interval), 4000);
+}
+
+function animateOrganPlacement() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const organs = [
+    { name: "Kidney", x: -50, y: 0, color: "rgba(255, 64, 64, 0.8)" },
+    { name: "Spinal Cord", x: 0, y: -50, color: "rgba(255, 215, 0, 0.8)" },
+    { name: "Bladder", x: 0, y: 50, color: "rgba(30, 144, 255, 0.8)" }
+  ];
+  let organIndex = 0;
+
+  const interval = setInterval(() => {
+    clearAnimation();
+    // Draw torso
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.fillRect(centerX - 50, centerY - 100, 100, 200);
+    
+    // Draw current organ
+    const organ = organs[organIndex];
+    ctx.fillStyle = organ.color;
+    ctx.beginPath();
+    ctx.arc(centerX + organ.x, centerY + organ.y, 20, 0, Math.PI * 2);
+    ctx.fill();
+    
+    organIndex = (organIndex + 1) % organs.length;
+  }, 1000);
+  setTimeout(() => clearInterval(interval), 3000);
+}
+
+function animateTissues() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const tissues = [
+    { name: "Epithelial", y: -50, color: "rgba(255, 64, 64, 0.8)" },
+    { name: "Connective", y: 0, color: "rgba(50, 205, 50, 0.8)" },
+    { name: "Muscle", y: 50, color: "rgba(255, 215, 0, 0.8)" }
+  ];
+  let tissueIndex = 0;
+
+  const interval = setInterval(() => {
+    clearAnimation();
+    // Draw arm model
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.fillRect(centerX - 20, centerY - 100, 40, 200);
+    
+    // Draw tissue layer
+    const tissue = tissues[tissueIndex];
+    ctx.fillStyle = tissue.color;
+    ctx.fillRect(centerX - 20, centerY + tissue.y - 20, 40, 40);
+    
+    tissueIndex = (tissueIndex + 1) % tissues.length;
+  }, 1000);
+  setTimeout(() => clearInterval(interval), 3000);
+}
+
+function animateCellOrganelles() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const organelles = [
+    { name: "Nucleus", x: 0, y: -30, color: "rgba(30, 144, 255, 0.8)" },
+    { name: "Mitochondria", x: -30, y: 30, color: "rgba(255, 64, 64, 0.8)" },
+    { name: "Lysosome", x: 30, y: 30, color: "rgba(50, 205, 50, 0.8)" }
+  ];
+  let organelleIndex = 0;
+
+  const interval = setInterval(() => {
+    clearAnimation();
+    // Draw cell
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 50, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw organelle
+    const organelle = organelles[organelleIndex];
+    ctx.fillStyle = organelle.color;
+    ctx.beginPath();
+    ctx.arc(centerX + organelle.x, centerY + organelle.y, 10, 0, Math.PI * 2);
+    ctx.fill();
+    
+    organelleIndex = (organelleIndex + 1) % organelles.length;
+  }, 1000);
+  setTimeout(() => clearInterval(interval), 3000);
+}
+
+function animateSkinLayers() {
+  clearAnimation();
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const layers = [
+    { name: "Epidermis", y: -30, color: "rgba(255, 215, 0, 0.8)" },
+    { name: "Dermis", y: 0, color: "rgba(255, 64, 64, 0.8)" },
+    { name: "Subcutaneous", y: 30, color: "rgba(50, 205, 50, 0.8)" }
+  ];
+  let layerIndex = 0;
+
+  const interval = setInterval(() => {
+    clearAnimation();
+    // Draw skin cross-section
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.fillRect(centerX - 50, centerY - 50, 100, 100);
+    
+    // Draw layer
+    const layer = layers[layerIndex];
+    ctx.fillStyle = layer.color;
+    ctx.fillRect(centerX - 50, centerY + layer.y - 10, 100, 20);
+    
+    layerIndex = (layerIndex + 1) % layers.length;
+  }, 1000);
+  setTimeout(() => clearInterval(interval), 3000);
+}
+
+// Create floating anatomical elements
+function createFloatingElements() {
+  const types = ['red-blood-cell', 'neuron', 'bone', 'muscle'];
+  
+  for (let i = 0; i < 15; i++) {
+    const element = document.createElement('div');
+    element.className = 'anatomy-animation ' + types[i % 4];
+    element.style.left = Math.random() * 100 + '%';
+    element.style.top = Math.random() * 100 + '%';
+    element.style.animationDelay = Math.random() * 6 + 's';
+    element.style.animationDuration = (4 + Math.random() * 4) + 's';
+    document.getElementById("animation-container").appendChild(element);
+  }
+}
+
+createFloatingElements();
+
+// Question Bank
+const allQuestions = [
+  // Station 1: Anatomical Language - Body Planes
+  {
+    station: "Station 1: Anatomical Language - Body Planes",
+    question: "What end of the humerus bone is the scarf wrapped around?",
+    options: ["Proximal", "Distal", "Superior", "Inferior"],
+    answer: "Proximal",
+    tip: "The proximal end of the humerus is closer to the shoulder, where a scarf might be wrapped in a model demonstration.",
+    image: "images/station1.jpg",
+    animate: animateBodyPlanes
+  },
+  {
+    station: "Station 1: Anatomical Language - Body Planes",
+    question: "What is the skeleton's mandible to the skeleton's hard hat?",
+    options: ["Superior", "Inferior", "Anterior", "Posterior"],
+    answer: "Inferior",
+    tip: "The mandible (jawbone) is inferior to the cranium, where a hard hat would sit on a skeleton model.",
+    image: "images/station1.jpg",
+    animate: animateBodyPlanes
+  },
+  {
+    station: "Station 1: Anatomical Language - Body Planes",
+    question: "What plane is the spinal cord model cut in?",
+    options: ["Frontal", "Sagittal", "Transverse", "Oblique"],
+    answer: "Sagittal",
+    tip: "A sagittal plane divides the spinal cord model into left and right halves, often used to show its midline structure.",
+    image: "images/station1.jpg",
+    animate: animateBodyPlanes
+  },
+  {
+    station: "Station 1: Anatomical Language - Body Planes",
+    question: "What plane is the nasogastric model cut into?",
+    options: ["Frontal", "Sagittal", "Transverse", "Oblique"],
+    answer: "Sagittal",
+    tip: "A nasogastric model, showing tube placement, is typically cut in a sagittal plane to display the midline path through the nasal cavity and stomach.",
+    image: "images/station1.jpg",
+    animate: animateBodyPlanes
+  },
+  {
+    station: "Station 1: Anatomical Language - Body Planes",
+    question: "What plane is the cranium cut into?",
+    options: ["Frontal", "Sagittal", "Transverse", "Oblique"],
+    answer: "Transverse",
+    tip: "A transverse plane cuts the cranium horizontally, separating top and bottom to show structures like the brain’s cross-section.",
+    image: "images/station1.jpg",
+    animate: animateBodyPlanes
+  },
+  {
+    station: "Station 1: Anatomical Language - Body Planes",
+    question: "Take the brain apart, identify all four body planes, and put it back together. Rate the difficulty (1 star per plane found: frontal, sagittal, transverse, oblique).",
+    options: ["1 star", "2 stars", "3 stars", "4 stars"],
+    answer: "4 stars",
+    tip: "The four body planes are frontal (front/back), sagittal (left/right), transverse (top/bottom), and oblique (diagonal). Rate how many you identified!",
+    image: "images/station1.jpg",
+    animate: animateBodyPlanes,
+    points: 4
+  },
+
+  // Station 2: Anatomical Language
+  {
+    station: "Station 2: Anatomical Language",
+    question: "Take all organs out of the anatomical model and put them back as fast as possible. One team member times the effort. How long did it take?",
+    options: ["Under 1 minute", "Under 2 minutes", "Under 3 minutes", "Could not put it back together in time"],
+    answer: "Under 1 minute",
+    tip: "Speed in reassembling the model demonstrates understanding of organ placement. Faster times indicate better familiarity!",
+    image: "images/station2.jpg",
+    animate: animateOrganPlacement,
+    points: 4
+  },
+  {
+    station: "Station 2: Anatomical Language",
+    question: "Name the cavity and describe the location of the kidneys using at least two terms (medial, lateral, inferior, superior, anterior, posterior, superficial, deep, proximal, distal, central, peripheral) with reference points.",
+    answer: "Abdominal cavity, posterior and inferior to the stomach",
+    tip: "The kidneys are in the abdominal cavity, located posterior to the stomach and inferior to the diaphragm.",
+    image: "images/station2.jpg",
+    animate: animateOrganPlacement
+  },
+  {
+    station: "Station 2: Anatomical Language",
+    question: "Name the cavity and describe the location of the spinal cord using at least two terms (medial, lateral, inferior, superior, anterior, posterior, superficial, deep, proximal, distal, central, peripheral) with reference points.",
+    answer: "Spinal cavity, medial and superior to the lumbar vertebrae",
+    tip: "The spinal cord is in the spinal cavity, running medially through the vertebral column and superior to the lower spine.",
+    image: "images/station2.jpg",
+    animate: animateOrganPlacement
+  },
+  {
+    station: "Station 2: Anatomical Language",
+    question: "Name the cavity and describe the location of the bladder using at least two terms (medial, lateral, inferior, superior, anterior, posterior, superficial, deep, central, peripheral) with reference points.",
+    answer: "Pelvic cavity, anterior and inferior to the sacrum",
+    tip: "The bladder is in the pelvic cavity, located anterior to the sacrum and inferior to the peritoneal cavity.",
+    image: "images/station2.jpg",
+    animate: animateOrganPlacement
+  },
+
+  // Station 3: Tissues and Glands
+  {
+    station: "Station 3: Tissues and Glands",
+    question: "The model represents glands in the cranial cavity. Are they exocrine or endocrine glands?",
+    options: ["Exocrine", "Endocrine"],
+    answer: "Endocrine",
+    tip: "Glands in the cranial cavity, like the pituitary, are endocrine, releasing hormones directly into the bloodstream.",
+    image: "images/station3.jpg",
+    animate: animateTissues
+  },
+  {
+    station: "Station 3: Tissues and Glands",
+    question: "Three of the four types of tissues are represented in the arm model. What are they?",
+    options: ["Epithelial, Connective, Muscle", "Epithelial, Nervous, Muscle", "Connective, Nervous, Muscle", "Epithelial, Connective, Nervous"],
+    answer: "Epithelial, Connective, Muscle",
+    tip: "The arm typically includes epithelial (skin), connective (tendons), and muscle (skeletal muscle) tissues.",
+    image: "images/station3.jpg",
+    animate: animateTissues,
+    points: 3
+  },
+  {
+    station: "Station 3: Tissues and Glands",
+    question: "What tissue is missing from the model of the arm?",
+    options: ["Epithelial", "Connective", "Nervous", "Muscle"],
+    answer: "Nervous",
+    tip: "The nervous tissue, responsible for nerve signals, is often not distinctly modeled in a basic arm display.",
+    image: "images/station3.jpg",
+    animate: animateTissues,
+    points: 3
+  },
+  {
+    station: "Station 3: Tissues and Glands",
+    question: "What type of tissue lines hollow organs and secretes mucous to protect the organ?",
+    options: ["Epithelial", "Connective", "Muscle", "Nervous"],
+    answer: "Epithelial",
+    tip: "Epithelial tissue lines organs like the stomach and secretes mucus for protection.",
+    image: "images/station3.jpg",
+    animate: animateTissues,
+    points: 3
+  },
+  {
+    station: "Station 3: Tissues and Glands",
+    question: "What type of tissue is blood plasma?",
+    options: ["Epithelial", "Muscle", "Connective", "Nervous"],
+    answer: "Connective",
+    tip: "Blood plasma is part of the connective tissue, supporting nutrient and waste transport.",
+    image: "images/station3.jpg",
+    animate: animateTissues,
+    points: 3
+  },
+  {
+    station: "Station 3: Tissues and Glands",
+    question: "What type of membrane surrounds the spinal cord floating in formaldehyde?",
+    options: ["Serous membrane", "Mucous membrane"],
+    answer: "Serous membrane",
+    tip: "The spinal cord is surrounded by meninges, a type of serous membrane, not mucous.",
+    image: "images/station3.jpg",
+    animate: animateTissues,
+    points: 3
+  },
+  {
+    station: "Station 3: Tissues and Glands",
+    question: "Describe the structure of connective tissue in as few words as possible.",
+    answer: "Cells in extracellular matrix",
+    tip: "Connective tissue consists of cells embedded in a matrix of fibers and ground substance.",
+    image: "images/station3.jpg",
+    animate: animateTissues,
+    points: 3
+  },
+  {
+    station: "Station 3: Tissues and Glands",
+    question: "What two types of tissue are membranes made up of?",
+    options: ["Connective and Nerve", "Epithelial and Muscle", "Connective and Epithelial", "Nerve and Muscle"],
+    answer: "Connective and Epithelial",
+    tip: "Membranes are typically composed of epithelial tissue over a connective tissue layer.",
+    image: "images/station3.jpg",
+    animate: animateTissues,
+    points: 3
+  },
+  {
+    station: "Station 3: Tissues and Glands",
+    question: "Name two differences between serous and mucous membranes.",
+    answer: "Serous: thin, secretes watery fluid; Mucous: thicker, secretes mucus",
+    tip: "Serous membranes are thin and secrete serous fluid, while mucous membranes are thicker and secrete mucus.",
+    image: "images/station3.jpg",
+    animate: animateTissues,
+    points: 3
+  },
+
+  // Station 4: The Cell
+  {
+    station: "Station 4: The Cell",
+    question: "Identify the organelle where ribosomes are made in the generic body cell and neuron.",
+    options: ["Nucleus", "Nucleolus", "Rough ER"],
+    answer: "Nucleolus",
+    tip: "The nucleolus within the nucleus is where ribosome assembly begins in both cell types.",
+    image: "images/station4.jpg",
+    animate: animateCellOrganelles
+  },
+  {
+    station: "Station 4: The Cell",
+    question: "Identify the organelle responsible for cellular respiration.",
+    options: ["Nucleus", "Golgi body", "Mitochondria"],
+    answer: "Mitochondria",
+    tip: "Mitochondria are the powerhouses of the cell, producing ATP via cellular respiration.",
+    image: "images/station4.jpg",
+    animate: animateCellOrganelles
+  },
+  {
+    station: "Station 4: The Cell",
+    question: "Identify the organelle responsible for modifying lipids.",
+    options: ["Smooth ER", "Rough ER", "Golgi body"],
+    answer: "Smooth ER",
+    tip: "The smooth endoplasmic reticulum modifies lipids and detoxifies substances.",
+    image: "images/station4.jpg",
+    animate: animateCellOrganelles
+  },
+  {
+    station: "Station 4: The Cell",
+    question: "Identify the organelle responsible for removing waste products and alien microbes.",
+    options: ["Smooth ER", "Lysosome", "Vesicle"],
+    answer: "Lysosome",
+    tip: "Lysosomes contain enzymes that break down waste and pathogens.",
+    image: "images/station4.jpg",
+    animate: animateCellOrganelles
+  },
+  {
+    station: "Station 4: The Cell",
+    question: "Name and explain the type of cell transport at the axon terminal (passive or active).",
+    answer: "Exocytosis, active transport",
+    tip: "Neurotransmitters are released via exocytosis, an active transport process requiring energy.",
+    image: "images/station4.jpg",
+    animate: animateCellOrganelles,
+    points: 2
+  },
+  {
+    station: "Station 4: The Cell",
+    question: "What form of reproduction created the oocytes in the ovary model?",
+    options: ["Mitosis", "Meiosis"],
+    answer: "Meiosis",
+    tip: "Oocytes (egg cells) are produced by meiosis, reducing chromosome number for reproduction.",
+    image: "images/station4.jpg",
+    animate: animateCellOrganelles,
+    points: 3
+  },
+  {
+    station: "Station 4: The Cell",
+    question: "Using key words, describe how one organelle assists a cell to maintain homeostasis.",
+    answer: "Mitochondria produce ATP for energy homeostasis",
+    tip: "Mitochondria generate ATP, providing energy to regulate internal cell conditions.",
+    image: "images/station4.jpg",
+    animate: animateCellOrganelles,
+    points: 5
+  },
+
+  // Station 5: Integumentary System
+  {
+    station: "Station 5: Integumentary System",
+    question: "Identify the sebaceous gland on the skin model and explain its function.",
+    answer: "Sebaceous gland, secretes sebum to lubricate hair and skin",
+    tip: "The sebaceous gland is located near hair follicles and secretes sebum to keep skin and hair moisturized.",
+    image: "",
+    animate: animateSkinLayers
+  },
+  {
+    station: "Station 5: Integumentary System",
+    question: "Identify the nerve receptor on the skin model and explain its function.",
+    answer: "Nerve receptor, detects sensory stimuli like touch and pressure",
+    tip: "Nerve receptors in the skin detect sensory input such as touch, pressure, and temperature.",
+    image: "",
+    animate: animateSkinLayers
+  },
+  {
+    station: "Station 5: Integumentary System",
+    question: "Identify the sweat gland on the skin model and explain its function.",
+    answer: "Sweat gland, regulates temperature by producing sweat",
+    tip: "Sweat glands, or sudiferous glands, help regulate body temperature through sweat production and excretion.",
+    image: "",
+    animate: animateSkinLayers
+  },
+  {
+    station: "Station 5: Integumentary System",
+    question: "What cells make up the third layer of the integumentary system? What is the function of this layer?",
+    answer: "Adipocytes, insulation and cushioning",
+    tip: "The third layer (subcutaneous) contains adipocytes (fat cells) and functions to insulate and cushion the body.",
+    image: "images/station5_general.jpg",
+    animate: animateSkinLayers
+  },
+  {
+    station: "Station 5: Integumentary System",
+    question: "What is the top layer of the skin called?",
+    answer: "Epidermis",
+    tip: "The top layer of the skin is the epidermis, which provides a protective barrier.",
+    image: "images/station5_general.jpg",
+    animate: animateSkinLayers
+  },
+  {
+    station: "Station 5: Integumentary System",
+    question: "Describe the structure of the dermis.",
+    answer: "Dense connective tissue with blood vessels and nerves",
+    tip: "The dermis is made of dense connective tissue, containing blood vessels, nerves, and glands.",
+    image: "images/station5_general.jpg",
+    animate: animateSkinLayers
+  },
+  {
+    station: "Station 5: Integumentary System",
+    question: "Identify as many functions of the subcutaneous layer as possible.",
+    answer: "Insulation, cushioning, energy storage",
+    tip: "The subcutaneous layer insulates, cushions, and stores energy as fat.",
+    image: "images/station5_general.jpg",
+    animate: animateSkinLayers
+  },
+  {
+    station: "Station 5: Integumentary System",
+    question: "Put the stratum levels in order from the bottom layer deep in the epidermis to the top layer on the superficial surface.",
+    options: ["Stratum Basale, Stratum Spinosum, Stratum Granulosum, Stratum Lucidum, Stratum Corneum",
+              "Stratum Corneum, Stratum Lucidum, Stratum Granulosum, Stratum Spinosum, Stratum Basale",
+              "Stratum Spinosum, Stratum Basale, Stratum Granulosum, Stratum Lucidum, Stratum Corneum"],
+    answer: "Stratum Basale, Stratum Spinosum, Stratum Granulosum, Stratum Lucidum, Stratum Corneum",
+    tip: "The correct order from deep to superficial is: Basale, Spinosum, Granulosum, Lucidum, Corneum.",
+    image: "images/station5_general.jpg",
+    animate: animateSkinLayers,
+    points: 5
+  }
+];
+
+// Shuffle function
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+let questions = allQuestions; // Initially set to original order
+let currentQuestion = 0;
+let score = 0;
+let startTime = Date.now();
+let questionsAnswered = 0;
+
+function startQuiz() {
+  questions = shuffleArray(allQuestions); // Shuffle questions on each start
+  startScreen.classList.add("hidden");
+  quizContent.classList.remove("hidden");
+  currentQuestion = 0; // Reset to first question of shuffled order
+  score = 0;
+  questionsAnswered = 0;
+  scoreDisplay.textContent = "Score: 0";
+  updateProgress();
+  showQuestion();
+}
+
+function updateProgress() {
+  const progress = (questionsAnswered / questions.length) * 100;
+  progressBar.style.width = progress + '%';
+}
+
+function showQuestion() {
+  const q = questions[currentQuestion];
+  counterDisplay.textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
+  stationImage.style.display = q.image ? "block" : "none";
+  stationImage.src = q.image || "";
+  questionBox.innerHTML = `<p><strong>${q.station}</strong></p><p><strong>${q.question}</strong></p>`;
+
+  if (q.options) {
+    if (q.question.includes("Put the stratum levels in order")) {
+      const select = document.createElement("select");
+      select.className = "order-select";
+      q.options.forEach(option => {
+        const opt = document.createElement("option");
+        opt.value = option;
+        opt.textContent = option;
+        select.appendChild(opt);
+      });
+      select.onchange = () => checkAnswer(select.value, select);
+      questionBox.appendChild(select);
+    } else {
+      q.options.forEach((option, index) => {
+        const button = document.createElement("button");
+        button.className = "btn";
+        button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+        button.onclick = () => checkAnswer(option, button);
+        questionBox.appendChild(button);
+      });
+    }
+  } else {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "text-input";
+    input.placeholder = "Enter your answer";
+    input.onchange = () => checkAnswer(input.value, input);
+    questionBox.appendChild(input);
+  }
+
+  tipBox.style.display = "none";
+  updateProgress();
+  if (q.animate) q.animate();
+}
+
+function checkAnswer(selected, element) {
+  const q = questions[currentQuestion];
+  let allButtons = questionBox.querySelectorAll('.btn');
+  let allInputs = questionBox.querySelectorAll('.text-input, .order-select');
+
+  if (q.options) {
+    allButtons.forEach(btn => btn.style.pointerEvents = 'none');
+  } else {
+    allInputs.forEach(input => input.disabled = true);
+  }
+
+  let isCorrect = false;
+  if (q.options && q.options.includes(selected)) {
+    isCorrect = selected === q.answer;
+  } else {
+    isCorrect = selected.trim().toLowerCase() === q.answer.toLowerCase();
+  }
+
+  if (isCorrect) {
+    if (element.className === "btn" || element.className === "order-select") {
+      element.classList.add('correct');
+      score += q.points || 1;
+    }
+    scoreDisplay.textContent = `Score: ${score}/${questionsAnswered + (q.points || 1)}`;
+  } else {
+    if (element.className === "btn") {
+      element.classList.add('incorrect');
+      allButtons.forEach(btn => {
+        if (btn.textContent.includes(q.answer)) btn.classList.add('correct');
+      });
+    }
+  }
+
+  questionsAnswered += q.points || 1;
+
+  tipBox.innerHTML = `<strong>Explanation:</strong> ${q.tip}`;
+  tipBox.style.display = "block";
+
+  currentQuestion++;
+  if (currentQuestion < questions.length) {
+    setTimeout(showQuestion, 3500);
+  } else {
+    setTimeout(showFinalResults, 3500);
+  }
+}
+
+function showFinalResults() {
+  const timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+  const percentage = Math.round((score / questions.length) * 100);
+  
+  let performance = "";
+  if (percentage >= 80) performance = "Excellent! 🌟";
+  else if (percentage >= 70) performance = "Good work! 👍";
+  else if (percentage >= 60) performance = "Satisfactory ✓";
+  else performance = "Needs improvement 📚";
+  
+  questionBox.innerHTML = `
+    <div class="final-results">
+      <h2>Quiz Complete!</h2>
+      <p>Final Score: ${score}/${questions.length} (${percentage}%)</p>
+      <p>Performance: ${performance}</p>
+      <p>Time Taken: ${timeTaken} seconds</p>
+      <button class="restart-btn" onclick="restartQuiz()">Restart Quiz</button>
+    </div>
+  `;
+  tipBox.style.display = "none";
+  progressBar.style.width = '100%';
+  stationImage.style.display = "none";
+}
+
+function restartQuiz() {
+  questions = shuffleArray(allQuestions); // Shuffle again on restart
+  currentQuestion = 0;
+  score = 0;
+  questionsAnswered = 0;
+  startTime = Date.now();
+  scoreDisplay.textContent = "Score: 0";
+  updateProgress();
+  showQuestion();
+}
+
+// Initialize quiz (show start screen)
+startScreen.classList.remove("hidden");
+quizContent.classList.add("hidden");
+</script>
+</body>
+</html>
