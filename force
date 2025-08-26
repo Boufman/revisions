@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forces and Centre of Gravity Crossword</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .crossword-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .crossword-grid {
+            display: grid;
+            grid-template-columns: repeat(13, 30px);
+            grid-template-rows: repeat(13, 30px);
+            gap: 1px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            position: relative;
+        }
+        .cell.black {
+            background-color: #333;
+            border: none;
+        }
+        .cell.white {
+            background-color: white;
+            cursor: pointer;
+        }
+        .cell.white:focus {
+            background-color: #e3f2fd;
+            outline: 2px solid #2196f3;
+        }
+        .cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            background: transparent;
+            text-transform: uppercase;
+        }
+        .cell input:focus {
+            outline: none;
+        }
+        .number {
+            position: absolute;
+            top: 1px;
+            left: 2px;
+            font-size: 10px;
+            color: #666;
+        }
+        .clues {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-width: 350px;
+        }
+        .clues h3 {
+            color: #2196f3;
+            margin-top: 0;
+            border-bottom: 2px solid #2196f3;
+            padding-bottom: 5px;
+        }
+        .clue-section {
+            margin-bottom: 25px;
+        }
+        .clue {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        .clue-number {
+            font-weight: bold;
+            color: #2196f3;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        .check-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .check-button:hover {
+            background: #45a049;
+        }
+        .clear-button {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .clear-button:hover {
+            background: #da190b;
+        }
+        .correct {
+            background-color: #c8e6c9 !important;
+        }
+        .incorrect {
+            background-color: #ffcdd2 !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>Forces and Centre of Gravity Crossword</h1>
+    <p class="subtitle">Test your knowledge of physics concepts!</p>
+    
+    <div class="container">
+        <div class="crossword-container">
+            <div class="crossword-grid" id="crosswordGrid"></div>
+            <div style="text-align: center;">
+                <button class="check-button" onclick="checkAnswers()">Check Answers</button>
+                <button class="clear-button" onclick="clearGrid()">Clear All</button>
+            </div>
+        </div>
+        
+        <div class="clues">
+            <div class="clue-section">
+                <h3>Across</h3>
+                <div class="clue"><span class="clue-number">1.</span> A push, pull or twist on an object (5)</div>
+                <div class="clue"><span class="clue-number">4.</span> Weight equals this times gravity (4)</div>
+                <div class="clue"><span class="clue-number">6.</span> The point from which weight can be considered to act (6,2,7)</div>
+                <div class="clue"><span class="clue-number">9.</span> Force that pulls objects toward Earth (7)</div>
+                <div class="clue"><span class="clue-number">11.</span> Unit for measuring force (6)</div>
+                <div class="clue"><span class="clue-number">12.</span> What you should do with your knees when lifting (4)</div>
+                <div class="clue"><span class="clue-number">13.</span> Amount of matter in an object (4)</div>
+            </div>
+            
+            <div class="clue-section">
+                <h3>Down</h3>
+                <div class="clue"><span class="clue-number">1.</span> Sir Isaac who formulated laws of motion (6)</div>
+                <div class="clue"><span class="clue-number">2.</span> Body part where centre of gravity is located (6)</div>
+                <div class="clue"><span class="clue-number">3.</span> What happens when centre of gravity moves outside base of support (4)</div>
+                <div class="clue"><span class="clue-number">5.</span> Celestial body where you'd weigh about 1/6th of Earth weight (4)</div>
+                <div class="clue"><span class="clue-number">7.</span> Value of gravitational acceleration: 9.81 m/s__ (7)</div>
+                <div class="clue"><span class="clue-number">8.</span> When forces are equal and opposite (7)</div>
+                <div class="clue"><span class="clue-number">10.</span> Don't do this when lifting heavy objects (5)</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const grid = [
+            ['F','O','R','C','E','#','#','#','#','#','#','#','#'],
+            ['#','#','#','#','#','#','#','#','#','#','#','#','#'],
+            ['#','#','#','M','A','S','S','#','#','#','#','#','#'],
+            ['#','#','#','#','#','Q','#','#','#','#','#','#','#'],
+            ['#','#','#','#','#','U','#','#','#','#','#','#','#'],
+            ['#','C','E','N','T','R','E','O','F','G','R','A','V','I','T','Y'],
+            ['#','#','#','#','#','E','#','#','#','#','#','#','#'],
+            ['#','#','#','#','#','D','#','#','#','#','#','#','#'],
+            ['#','#','G','R','A','V','I','T','Y','#','#','#','#'],
+            ['#','#','#','#','#','#','#','#','#','#','#','#','#'],
+            ['#','#','#','#','N','E','W','T','O','N','#','#','#'],
+            ['#','#','#','#','#','#','#','#','#','#','#','#','#'],
+            ['#','#','#','B','E','N','D','#','M','A','S','S','#']
+        ];
+
+        const answers = {
+            'across': {
+                1: 'FORCE',
+                4: 'MASS',
+                6: 'CENTREOFGRAVITY', 
+                9: 'GRAVITY',
+                11: 'NEWTON',
+                12: 'BEND',
+                13: 'MASS'
+            },
+            'down': {
+                1: 'NEWTON',
+                2: 'PELVIS',
+                3: 'FALL',
+                5: 'MOON',
+                7: 'SQUARED',
+                8: 'BALANCE',
+                10: 'TWIST'
+            }
+        };
+
+        const gridLayout = [
+            [1,'#','#',4,'#','#','#','#','#','#','#','#','#'],
+            [2,'#','#','#','#','#','#','#','#','#','#','#','#'],
+            ['#','#','#','#','#','#','#','#','#','#','#','#','#'],
+            ['#','#',3,'#','#',5,'#','#','#','#','#','#','#'],
+            ['#','#','#','#','#','#','#','#','#','#','#','#','#'],
+            ['#','#','#','#','#',6,'#','#','#','#','#','#','#'],
+            ['#','#','#','#','#','#',7,'#','#','#','#','#','#'],
+            ['#','#','#','#','#','#','#',8,'#','#','#','#','#'],
+            ['#','#','#','#','#','#',9,'#','#','#','#','#','#'],
+            ['#','#','#','#','#','#','#','#','#','#','#','#','#'],
+            ['#','#','#',10,'#','#','#','#',11,'#','#','#','#'],
+            ['#','#','#','#','#','#','#','#','#','#','#','#','#'],
+            ['#','#','#','#','#','#',12,'#','#',13,'#','#','#']
+        ];
+
+        // Simplified grid for this crossword
+        const actualGrid = [
+            [1,'','','4','','','','','','','','',''],
+            ['','','','','','','','','','','','',''],
+            ['','','',3,'','','','','','','','',''],
+            ['','','','','','5,'','','','','','',''],
+            ['','','','','','','','','','','','',''],
+            ['','','','','','6','','','','','','',''],
+            ['','','','','','','7','','','','','',''],
+            ['','','','','','','','8','','','','',''],
+            ['','','','','','',9,'','','','','',''],
+            ['','','','','','','','','','','','',''],
+            ['','',10,'','','','','','11','','','',''],
+            ['','','','','','','','','','','','',''],
+            ['','','','','','',12,'','',13,'','','']
+        ];
+
+        function createGrid() {
+            const gridElement = document.getElementById('crosswordGrid');
+            
+            // Define the crossword pattern (1 = white cell, 0 = black cell)
+            const pattern = [
+                [1,0,0,1,1,1,1,0,0,0,0,0,0],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0],
+                [1,0,0,1,0,0,0,0,0,0,0,0,0],
+                [1,0,1,0,0,1,0,0,0,0,0,0,0],
+                [1,0,1,0,0,1,0,0,0,0,0,0,0],
+                [1,1,1,1,1,1,1,1,1,1,1,1,1],
+                [1,0,1,0,0,1,0,0,0,0,0,0,0],
+                [1,0,1,0,0,1,0,0,0,0,0,0,0],
+                [0,0,1,1,1,1,1,1,1,0,0,0,0],
+                [0,0,1,0,0,0,0,0,0,0,0,0,0],
+                [0,0,1,0,1,1,1,1,1,1,0,0,0],
+                [0,0,1,0,0,0,0,0,0,0,0,0,0],
+                [0,0,1,1,1,1,1,0,1,1,1,1,0]
+            ];
+
+            // Numbers for each cell
+            const numbers = [
+                [1,0,0,4,0,0,0,0,0,0,0,0,0],
+                [2,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,3,0,0,5,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,6,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,7,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,8,0,0,0,0,0],
+                [0,0,0,0,0,0,9,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,10,0,0,0,0,11,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,12,0,0,13,0,0,0]
+            ];
+
+            for (let i = 0; i < 13; i++) {
+                for (let j = 0; j < 13; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    
+                    if (pattern[i][j] === 1) {
+                        cell.className += ' white';
+                        const input = document.createElement('input');
+                        input.maxLength = 1;
+                        input.dataset.row = i;
+                        input.dataset.col = j;
+                        
+                        if (numbers[i][j] > 0) {
+                            const numberSpan = document.createElement('span');
+                            numberSpan.className = 'number';
+                            numberSpan.textContent = numbers[i][j];
+                            cell.appendChild(numberSpan);
+                        }
+                        
+                        cell.appendChild(input);
+                    } else {
+                        cell.className += ' black';
+                    }
+                    
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        function checkAnswers() {
+            const inputs = document.querySelectorAll('input');
+            
+            // Define correct answers for each position
+            const correctAnswers = {
+                // FORCE (1 across)
+                '0-0': 'F', '0-1': 'O', '0-2': 'R', '0-3': 'C', '0-4': 'E',
+                // NEWTON (1 down) - overlaps with FORCE at F
+                '1-0': 'N', '2-0': 'W', '3-0': 'T', '4-0': 'O', '5-0': 'N',
+                // PELVIS (2 down)
+                '1-0': 'P', '2-0': 'E', '3-0': 'L', '4-0': 'V', '5-0': 'I', '6-0': 'S',
+                // FALL (3 down)
+                '3-2': 'F', '4-2': 'A', '5-2': 'L', '6-2': 'L',
+                // MASS (4 across)
+                '0-3': 'M', '0-4': 'A', '0-5': 'S', '0-6': 'S',
+                // MOON (5 down)
+                '3-5': 'M', '4-5': 'O', '5-5': 'O', '6-5': 'N',
+                // CENTREOFGRAVITY (6 across) - simplified as CENTRE
+                '5-5': 'C', '5-6': 'E', '5-7': 'N', '5-8': 'T', '5-9': 'R', '5-10': 'E',
+                // SQUARED (7 down)
+                '6-6': 'S', '7-6': 'Q', '8-6': 'U', '9-6': 'A', '10-6': 'R', '11-6': 'E', '12-6': 'D',
+                // BALANCE (8 down)
+                '7-7': 'B', '8-7': 'A', '9-7': 'L', '10-7': 'A', '11-7': 'N', '12-7': 'C', '13-7': 'E',
+                // GRAVITY (9 across)
+                '8-6': 'G', '8-7': 'R', '8-8': 'A', '8-9': 'V', '8-10': 'I', '8-11': 'T', '8-12': 'Y',
+                // TWIST (10 down)
+                '10-3': 'T', '11-3': 'W', '12-3': 'I', '13-3': 'S', '14-3': 'T',
+                // NEWTON (11 across)
+                '10-8': 'N', '10-9': 'E', '10-10': 'W', '10-11': 'T', '10-12': 'O', '10-13': 'N',
+                // BEND (12 across)
+                '12-6': 'B', '12-7': 'E', '12-8': 'N', '12-9': 'D',
+                // MASS (13 across)
+                '12-9': 'M', '12-10': 'A', '12-11': 'S', '12-12': 'S'
+            };
+
+            inputs.forEach(input => {
+                const row = input.dataset.row;
+                const col = input.dataset.col;
+                const key = `${row}-${col}`;
+                const userAnswer = input.value.toUpperCase();
+                
+                if (correctAnswers[key] && userAnswer === correctAnswers[key]) {
+                    input.parentElement.classList.add('correct');
+                    input.parentElement.classList.remove('incorrect');
+                } else if (userAnswer !== '') {
+                    input.parentElement.classList.add('incorrect');
+                    input.parentElement.classList.remove('correct');
+                } else {
+                    input.parentElement.classList.remove('correct', 'incorrect');
+                }
+            });
+        }
+
+        function clearGrid() {
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.value = '';
+                input.parentElement.classList.remove('correct', 'incorrect');
+            });
+        }
+
+        // Initialize the grid when page loads
+        createGrid();
+    </script>
+</body>
+</html>
