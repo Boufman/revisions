@@ -1,363 +1,344 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forces and Centre of Gravity Crossword</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-        }
-        .crossword-container {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .crossword-grid {
-            display: grid;
-            grid-template-columns: repeat(15, 30px);
-            grid-template-rows: repeat(13, 30px);
-            gap: 1px;
-            margin: 20px 0;
-            justify-content: center;
-        }
-        .cell {
-            width: 30px;
-            height: 30px;
-            border: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: bold;
-            position: relative;
-            box-sizing: border-box;
-        }
-        .cell.black {
-            background-color: #333;
-            border: none;
-        }
-        .cell.white {
-            background-color: white;
-            cursor: pointer;
-        }
-        .cell.white:focus-within {
-            background-color: #e3f2fd;
-            outline: 2px solid #2196f3;
-        }
-        .cell input {
-            width: 100%;
-            height: 100%;
-            border: none;
-            text-align: center;
-            font-size: 14px;
-            font-weight: bold;
-            background: transparent;
-            text-transform: uppercase;
-            box-sizing: border-box;
-        }
-        .cell input:focus {
-            outline: none;
-        }
-        .number {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            font-size: 10px;
-            color: #666;
-            font-weight: normal;
-        }
-        .clues {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            min-width: 300px;
-        }
-        .clues h3 {
-            color: #2196f3;
-            margin-top: 0;
-            border-bottom: 2px solid #2196f3;
-            padding-bottom: 5px;
-        }
-        .clue-section {
-            margin-bottom: 25px;
-        }
-        .clue {
-            margin: 8px 0;
-            line-height: 1.4;
-        }
-        .clue-number {
-            font-weight: bold;
-            color: #2196f3;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-style: italic;
-        }
-        .check-button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 10px 5px;
-        }
-        .check-button:hover {
-            background: #45a049;
-        }
-        .clear-button {
-            background: #f44336;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 10px 5px;
-        }
-        .clear-button:hover {
-            background: #da190b;
-        }
-        .correct {
-            background-color: #c8e6c9 !important;
-        }
-        .incorrect {
-            background-color: #ffcdd2 !important;
-        }
-        .error-message {
-            color: red;
-            text-align: center;
-            margin: 20px 0;
-            display: none;
-        }
-        .instructions {
-            background-color: #e8f4f8;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #2196f3;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Forces and Centre of Gravity Crossword</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 15px;
+    background-color: #f5f5f5;
+  }
+
+  h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+  }
+  .subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+    font-style: italic;
+    font-size: 1rem;
+  }
+
+  .instructions {
+    background-color: #e8f4f8;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #2196f3;
+    font-size: 0.95rem;
+  }
+
+  /* Layout */
+  .container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .crossword-container, .clues {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    flex: 1 1 100%;
+  }
+
+  /* Grid */
+  .crossword-grid {
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    gap: 1px;
+    margin: 15px auto;
+    width: min(92vw, 700px);
+    max-width: 100%;
+  }
+  .cell {
+    aspect-ratio: 1 / 1;
+    border: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(10px, 2.5vw, 16px);
+    font-weight: bold;
+    position: relative;
+    box-sizing: border-box;
+  }
+  .cell.black {
+    background-color: #333;
+    border: none;
+  }
+  .cell.white {
+    background-color: white;
+    cursor: pointer;
+  }
+  .cell.white:focus-within {
+    background-color: #e3f2fd;
+    outline: 2px solid #2196f3;
+  }
+  .cell input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: inherit;
+    font-weight: bold;
+    background: transparent;
+    text-transform: uppercase;
+  }
+  .cell input:focus { outline: none; }
+
+  .number {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 0.6em;
+    color: #666;
+    font-weight: normal;
+  }
+
+  /* Clues */
+  .clues h3 {
+    color: #2196f3;
+    margin-top: 0;
+    border-bottom: 2px solid #2196f3;
+    padding-bottom: 5px;
+    font-size: 1.1rem;
+  }
+  .clue { margin: 6px 0; line-height: 1.4; font-size: 0.95rem; }
+  .clue-number { font-weight: bold; color: #2196f3; }
+
+  /* Buttons */
+  .check-button, .clear-button {
+    display: inline-block;
+    width: 48%;
+    padding: 12px;
+    margin: 5px 1%;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .check-button { background: #4CAF50; color: white; }
+  .check-button:hover { background: #45a049; }
+  .clear-button { background: #f44336; color: white; }
+  .clear-button:hover { background: #da190b; }
+
+  /* Correctness */
+  .correct { background-color: #c8e6c9 !important; }
+  .incorrect { background-color: #ffcdd2 !important; }
+
+  .error-message {
+    color: red;
+    text-align: center;
+    margin: 15px 0;
+    display: none;
+  }
+
+  /* Desktop layout */
+  @media (min-width: 768px) {
+    .container { flex-wrap: nowrap; }
+    .crossword-container { flex: 2; }
+    .clues { flex: 1; }
+  }
+</style>
 </head>
 <body>
-    <h1>Forces and Centre of Gravity Crossword</h1>
-    <p class="subtitle">Test your knowledge of physics concepts!</p>
-    
-    <div class="instructions">
-        <p><strong>Instructions:</strong> Click on a cell to enter a letter. Use the clues to solve the crossword puzzle. Press "Check Answers" to verify your solutions or "Clear All" to start over.</p>
-    </div>
-    
-    <div class="container">
-        <div class="crossword-container">
-            <div class="crossword-grid" id="crosswordGrid"></div>
-            <div class="error-message" id="errorMessage">Failed to load crossword grid. Please check the console for errors.</div>
-            <div style="text-align: center;">
-                <button class="check-button" onclick="checkAnswers()">Check Answers</button>
-                <button class="clear-button" onclick="clearGrid()">Clear All</button>
-            </div>
-        </div>
-        
-        <div class="clues">
-            <div class="clue-section">
-                <h3>Across</h3>
-                <div class="clue"><span class="clue-number">1.</span> A push, pull or twist on an object (5)</div>
-                <div class="clue"><span class="clue-number">3.</span> Amount of matter in an object (4)</div>
-                <div class="clue"><span class="clue-number">4.</span> Point where weight is balanced (15)</div>
-                <div class="clue"><span class="clue-number">5.</span> Don't do this when lifting (5)</div>
-                <div class="clue"><span class="clue-number">8.</span> To drop due to gravity (4)</div>
-                <div class="clue"><span class="clue-number">9.</span> Region where centre of gravity is located (6)</div>
-            </div>
-            
-            <div class="clue-section">
-                <h3>Down</h3>
-                <div class="clue"><span class="clue-number">2.</span> Sir Isaac who formulated laws of motion (6)</div>
-                <div class="clue"><span class="clue-number">6.</span> Do this with your knees when lifting (4)</div>
-                <div class="clue"><span class="clue-number">7.</span> To have equilibrium (7)</div>
-            </div>
-        </div>
+  <h1>Forces and Centre of Gravity Crossword</h1>
+  <p class="subtitle">Test your knowledge of physics concepts!</p>
+
+  <div class="instructions">
+    <p><strong>Instructions:</strong> Tap a cell and type a letter. Use the clues to solve the crossword. Press “Check Answers” to verify or “Clear All” to start over.</p>
+  </div>
+
+  <div class="container">
+    <div class="crossword-container">
+      <div class="crossword-grid" id="crosswordGrid"></div>
+      <div class="error-message" id="errorMessage">Failed to load crossword grid. Please check the console for errors.</div>
+      <div style="text-align:center;">
+        <button class="check-button" onclick="checkAnswers()">Check Answers</button>
+        <button class="clear-button" onclick="clearGrid()">Clear All</button>
+      </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            try {
-                createGrid();
-                console.log('Crossword grid initialized successfully.');
-            } catch (error) {
-                console.error('Error initializing crossword grid:', error);
-                document.getElementById('errorMessage').style.display = 'block';
+    <div class="clues">
+      <div class="clue-section">
+        <h3>Across</h3>
+        <div class="clue"><span class="clue-number">1.</span> A push, pull or twist on an object (5)</div>
+        <div class="clue"><span class="clue-number">3.</span> Amount of matter in an object (4)</div>
+        <div class="clue"><span class="clue-number">4.</span> Point where weight is balanced (15)</div>
+        <div class="clue"><span class="clue-number">5.</span> Don't do this when lifting (5)</div>
+        <div class="clue"><span class="clue-number">8.</span> To drop due to gravity (4)</div>
+        <div class="clue"><span class="clue-number">9.</span> Region where centre of gravity is located (6)</div>
+      </div>
+      <div class="clue-section">
+        <h3>Down</h3>
+        <div class="clue"><span class="clue-number">2.</span> Sir Isaac who formulated laws of motion (6)</div>
+        <div class="clue"><span class="clue-number">6.</span> Do this with your knees when lifting (4)</div>
+        <div class="clue"><span class="clue-number">7.</span> To have equilibrium (7)</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        createGrid();
+        console.log('Crossword grid initialized successfully.');
+      } catch (error) {
+        console.error('Error initializing crossword grid:', error);
+        document.getElementById('errorMessage').style.display = 'block';
+      }
+    });
+
+    function createGrid() {
+      const gridElement = document.getElementById('crosswordGrid');
+      if (!gridElement) throw new Error('Crossword grid element not found.');
+
+      // 1 = white, 0 = black (13 rows x 15 cols)
+      const pattern = [
+        [0,0,0,0,1,0,1,1,1,1,0,0,0,0,0],
+        [1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+        [0,1,0,0,0,0,0,0,0,0,1,0,0,0,0],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,0,0,0,0,0,0,0,0,1,0,0,0,0],
+        [0,1,0,0,0,0,0,0,0,1,1,1,1,0,0],
+        [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,1,1,1,1,1,1]
+      ];
+
+      // Clue numbers (0 = none)
+      const numbers = [
+        [0,0,0,0,0,0,3,0,0,0,0,0,0,0,0],
+        [1,0,0,0,2,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,5,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,6,0,0,0,0,0,0,0,0,7,0,0,0,0],
+        [4,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,8,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,9,0,0,0,0,0]
+      ];
+
+      gridElement.innerHTML = '';
+      for (let i = 0; i < 13; i++) {
+        for (let j = 0; j < 15; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+
+          if (pattern[i][j] === 1) {
+            cell.classList.add('white');
+            const input = document.createElement('input');
+            input.maxLength = 1;
+            input.dataset.row = i;
+            input.dataset.col = j;
+
+            if (numbers[i][j]) {
+              const numberSpan = document.createElement('span');
+              numberSpan.className = 'number';
+              numberSpan.textContent = numbers[i][j];
+              cell.appendChild(numberSpan);
             }
+            cell.appendChild(input);
+          } else {
+            cell.classList.add('black');
+          }
+          gridElement.appendChild(cell);
+        }
+      }
+      console.log('Grid creation completed. Cells added:', gridElement.childElementCount);
+    }
+
+    function checkAnswers() {
+      try {
+        const inputs = document.querySelectorAll('.cell.white input');
+        if (!inputs.length) {
+          console.error('No input elements found in the grid.');
+          return;
+        }
+
+        // Correct letters by grid coordinate "row-col"
+        const correctAnswers = {
+          // 1 Across: FORCE (row 1, col 0-4)
+          '1-0':'F','1-1':'O','1-2':'R','1-3':'C','1-4':'E',
+
+          // 2 Down: NEWTON (col 4, rows 0-5)
+          '0-4':'N','1-4':'E','2-4':'W','3-4':'T','4-4':'O','5-4':'N',
+
+          // 3 Across: MASS (row 0, col 6-9)
+          '0-6':'M','0-7':'A','0-8':'S','0-9':'S',
+
+          // 4 Across: CENTREOFGRAVITY (row 7, col 0-14)
+          '7-0':'C','7-1':'E','7-2':'N','7-3':'T','7-4':'R',
+          '7-5':'E','7-6':'O','7-7':'F','7-8':'G','7-9':'R',
+          '7-10':'A','7-11':'V','7-12':'I','7-13':'T','7-14':'Y',
+
+          // 5 Across: TWIST (row 3, col 4-8)
+          '3-4':'T','3-5':'W','3-6':'I','3-7':'S','3-8':'T',
+
+          // 6 Down: BEND (col 1, rows 6-9)
+          '6-1':'B','7-1':'E','8-1':'N','9-1':'D',
+
+          // 7 Down: BALANCE (col 10, rows 6-12)
+          '6-10':'B','7-10':'A','8-10':'L','9-10':'A','10-10':'N','11-10':'C','12-10':'E',
+
+          // 8 Across: FALL (row 9, col 9-12)
+          '9-9':'F','9-10':'A','9-11':'L','9-12':'L',
+
+          // 9 Across: PELVIS (row 12, col 9-14)
+          '12-9':'P','12-10':'E','12-11':'L','12-12':'V','12-13':'I','12-14':'S'
+        };
+
+        inputs.forEach(input => {
+          const row = input.dataset.row;
+          const col = input.dataset.col;
+          const key = `${row}-${col}`;
+          const userAnswer = input.value.toUpperCase();
+
+          if (correctAnswers[key] && userAnswer === correctAnswers[key]) {
+            input.parentElement.classList.add('correct');
+            input.parentElement.classList.remove('incorrect');
+          } else if (userAnswer !== '') {
+            input.parentElement.classList.add('incorrect');
+            input.parentElement.classList.remove('correct');
+          } else {
+            input.parentElement.classList.remove('correct', 'incorrect');
+          }
         });
+        console.log('Answer check completed.');
+      } catch (error) {
+        console.error('Error in checkAnswers:', error);
+      }
+    }
 
-        function createGrid() {
-            const gridElement = document.getElementById('crosswordGrid');
-            if (!gridElement) {
-                throw new Error('Crossword grid element not found.');
-            }
-            
-            // Define the crossword pattern (1 = white cell, 0 = black cell)
-            const pattern = [
-                [0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 极, 0],
-                [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 极, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 极, 0, 0, 0, 1, 1, 1, 1, 1, 1]
-            ];
-
-            // Numbers for each cell
-            const numbers = [
-                [0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0],
-                [1, 0, 0, 0, 2, 0, 极, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0],
-                [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 极, 0, 0, 0, 0, 0, 0, 0, 0, 极],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0]
-            ];
-
-            console.log('Creating crossword grid with pattern:', pattern);
-            console.log('Numbers array:', numbers);
-
-            gridElement.innerHTML = ''; // Clear any existing content
-            for (let i = 0; i < 13; i++) {
-                for (let j = 0; j < 15; j++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    
-                    if (pattern[i][j] === 1) {
-                        cell.className += ' white';
-                        const input = document.createElement('input');
-                        input.maxLength = 1;
-                        input.dataset.row = i;
-                        input.dataset.col = j;
-                        
-                        if (numbers[i][j]) {
-                            const numberSpan = document.createElement('span');
-                            numberSpan.className = 'number';
-                            numberSpan.textContent = numbers[i][j];
-                            cell.appendChild(numberSpan);
-                        }
-                        
-                        cell.appendChild(input);
-                    } else {
-                        cell.className += ' black';
-                    }
-                    
-                    gridElement.appendChild(cell);
-                }
-            }
-            console.log('Grid creation completed. Cells added:', gridElement.childElementCount);
-        }
-
-        function checkAnswers() {
-            try {
-                const inputs = document.querySelectorAll('input');
-                if (!inputs.length) {
-                    console.error('No input elements found in the grid.');
-                    return;
-                }
-                
-                // Define correct answers for each position
-                const correctAnswers = {
-                    // 1 Across: FORCE
-                    '1-0': 'F', '1-1': 'O', '1-2': 'R', '1-3': 'C', '1-4': 'E',
-                    
-                    // 2 Down: NEWTON
-                    '0-4': 'N', '1-4': 'E', '2-4': 'W', '3-4': 'T', '4-4': 'O', '5-4': 'N', '6-4': 'N',
-                    
-                    // 3 Across: MASS
-                    '0-6': 'M', '0-7': 'A', '0-8': 'S', '0-9': 'S',
-                    
-                    // 4 Across: CENTREOFGRAVITY
-                    '7-0': 'C', '7-1': 'E', '7-2': 'N', '7-3': 'T', '7-4': 'R', 
-                    '7-5': 'E', '7-6': 'O', '7-7': 'F', '7-8': 'G', '7-9': 'R', 
-                    '7-10': 'A', '7-11': 'V', '7-12': 'I', '7-13': 'T', '7-14': 'Y',
-                    
-                    // 5 Across: TWIST
-                    '3-4': 'T', '3-5': 'W', '3-6': 'I', '3-7': 'S', '3-8': 'T',
-                    
-                    // 6 Down: BEND
-                    '6-1': 'B', '7-1': 'E', '8-1': 'N', '9-1': 'D',
-                    
-                    // 7 Down: BALANCE
-                    '6-10': 'B', '7-10': 'A', '8-10': 'L', '9-10': 'A', '10-10': 'N', '11-10': 'C', '12-10': 'E',
-                    
-                    // 8 Across: FALL
-                    '9-9': 'F', '9-10': 'A', '9-11': 'L', '极-12': 'L',
-                    
-                    // 9 Across: PELVIS
-                    '12-9': 'P', '12-10': 'E', '12-11': 'L', '12-12': 'V', '12-13': 'I', '12-14': 'S'
-                };
-
-                console.log('Checking answers with correctAnswers:', correctAnswers);
-                
-                inputs.forEach(input => {
-                    const row = input.dataset.row;
-                    const col = input.dataset.col;
-                    const key = `${row}-${col}`;
-                    const userAnswer = input.value.toUpperCase();
-                    
-                    if (correctAnswers[key] && userAnswer === correctAnswers[key]) {
-                        input.parentElement.classList.add('correct');
-                        input.parentElement.classList.remove('incorrect');
-                    } else if (userAnswer !== '') {
-                        input.parentElement.classList.add('incorrect');
-                        input.parentElement.classList.remove('correct');
-                    } else {
-                        input.parentElement.classList.remove('correct', 'incorrect');
-                    }
-                });
-                console.log('Answer check completed.');
-            } catch (error) {
-                console.error('Error in checkAnswers:', error);
-            }
-        }
-
-        function clearGrid() {
-            try {
-                const inputs = document.querySelectorAll('input');
-                inputs.forEach(input => {
-                    input.value = '';
-                    input.parentElement.classList.remove('correct', 'incorrect');
-                });
-                console.log('Grid cleared successfully.');
-            } catch (error) {
-                console.error('Error in clearGrid:', error);
-            }
-        }
-    </script>
+    function clearGrid() {
+      try {
+        const inputs = document.querySelectorAll('.cell.white input');
+        inputs.forEach(input => {
+          input.value = '';
+          input.parentElement.classList.remove('correct', 'incorrect');
+        });
+        console.log('Grid cleared successfully.');
+      } catch (error) {
+        console.error('Error in clearGrid:', error);
+      }
+    }
+  </script>
 </body>
 </html>
