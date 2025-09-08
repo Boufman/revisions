@@ -90,7 +90,6 @@
 
     async function startCamera(facingMode = 'environment') {
       try {
-        // Stop existing stream if any
         if (video.srcObject) {
           video.srcObject.getTracks().forEach(track => track.stop());
         }
@@ -155,7 +154,7 @@
       try {
         const model = poseDetection.SupportedModels.MoveNet;
         detector = await poseDetection.createDetector(model, {
-          modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
+          modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER // Faster model
         });
         console.log("✅ Pose detector loaded with backend:", tf.getBackend());
         detectPose();
@@ -167,7 +166,12 @@
     }
 
     function calculateAngle(a, b, c) {
-      const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+      // Adjust for mirrored video (selfie mode)
+      let ax = currentFacingMode === 'user' ? canvas.width - a.x : a.x;
+      let bx = currentFacingMode === 'user' ? canvas.width - b.x : b.x;
+      let cx = currentFacingMode === 'user' ? canvas.width - c.x : c.x;
+
+      const radians = Math.atan2(c.y - b.y, cx - bx) - Math.atan2(a.y - b.y, ax - bx);
       let angle = Math.abs(radians * 180 / Math.PI);
       if (angle > 180) angle = 360 - angle;
       return angle;
@@ -233,13 +237,23 @@
       const elbow = kp[KEYPOINTS.left_elbow];
       const wrist = kp[KEYPOINTS.left_wrist];
 
-      if (shoulder.score > 0.4 && elbow.score > 0.4 && wrist.score > 0.4) {
+      console.log(`Keypoint scores: shoulder=${shoulder.score.toFixed(2)}, elbow=${elbow.score.toFixed(2)}, wrist=${wrist.score.toFixed(2)}`);
+
+      if (shoulder.score > 0.3 && elbow.score > 0.3 && wrist.score > 0.3) {
         const angle = calculateAngle(shoulder, elbow, wrist);
+        console.log(`Elbow angle: ${angle.toFixed(0)}°`);
+
         ctx.fillStyle = 'black';
         ctx.font = '16px Arial';
         ctx.fillText(`Angle: ${angle.toFixed(0)}°`, elbow.x + 10, elbow.y);
 
         if (angle > 60 && angle < 100) {
+          // Draw green circle to indicate correct angle
+          ctx.beginPath();
+          ctx.arc(elbow.x, elbow.y, 10, 0, 2 * Math.PI);
+          ctx.fillStyle = 'green';
+          ctx.fill();
+
           if (!isPoseCorrect) {
             isPoseCorrect = true;
             correctPoseStartTime = Date.now();
@@ -255,23 +269,21 @@
           }
         } else {
           isPoseCorrect = false;
-          feedbackDiv.textContent = "Adjust your pose: Flex your elbow more.";
+          feedbackDiv.textContent = `Adjust your pose: Flex your elbow to 60°-100°. Current: ${angle.toFixed(0)}°`;
           feedbackDiv.style.color = "red";
         }
       } else {
-        feedbackDiv.textContent = "Make sure your arm is visible!";
+        feedbackDiv.textContent = "Make sure your arm is fully visible!";
         feedbackDiv.style.color = "red";
       }
     }
 
-    // Start camera on button click
     document.getElementById('startBtn').addEventListener('click', () => {
       startCamera(currentFacingMode);
       document.getElementById('startBtn').style.display = 'none';
       document.getElementById('toggleCameraBtn').style.display = 'inline-block';
     });
 
-    // Toggle camera on button click
     document.getElementById('toggleCameraBtn').addEventListener('click', () => {
       const newFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
       startCamera(newFacingMode);
