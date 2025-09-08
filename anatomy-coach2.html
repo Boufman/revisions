@@ -61,7 +61,7 @@
 <body>
   <div id="instructions">
     <h2>Anatomy Coach: Biceps Brachii</h2>
-    <p>1. Tap "Start Camera".<br>2. Use "Toggle Camera" to switch between selfie and rear camera.<br>3. Point at a classmate or yourself, then slowly bend your elbow to flex the biceps.<br>4. Hold the flexed position (60°-100°) for 2 seconds for feedback!</p>
+    <p>1. Tap "Start Camera".<br>2. Use "Toggle Camera" to switch between selfie and rear camera.<br>3. Point at a classmate or yourself, keeping your arm parallel to the camera.<br>4. Slowly bend your elbow (50°-110°) and hold for 2 seconds for feedback!</p>
   </div>
 
   <button id="startBtn">Start Camera</button>
@@ -154,7 +154,7 @@
       try {
         const model = poseDetection.SupportedModels.MoveNet;
         detector = await poseDetection.createDetector(model, {
-          modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER // Faster model
+          modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER
         });
         console.log("✅ Pose detector loaded with backend:", tf.getBackend());
         detectPose();
@@ -166,7 +166,6 @@
     }
 
     function calculateAngle(a, b, c) {
-      // Adjust for mirrored video (selfie mode)
       let ax = currentFacingMode === 'user' ? canvas.width - a.x : a.x;
       let bx = currentFacingMode === 'user' ? canvas.width - b.x : b.x;
       let cx = currentFacingMode === 'user' ? canvas.width - c.x : c.x;
@@ -175,6 +174,16 @@
       let angle = Math.abs(radians * 180 / Math.PI);
       if (angle > 180) angle = 360 - angle;
       return angle;
+    }
+
+    function checkDepth(shoulder, elbow, wrist) {
+      // Check z-coordinate differences (depth)
+      const zDiff = Math.max(
+        Math.abs(shoulder.z - elbow.z),
+        Math.abs(elbow.z - wrist.z),
+        Math.abs(shoulder.z - wrist.z)
+      );
+      return zDiff < 0.2; // Reasonable threshold for arm in plane
     }
 
     async function detectPose() {
@@ -238,6 +247,7 @@
       const wrist = kp[KEYPOINTS.left_wrist];
 
       console.log(`Keypoint scores: shoulder=${shoulder.score.toFixed(2)}, elbow=${elbow.score.toFixed(2)}, wrist=${wrist.score.toFixed(2)}`);
+      console.log(`Depths: shoulder.z=${shoulder.z.toFixed(2)}, elbow.z=${elbow.z.toFixed(2)}, wrist.z=${wrist.z.toFixed(2)}`);
 
       if (shoulder.score > 0.3 && elbow.score > 0.3 && wrist.score > 0.3) {
         const angle = calculateAngle(shoulder, elbow, wrist);
@@ -247,8 +257,19 @@
         ctx.font = '16px Arial';
         ctx.fillText(`Angle: ${angle.toFixed(0)}°`, elbow.x + 10, elbow.y);
 
-        if (angle > 45 && angle < 120) {
-          // Draw green circle to indicate correct angle
+        const isDepthValid = checkDepth(shoulder, elbow, wrist);
+        if (!isDepthValid && currentFacingMode === 'user') {
+          feedbackDiv.textContent = "Keep your arm parallel to the camera!";
+          feedbackDiv.style.color = "yellow";
+          ctx.beginPath();
+          ctx.arc(elbow.x, elbow.y, 10, 0, 2 * Math.PI);
+          ctx.fillStyle = 'yellow';
+          ctx.fill();
+          isPoseCorrect = false;
+          return;
+        }
+
+        if (angle > 50 && angle < 110) {
           ctx.beginPath();
           ctx.arc(elbow.x, elbow.y, 10, 0, 2 * Math.PI);
           ctx.fillStyle = 'green';
@@ -269,7 +290,7 @@
           }
         } else {
           isPoseCorrect = false;
-          feedbackDiv.textContent = `Adjust your pose: Flex your elbow to 60°-100°. Current: ${angle.toFixed(0)}°`;
+          feedbackDiv.textContent = `Adjust your pose: Flex your elbow to 50°-110°. Current: ${angle.toFixed(0)}°`;
           feedbackDiv.style.color = "red";
         }
       } else {
