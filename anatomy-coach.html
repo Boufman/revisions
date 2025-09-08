@@ -10,7 +10,7 @@
   <style>
     body { margin: 20px; font-family: Arial, sans-serif; text-align: center; }
     #video { transform: scaleX(-1); width: 100%; border: 3px solid #ccc; }
-    #feedback { font-size: 1.5em; font-weight: bold; color: green; margin: 10px; }
+    #feedback { font-size: 1.5em; font-weight: bold; margin: 10px; }
     #instructions { background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
     #startBtn { padding: 10px 20px; font-size: 1em; margin-bottom: 10px; }
     canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
@@ -44,27 +44,27 @@
 
     async function startCamera() {
       try {
-        // Force Safari to accept playsinline
         video.setAttribute("playsinline", true);
         video.setAttribute("muted", true);
 
-        // Request camera
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" },
           audio: false
         });
         video.srcObject = stream;
 
-        video.onloadedmetadata = async () => {
-          canvas.width = video.videoWidth || window.innerWidth;
-          canvas.height = video.videoHeight || window.innerHeight;
+        video.onloadeddata = async () => {
+          // ✅ get actual video size once frames are ready
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
 
-          // Load pose detector AFTER camera is ready
+          // ✅ load pose detector
           const model = poseDetection.SupportedModels.MoveNet;
           detector = await poseDetection.createDetector(model, {
             modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
           });
 
+          console.log("✅ Pose detector loaded");
           detectPose();
         };
       } catch (err) {
@@ -86,9 +86,13 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (poses.length > 0) {
+        console.log("✅ Pose detected");
         const keypoints = poses[0].keypoints;
         drawSkeleton(keypoints);
         checkElbowFlexion(keypoints);
+      } else {
+        feedbackDiv.textContent = "No pose detected!";
+        feedbackDiv.style.color = "red";
       }
       requestAnimationFrame(detectPose);
     }
@@ -156,7 +160,7 @@
       }
     }
 
-    // Require user gesture to start camera
+    // User must tap to start
     document.getElementById('startBtn').addEventListener('click', () => {
       startCamera();
       document.getElementById('startBtn').style.display = 'none';
