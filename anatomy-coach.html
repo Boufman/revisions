@@ -8,12 +8,51 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
   <style>
-    body { margin: 20px; font-family: Arial, sans-serif; text-align: center; }
-    #video { transform: scaleX(-1); width: 100%; border: 3px solid #ccc; }
-    #feedback { font-size: 1.5em; font-weight: bold; margin: 10px; }
-    #instructions { background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
-    #startBtn { padding: 10px 20px; font-size: 1em; margin-bottom: 10px; }
-    canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+    body {
+      margin: 20px;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      overflow: hidden;
+    }
+    #container {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    #video {
+      transform: scaleX(-1);
+      width: 100%;
+      height: auto;
+      border: 3px solid #ccc;
+      display: block;
+    }
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      transform: scaleX(-1); /* Mirror canvas to match video */
+    }
+    #feedback {
+      font-size: 1.5em;
+      font-weight: bold;
+      margin: 10px;
+    }
+    #instructions {
+      background-color: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    #startBtn {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -23,8 +62,10 @@
   </div>
 
   <button id="startBtn">Start Camera</button><br>
-  <video id="video" autoplay muted playsinline></video>
-  <canvas id="canvas"></canvas>
+  <div id="container">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+  </div>
   <div id="feedback">Press "Start Camera"</div>
 
   <script>
@@ -48,28 +89,42 @@
         video.setAttribute("muted", true);
 
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+          video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } },
           audio: false
         });
         video.srcObject = stream;
 
-        video.onloadeddata = async () => {
-          // ✅ get actual video size once frames are ready
+        video.onloadedmetadata = () => {
+          video.play().catch(err => console.error("Video play error:", err));
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
 
-          // ✅ load pose detector
-          const model = poseDetection.SupportedModels.MoveNet;
-          detector = await poseDetection.createDetector(model, {
-            modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
-          });
+          // Ensure canvas matches video size
+          const container = document.getElementById('container');
+          container.style.width = `${video.videoWidth}px`;
+          container.style.height = `${video.videoHeight}px`;
 
-          console.log("✅ Pose detector loaded");
-          detectPose();
+          console.log(`Video size: ${video.videoWidth}x${video.videoHeight}`);
+          loadPoseDetector();
         };
       } catch (err) {
         console.error("Camera error:", err);
         feedbackDiv.textContent = "❌ Camera access failed: " + err.message;
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    async function loadPoseDetector() {
+      try {
+        const model = poseDetection.SupportedModels.MoveNet;
+        detector = await poseDetection.createDetector(model, {
+          modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
+        });
+        console.log("✅ Pose detector loaded");
+        detectPose();
+      } catch (err) {
+        console.error("Detector error:", err);
+        feedbackDiv.textContent = "❌ Pose detector failed to load: " + err.message;
         feedbackDiv.style.color = "red";
       }
     }
@@ -82,16 +137,28 @@
     }
 
     async function detectPose() {
-      const poses = await detector.estimatePoses(video);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!detector) {
+        console.warn("Detector not ready");
+        requestAnimationFrame(detectPose);
+        return;
+      }
 
-      if (poses.length > 0) {
-        console.log("✅ Pose detected");
-        const keypoints = poses[0].keypoints;
-        drawSkeleton(keypoints);
-        checkElbowFlexion(keypoints);
-      } else {
-        feedbackDiv.textContent = "No pose detected!";
+      try {
+        const poses = await detector.estimatePoses(video);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (poses.length > 0) {
+          console.log("✅ Pose detected");
+          const keypoints = poses[0].keypoints;
+          drawSkeleton(keypoints);
+          checkElbowFlexion(keypoints);
+        } else {
+          feedbackDiv.textContent = "No pose detected!";
+          feedbackDiv.style.color = "red";
+        }
+      } catch (err) {
+        console.error("Pose detection error:", err);
+        feedbackDiv.textContent = "Pose detection error";
         feedbackDiv.style.color = "red";
       }
       requestAnimationFrame(detectPose);
@@ -160,7 +227,6 @@
       }
     }
 
-    // User must tap to start
     document.getElementById('startBtn').addEventListener('click', () => {
       startCamera();
       document.getElementById('startBtn').style.display = 'none';
