@@ -247,7 +247,7 @@
         ctx.font = '16px Arial';
         ctx.fillText(`Angle: ${angle.toFixed(0)}°`, elbow.x + 10, elbow.y);
 
-        if (angle > 60 && angle < 100) {
+        if (angle > 45 && angle < 120) {
           // Draw green circle to indicate correct angle
           ctx.beginPath();
           ctx.arc(elbow.x, elbow.y, 10, 0, 2 * Math.PI);
