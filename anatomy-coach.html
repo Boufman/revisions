@@ -19,11 +19,11 @@
 <body>
   <div id="instructions">
     <h2>Anatomy Coach: Elbow Flexion</h2>
-    <p>1. Point the camera at a classmate.<br>2. Have them slowly bend their elbow.<br>3. Hold a flexed position for feedback!</p>
+    <p>1. Tap "Start Camera".<br>2. Point the camera at a classmate.<br>3. Have them slowly bend their elbow.<br>4. Hold a flexed position for feedback!</p>
   </div>
 
   <button id="startBtn">Start Camera</button><br>
-  <video id="video" autoplay playsinline muted></video>
+  <video id="video" autoplay muted playsinline></video>
   <canvas id="canvas"></canvas>
   <div id="feedback">Press "Start Camera"</div>
 
@@ -42,31 +42,36 @@
       right_shoulder: 6, right_elbow: 8, right_wrist: 10
     };
 
-    async function init() {
-      const model = poseDetection.SupportedModels.MoveNet;
-      detector = await poseDetection.createDetector(model, {
-        modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
-      });
-
+    async function startCamera() {
       try {
+        // Force Safari to accept playsinline
+        video.setAttribute("playsinline", true);
+        video.setAttribute("muted", true);
+
+        // Request camera
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" }, audio: false
+          video: { facingMode: "environment" },
+          audio: false
         });
         video.srcObject = stream;
 
-        video.onloadedmetadata = () => {
-          resizeCanvas();
+        video.onloadedmetadata = async () => {
+          canvas.width = video.videoWidth || window.innerWidth;
+          canvas.height = video.videoHeight || window.innerHeight;
+
+          // Load pose detector AFTER camera is ready
+          const model = poseDetection.SupportedModels.MoveNet;
+          detector = await poseDetection.createDetector(model, {
+            modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
+          });
+
           detectPose();
         };
       } catch (err) {
-        feedbackDiv.textContent = "Camera access denied!";
+        console.error("Camera error:", err);
+        feedbackDiv.textContent = "❌ Camera access failed: " + err.message;
         feedbackDiv.style.color = "red";
       }
-    }
-
-    function resizeCanvas() {
-      canvas.width = video.videoWidth || window.innerWidth;
-      canvas.height = video.videoHeight || window.innerHeight;
     }
 
     function calculateAngle(a, b, c) {
@@ -77,9 +82,6 @@
     }
 
     async function detectPose() {
-      if (video.readyState < 2) {
-        await new Promise(r => video.onloadeddata = r);
-      }
       const poses = await detector.estimatePoses(video);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -136,7 +138,7 @@
           } else {
             const holdTime = Date.now() - correctPoseStartTime;
             if (holdTime >= HOLD_TIME_NEEDED) {
-              feedbackDiv.textContent = "CORRECT! Elbow Flexion";
+              feedbackDiv.textContent = "✅ CORRECT! Elbow Flexion";
               feedbackDiv.style.color = "green";
             } else {
               feedbackDiv.textContent = `Hold it... (${(holdTime/1000).toFixed(1)}s)`;
@@ -154,9 +156,9 @@
       }
     }
 
-    // Require user gesture to start
+    // Require user gesture to start camera
     document.getElementById('startBtn').addEventListener('click', () => {
-      init();
+      startCamera();
       document.getElementById('startBtn').style.display = 'none';
     });
   </script>
