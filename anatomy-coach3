@@ -1,0 +1,309 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Anatomy Motion Coach: Biceps Brachii</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-cpu@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@latest"></script>
+  <style>
+    body {
+      margin: 20px;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      overflow: hidden;
+    }
+    #container {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    #video {
+      transform: scaleX(-1);
+      width: 100%;
+      height: auto;
+      border: 3px solid #ccc;
+      display: block;
+    }
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      transform: scaleX(-1);
+    }
+    #feedback {
+      font-size: 1.5em;
+      font-weight: bold;
+      margin: 10px;
+    }
+    #instructions {
+      background-color: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    #startBtn, #toggleCameraBtn {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="instructions">
+    <h2>Anatomy Coach: Biceps Brachii</h2>
+    <p>1. Tap "Start Camera".<br>2. Use "Toggle Camera" to switch between selfie and rear camera.<br>3. Point at a classmate or yourself, then slowly bend either elbow to flex the biceps.<br>4. Hold the flexed position (60°-100°) for 2 seconds for feedback!</p>
+  </div>
+
+  <button id="startBtn">Start Camera</button>
+  <button id="toggleCameraBtn" style="display: none;">Toggle Camera</button><br>
+  <div id="container">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+  </div>
+  <div id="feedback">Press "Start Camera"</div>
+
+  <script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+    let feedbackDiv = document.getElementById('feedback');
+    let detector;
+    let isPoseCorrect = false;
+    let correctPoseStartTime = 0;
+    const HOLD_TIME_NEEDED = 2000;
+    let currentFacingMode = 'environment';
+
+    const KEYPOINTS = {
+      left_shoulder: 5, left_elbow: 7, left_wrist: 9,
+      right_shoulder: 6, right_elbow: 8, right_wrist: 10
+    };
+
+    async function startCamera(facingMode = 'environment') {
+      try {
+        if (video.srcObject) {
+          video.srcObject.getTracks().forEach(track => track.stop());
+        }
+
+        video.setAttribute("playsinline", true);
+        video.setAttribute("muted", true);
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false
+        });
+        video.srcObject = stream;
+        currentFacingMode = facingMode;
+
+        video.onloadedmetadata = () => {
+          video.play().catch(err => {
+            console.error("Video play error:", err);
+            feedbackDiv.textContent = "❌ Video playback failed";
+            feedbackDiv.style.color = "red";
+          });
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          const container = document.getElementById('container');
+          container.style.width = `${video.videoWidth}px`;
+          container.style.height = `${video.videoHeight}px`;
+
+          console.log(`Video size: ${video.videoWidth}x${video.videoHeight}`);
+          if (!detector) {
+            initializeBackend();
+          } else {
+            detectPose();
+          }
+        };
+      } catch (err) {
+        console.error("Camera error:", err);
+        feedbackDiv.textContent = "❌ Camera access failed: " + err.message;
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    async function initializeBackend() {
+      try {
+        await tf.setBackend('webgl');
+        console.log("WebGL backend initialized:", tf.getBackend());
+
+        if (!tf.getBackend()) {
+          console.warn("WebGL unavailable, falling back to CPU");
+          await tf.setBackend('cpu');
+          console.log("CPU backend initialized:", tf.getBackend());
+        }
+
+        loadPoseDetector();
+      } catch (err) {
+        console.error("Backend initialization error:", err);
+        feedbackDiv.textContent = "❌ Backend initialization failed: " + err.message;
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    async function loadPoseDetector() {
+      try {
+        const model = poseDetection.SupportedModels.MoveNet;
+        detector = await poseDetection.createDetector(model, {
+          modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER
+        });
+        console.log("✅ Pose detector loaded with backend:", tf.getBackend());
+        detectPose();
+      } catch (err) {
+        console.error("Detector error:", err);
+        feedbackDiv.textContent = "❌ Pose detector failed to load: " + err.message;
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    function calculateAngle(a, b, c) {
+      let ax = currentFacingMode === 'user' ? canvas.width - a.x : a.x;
+      let bx = currentFacingMode === 'user' ? canvas.width - b.x : b.x;
+      let cx = currentFacingMode === 'user' ? canvas.width - c.x : c.x;
+
+      const radians = Math.atan2(c.y - b.y, cx - bx) - Math.atan2(a.y - b.y, ax - bx);
+      let angle = Math.abs(radians * 180 / Math.PI);
+      if (angle > 180) angle = 360 - angle;
+      return angle;
+    }
+
+    async function detectPose() {
+      if (!detector) {
+        console.warn("Detector not ready");
+        requestAnimationFrame(detectPose);
+        return;
+      }
+
+      try {
+        const poses = await detector.estimatePoses(video);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (poses.length > 0) {
+          console.log("✅ Pose detected");
+          const keypoints = poses[0].keypoints;
+          drawSkeleton(keypoints);
+          checkElbowFlexion(keypoints);
+        } else {
+          feedbackDiv.textContent = "No pose detected!";
+          feedbackDiv.style.color = "red";
+        }
+      } catch (err) {
+        console.error("Pose detection error:", err);
+        feedbackDiv.textContent = "Pose detection error";
+        feedbackDiv.style.color = "red";
+      }
+      requestAnimationFrame(detectPose);
+    }
+
+    function drawSkeleton(keypoints) {
+      drawLine(keypoints, KEYPOINTS.left_shoulder, KEYPOINTS.left_elbow);
+      drawLine(keypoints, KEYPOINTS.left_elbow, KEYPOINTS.left_wrist);
+      drawLine(keypoints, KEYPOINTS.right_shoulder, KEYPOINTS.right_elbow);
+      drawLine(keypoints, KEYPOINTS.right_elbow, KEYPOINTS.right_wrist);
+
+      keypoints.forEach(kp => {
+        if (kp.score > 0.3) {
+          ctx.beginPath();
+          ctx.arc(kp.x, kp.y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = 'red';
+          ctx.fill();
+        }
+      });
+    }
+
+    function drawLine(kp, i, j) {
+      if (kp[i].score > 0.3 && kp[j].score > 0.3) {
+        ctx.beginPath();
+        ctx.moveTo(kp[i].x, kp[i].y);
+        ctx.lineTo(kp[j].x, kp[j].y);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'cyan';
+        ctx.stroke();
+      }
+    }
+
+    function checkElbowFlexion(kp) {
+      const arms = [
+        { shoulder: kp[KEYPOINTS.left_shoulder], elbow: kp[KEYPOINTS.left_elbow], wrist: kp[KEYPOINTS.left_wrist], side: 'left' },
+        { shoulder: kp[KEYPOINTS.right_shoulder], elbow: kp[KEYPOINTS.right_elbow], wrist: kp[KEYPOINTS.right_wrist], side: 'right' }
+      ];
+
+      let bestAngle = null;
+      let bestArm = null;
+
+      for (const arm of arms) {
+        const { shoulder, elbow, wrist, side } = arm;
+        console.log(`Checking ${side} arm: shoulder.score=${shoulder.score.toFixed(2)}, elbow.score=${elbow.score.toFixed(2)}, wrist.score=${wrist.score.toFixed(2)}`);
+
+        if (shoulder.score > 0.3 && elbow.score > 0.3 && wrist.score > 0.3) {
+          const angle = calculateAngle(shoulder, elbow, wrist);
+          console.log(`${side} arm angle: ${angle.toFixed(0)}°`);
+
+          if (!bestAngle || Math.abs(angle - 75) < Math.abs(bestAngle - 75)) {
+            bestAngle = angle;
+            bestArm = arm;
+          }
+        }
+      }
+
+      if (bestArm) {
+        const { shoulder, elbow, wrist, side } = bestArm;
+
+        ctx.fillStyle = 'black';
+        ctx.font = '16px Arial';
+        ctx.fillText(`Angle (${side}): ${bestAngle.toFixed(0)}°`, elbow.x + 10, elbow.y);
+
+        if (bestAngle > 60 && bestAngle < 100) {
+          ctx.beginPath();
+          ctx.arc(elbow.x, elbow.y, 10, 0, 2 * Math.PI);
+          ctx.fillStyle = 'green';
+          ctx.fill();
+
+          if (!isPoseCorrect) {
+            isPoseCorrect = true;
+            correctPoseStartTime = Date.now();
+          } else {
+            const holdTime = Date.now() - correctPoseStartTime;
+            if (holdTime >= HOLD_TIME_NEEDED) {
+              feedbackDiv.textContent = `✅ CORRECT! Biceps Brachii Elbow Flexion (${side} arm)`;
+              feedbackDiv.style.color = "green";
+            } else {
+              feedbackDiv.textContent = `Hold it... (${(holdTime/1000).toFixed(1)}s)`;
+              feedbackDiv.style.color = "orange";
+            }
+          }
+        } else {
+          isPoseCorrect = false;
+          feedbackDiv.textContent = `Adjust your pose: Flex your elbow to 60°-100°. Current (${side}): ${bestAngle.toFixed(0)}°`;
+          feedbackDiv.style.color = "red";
+        }
+      } else {
+        feedbackDiv.textContent = "Make sure your arm is fully visible!";
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      startCamera(currentFacingMode);
+      document.getElementById('startBtn').style.display = 'none';
+      document.getElementById('toggleCameraBtn').style.display = 'inline-block';
+    });
+
+    document.getElementById('toggleCameraBtn').addEventListener('click', () => {
+      const newFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+      startCamera(newFacingMode);
+      document.getElementById('toggleCameraBtn').textContent = `Switch to ${newFacingMode === 'environment' ? 'Selfie' : 'Rear'} Camera`;
+    });
+  </script>
+</body>
+</html>
+```
