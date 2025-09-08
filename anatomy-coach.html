@@ -1,170 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anatomy Motion Coach</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
-    <style>
-        body { margin: 20px; font-family: Arial, sans-serif; }
-        #video { transform: scaleX(-1); /* Mirrors the webcam */ width: 100%; border: 3px solid #ccc; }
-        #feedback { font-size: 1.5em; font-weight: bold; color: green; text-align: center; margin: 10px; }
-        #instructions { background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Anatomy Motion Coach</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+  <style>
+    body { margin: 20px; font-family: Arial, sans-serif; text-align: center; }
+    #video { transform: scaleX(-1); width: 100%; border: 3px solid #ccc; }
+    #feedback { font-size: 1.5em; font-weight: bold; color: green; margin: 10px; }
+    #instructions { background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+    #startBtn { padding: 10px 20px; font-size: 1em; margin-bottom: 10px; }
+    canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+  </style>
 </head>
 <body>
-    <div id="instructions">
-        <h2>Anatomy Coach: Elbow Flexion</h2>
-        <p>1. Point the camera at a classmate.<br>2. Have them slowly bend their elbow.<br>3. Hold a flexed position for feedback!</p>
-    </div>
-    <video id="video" autoplay playsinline></video>
-    <div id="feedback">Adjust your pose...</div>
-    <canvas id="canvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+  <div id="instructions">
+    <h2>Anatomy Coach: Elbow Flexion</h2>
+    <p>1. Point the camera at a classmate.<br>2. Have them slowly bend their elbow.<br>3. Hold a flexed position for feedback!</p>
+  </div>
 
-    <script>
-        // Variables to hold elements and state
-        let video = document.getElementById('video');
-        let canvas = document.getElementById('canvas');
-        let ctx = canvas.getContext('2d');
-        let feedbackDiv = document.getElementById('feedback');
-        let detector;
-        let isPoseCorrect = false;
-        let correctPoseStartTime = 0;
-        const HOLD_TIME_NEEDED = 2000; // Hold for 2 seconds
+  <button id="startBtn">Start Camera</button><br>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
+  <div id="feedback">Press "Start Camera"</div>
 
-        // Keypoint indexes for MoveNet
-        const KEYPOINTS = {
-            left_shoulder: 5,
-            left_elbow: 7,
-            left_wrist: 9,
-            right_shoulder: 6,
-            right_elbow: 8,
-            right_wrist: 10
+  <script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+    let feedbackDiv = document.getElementById('feedback');
+    let detector;
+    let isPoseCorrect = false;
+    let correctPoseStartTime = 0;
+    const HOLD_TIME_NEEDED = 2000;
+
+    const KEYPOINTS = {
+      left_shoulder: 5, left_elbow: 7, left_wrist: 9,
+      right_shoulder: 6, right_elbow: 8, right_wrist: 10
+    };
+
+    async function init() {
+      const model = poseDetection.SupportedModels.MoveNet;
+      detector = await poseDetection.createDetector(model, {
+        modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
+      });
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }, audio: false
+        });
+        video.srcObject = stream;
+
+        video.onloadedmetadata = () => {
+          resizeCanvas();
+          detectPose();
         };
+      } catch (err) {
+        feedbackDiv.textContent = "Camera access denied!";
+        feedbackDiv.style.color = "red";
+      }
+    }
 
-        // Main function to initialize everything
-        async function init() {
-            // Configure the detector
-            const model = poseDetection.SupportedModels.MoveNet;
-            const detectorConfig = {
-                modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
-            };
-            detector = await poseDetection.createDetector(model, detectorConfig);
+    function resizeCanvas() {
+      canvas.width = video.videoWidth || window.innerWidth;
+      canvas.height = video.videoHeight || window.innerHeight;
+    }
 
-            // Start the camera
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
+    function calculateAngle(a, b, c) {
+      const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+      let angle = Math.abs(radians * 180 / Math.PI);
+      if (angle > 180) angle = 360 - angle;
+      return angle;
+    }
 
-            // Wait for the video to start playing to get its dimensions
-            video.onloadedmetadata = () => {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                // Start the detection loop
-                detectPose();
-            };
+    async function detectPose() {
+      if (video.readyState < 2) {
+        await new Promise(r => video.onloadeddata = r);
+      }
+      const poses = await detector.estimatePoses(video);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (poses.length > 0) {
+        const keypoints = poses[0].keypoints;
+        drawSkeleton(keypoints);
+        checkElbowFlexion(keypoints);
+      }
+      requestAnimationFrame(detectPose);
+    }
+
+    function drawSkeleton(keypoints) {
+      drawLine(keypoints, KEYPOINTS.left_shoulder, KEYPOINTS.left_elbow);
+      drawLine(keypoints, KEYPOINTS.left_elbow, KEYPOINTS.left_wrist);
+      drawLine(keypoints, KEYPOINTS.right_shoulder, KEYPOINTS.right_elbow);
+      drawLine(keypoints, KEYPOINTS.right_elbow, KEYPOINTS.right_wrist);
+
+      keypoints.forEach(kp => {
+        if (kp.score > 0.3) {
+          ctx.beginPath();
+          ctx.arc(kp.x, kp.y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = 'red';
+          ctx.fill();
         }
+      });
+    }
 
-        // Function to calculate the angle between three points
-        function calculateAngle(a, b, c) {
-            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
-            let angle = Math.abs(radians * 180 / Math.PI);
-            if (angle > 180) angle = 360 - angle;
-            return angle;
-        }
+    function drawLine(kp, i, j) {
+      if (kp[i].score > 0.3 && kp[j].score > 0.3) {
+        ctx.beginPath();
+        ctx.moveTo(kp[i].x, kp[i].y);
+        ctx.lineTo(kp[j].x, kp[j].y);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'cyan';
+        ctx.stroke();
+      }
+    }
 
-        // Main pose detection loop
-        async function detectPose() {
-            if (video.readyState < 2) {
-                await new Promise(resolve => video.onloadeddata = resolve);
-            }
+    function checkElbowFlexion(kp) {
+      const shoulder = kp[KEYPOINTS.left_shoulder];
+      const elbow = kp[KEYPOINTS.left_elbow];
+      const wrist = kp[KEYPOINTS.left_wrist];
 
-            const poses = await detector.estimatePoses(video);
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+      if (shoulder.score > 0.4 && elbow.score > 0.4 && wrist.score > 0.4) {
+        const angle = calculateAngle(shoulder, elbow, wrist);
+        ctx.fillStyle = 'black';
+        ctx.font = '16px Arial';
+        ctx.fillText(`Angle: ${angle.toFixed(0)}°`, elbow.x + 10, elbow.y);
 
-            if (poses.length > 0) {
-                const keypoints = poses[0].keypoints;
-                drawSkeleton(keypoints);
-                checkElbowFlexion(keypoints);
-            }
-
-            requestAnimationFrame(detectPose); // Loop forever
-        }
-
-        // Function to draw the skeleton on the canvas
-        function drawSkeleton(keypoints) {
-            // Draw lines for the arms
-            drawLine(keypoints, KEYPOINTS.left_shoulder, KEYPOINTS.left_elbow);
-            drawLine(keypoints, KEYPOINTS.left_elbow, KEYPOINTS.left_wrist);
-            drawLine(keypoints, KEYPOINTS.right_shoulder, KEYPOINTS.right_elbow);
-            drawLine(keypoints, KEYPOINTS.right_elbow, KEYPOINTS.right_wrist);
-
-            // Draw keypoints as dots
-            keypoints.forEach(keypoint => {
-                if (keypoint.score > 0.3) {
-                    ctx.beginPath();
-                    ctx.arc(keypoint.x, keypoint.y, 5, 0, 2 * Math.PI);
-                    ctx.fillStyle = 'red';
-                    ctx.fill();
-                }
-            });
-        }
-
-        function drawLine(keypoints, startIndex, endIndex) {
-            const start = keypoints[startIndex];
-            const end = keypoints[endIndex];
-            if (start.score > 0.3 && end.score > 0.3) {
-                ctx.beginPath();
-                ctx.moveTo(start.x, start.y);
-                ctx.lineTo(end.x, end.y);
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = 'cyan';
-                ctx.stroke();
-            }
-        }
-
-        // Function to check if the elbow is flexed correctly
-        function checkElbowFlexion(keypoints) {
-            const shoulder = keypoints[KEYPOINTS.left_shoulder];
-            const elbow = keypoints[KEYPOINTS.left_elbow];
-            const wrist = keypoints[KEYPOINTS.left_wrist];
-
-            // Check if points are visible with enough confidence
-            if (shoulder.score > 0.4 && elbow.score > 0.4 && wrist.score > 0.4) {
-                const angle = calculateAngle(shoulder, elbow, wrist);
-                ctx.fillStyle = 'black';
-                ctx.font = '16px Arial';
-                ctx.fillText(`Angle: ${angle.toFixed(0)}°`, elbow.x + 10, elbow.y);
-
-                // Check for correct flexion (angle between 60 and 100 degrees)
-                if (angle > 60 && angle < 100) {
-                    if (!isPoseCorrect) {
-                        isPoseCorrect = true;
-                        correctPoseStartTime = Date.now(); // Start the timer
-                    } else {
-                        const holdTime = Date.now() - correctPoseStartTime;
-                        if (holdTime >= HOLD_TIME_NEEDED) {
-                            feedbackDiv.textContent = "CORRECT! Elbow Flexion";
-                            feedbackDiv.style.color = "green";
-                        } else {
-                            feedbackDiv.textContent = `Hold it... (${(holdTime/1000).toFixed(1)}s)`;
-                            feedbackDiv.style.color = "orange";
-                        }
-                    }
-                } else {
-                    isPoseCorrect = false;
-                    feedbackDiv.textContent = "Adjust your pose: Flex your elbow more.";
-                    feedbackDiv.style.color = "red";
-                }
+        if (angle > 60 && angle < 100) {
+          if (!isPoseCorrect) {
+            isPoseCorrect = true;
+            correctPoseStartTime = Date.now();
+          } else {
+            const holdTime = Date.now() - correctPoseStartTime;
+            if (holdTime >= HOLD_TIME_NEEDED) {
+              feedbackDiv.textContent = "CORRECT! Elbow Flexion";
+              feedbackDiv.style.color = "green";
             } else {
-                feedbackDiv.textContent = "Make sure your arm is visible!";
-                feedbackDiv.style.color = "red";
+              feedbackDiv.textContent = `Hold it... (${(holdTime/1000).toFixed(1)}s)`;
+              feedbackDiv.style.color = "orange";
             }
+          }
+        } else {
+          isPoseCorrect = false;
+          feedbackDiv.textContent = "Adjust your pose: Flex your elbow more.";
+          feedbackDiv.style.color = "red";
         }
+      } else {
+        feedbackDiv.textContent = "Make sure your arm is visible!";
+        feedbackDiv.style.color = "red";
+      }
+    }
 
-        // Start the app when the page loads
-        window.onload = init;
-    </script>
+    // Require user gesture to start
+    document.getElementById('startBtn').addEventListener('click', () => {
+      init();
+      document.getElementById('startBtn').style.display = 'none';
+    });
+  </script>
 </body>
 </html>
