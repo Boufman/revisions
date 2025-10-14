@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Matter & Properties Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      overflow: hidden;
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #questionBox {
+      position: absolute;
+      top: 10vh;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      max-width: 90vw;
+      text-align: center;
+      font-size: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    #startBtn {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      padding: 25px 40px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #startBtn:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+    button.optionBtn {
+      margin: 10px;
+      padding: 14px 24px;
+      font-size: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button.optionBtn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    input[type="text"] {
+      font-size: 16px;
+      padding: 12px;
+      width: 80%;
+      margin-top: 15px;
+      border-radius: 8px;
+      border: 2px solid #667eea;
+      outline: none;
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 18px;
+      background: rgba(255,255,255,0.95);
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="overlay"></canvas>
+<div id="questionBox" style="display:none;"></div>
+<div id="scoreBoard">Score: 0 | Time: 0s</div>
+<button id="startBtn" onclick="startQuiz()">Start Matter & Properties Quiz</button>
+
+<script>
+  const overlay = document.getElementById('overlay');
+  const ctx = overlay.getContext('2d');
+  const questionBox = document.getElementById('questionBox');
+  const scoreBoard = document.getElementById('scoreBoard');
+  let currentQuestion = 0;
+  let score = 0;
+  let startTime = null;
+
+  function resizeCanvas() {
+    overlay.width = window.innerWidth;
+    overlay.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const questions = [
+    {
+      type: "mcq",
+      question: "What does 'kinetic' mean in the Kinetic Theory of Matter?",
+      options: ["Moving", "Stationary", "Solid"],
+      answer: "Moving",
+      animate: animateParticles
+    },
+    {
+      type: "mcq",
+      question: "In which state are particles packed tightly and vibrate about fixed positions?",
+      options: ["Solid", "Liquid", "Gas"],
+      answer: "Solid",
+      animate: animateSolid
+    },
+    {
+      type: "mcq",
+      question: "Which state of matter can be compressed?",
+      options: ["Gas", "Liquid", "Solid"],
+      answer: "Gas",
+      animate: animateGas
+    },
+    {
+      type: "text",
+      question: "What happens to particle movement when temperature increases?",
+      answer: "faster"
+    },
+    {
+      type: "mcq",
+      question: "Which property measures the amount of mass packed into a specific space?",
+      options: ["Density", "Hardness", "Melting point"],
+      answer: "Density",
+      animate: animateDensity
+    },
+    {
+      type: "mcq",
+      question: "At what temperature does water boil?",
+      options: ["100°C", "0°C", "50°C"],
+      answer: "100°C",
+      animate: animateBoiling
+    },
+    {
+      type: "text",
+      question: "What is the hardest substance in the human body?",
+      answer: "tooth enamel"
+    },
+    {
+      type: "mcq",
+      question: "The change from solid to liquid is called:",
+      options: ["Melting", "Freezing", "Evaporation"],
+      answer: "Melting",
+      animate: animateMelting
+    },
+    {
+      type: "mcq",
+      question: "The change from liquid to gas is called:",
+      options: ["Evaporation", "Condensation", "Sublimation"],
+      answer: "Evaporation",
+      animate: animateEvaporation
+    },
+    {
+      type: "text",
+      question: "What is the direct change from solid to gas called?",
+      answer: "sublimation"
+    },
+    {
+      type: "mcq",
+      question: "Which of these is a physical change?",
+      options: ["Melting ice", "Rusting metal", "Burning wood"],
+      answer: "Melting ice",
+      animate: animateMelting
+    },
+    {
+      type: "mcq",
+      question: "Which of these is a chemical change?",
+      options: ["Milk souring", "Ice melting", "Water boiling"],
+      answer: "Milk souring",
+      animate: animateChemical
+    },
+    {
+      type: "mcq",
+      question: "Are metals good or poor conductors of heat and electricity?",
+      options: ["Good conductors", "Poor conductors", "Non-conductors"],
+      answer: "Good conductors",
+      animate: animateConductor
+    },
+    {
+      type: "text",
+      question: "Do metals gain or lose electrons?",
+      answer: "lose"
+    },
+    {
+      type: "mcq",
+      question: "What happens to bonds during a chemical change?",
+      options: ["They are created or destroyed", "They stay the same", "They only get stronger"],
+      answer: "They are created or destroyed",
+      animate: animateChemical
+    },
+    {
+      type: "mcq",
+      question: "During physical changes, does composition change?",
+      options: ["No", "Yes", "Sometimes"],
+      answer: "No",
+      animate: animateParticles
+    },
+    {
+      type: "text",
+      question: "Can matter be destroyed according to the Kinetic Theory?",
+      answer: "no"
+    },
+    {
+      type: "mcq",
+      question: "Which property is a chemical property?",
+      options: ["Flammability", "Density", "Melting point"],
+      answer: "Flammability",
+      animate: animateChemical
+    }
+  ];
+
+  function startQuiz() {
+    document.getElementById('startBtn').style.display = 'none';
+    score = 0;
+    currentQuestion = 0;
+    startTime = Date.now();
+    askNext();
+  }
+
+  function askNext() {
+    if (currentQuestion >= questions.length) {
+      const totalTime = Math.floor((Date.now() - startTime) / 1000);
+      const percentage = Math.round((score / questions.length) * 100);
+      questionBox.innerHTML = `<h2>🎉 Quiz Complete!</h2>
+        <p style="font-size: 24px;">Score: ${score} / ${questions.length} (${percentage}%)</p>
+        <p>Time taken: ${totalTime} seconds</p>
+        <p>${percentage >= 80 ? '⭐ Excellent work!' : percentage >= 60 ? '👍 Good job!' : '📚 Keep studying!'}</p>`;
+      questionBox.style.display = 'block';
+      return;
+    }
+
+    const q = questions[currentQuestion];
+    questionBox.style.display = 'block';
+
+    if (q.type === "mcq") {
+      questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+        q.options.map(opt => `<button class="optionBtn" onclick="checkAnswer('${opt.replace(/'/g, "\\'")}', '${q.answer.replace(/'/g, "\\'")}', ${q.animate ? 'true' : 'false'})">${opt}</button>`).join("");
+    } else if (q.type === "text") {
+      questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+        `<input type="text" id="textInput" placeholder="Type your answer..."><br><button class="optionBtn" onclick="checkTextAnswer()">Submit</button>`;
+    }
+
+    updateScore();
+  }
+
+  function checkAnswer(selected, correct, hasAnimation) {
+    const isCorrect = selected === correct;
+    questionBox.innerHTML = isCorrect
+      ? `<span style="color:lightgreen; font-size: 22px;">✅ Correct!</span>`
+      : `<span style="color:#ff6b6b; font-size: 20px;">❌ The correct answer was <strong>${correct}</strong>.</span>`;
+
+    if (isCorrect) {
+      score++;
+      if (hasAnimation) questions[currentQuestion].animate();
+    }
+
+    setTimeout(() => {
+      currentQuestion++;
+      clearCanvas();
+      askNext();
+    }, 2500);
+  }
+
+  function checkTextAnswer() {
+    const userInput = document.getElementById('textInput').value.trim().toLowerCase();
+    const correct = questions[currentQuestion].answer.toLowerCase();
+    const isCorrect = userInput.includes(correct) || correct.includes(userInput);
+
+    questionBox.innerHTML = isCorrect
+      ? `<span style="color:lightgreen; font-size: 22px;">✅ Correct!</span>`
+      : `<span style="color:#ff6b6b; font-size: 20px;">❌ The correct answer was <strong>${questions[currentQuestion].answer}</strong>.</span>`;
+
+    if (isCorrect) score++;
+
+    setTimeout(() => {
+      currentQuestion++;
+      clearCanvas();
+      askNext();
+    }, 2500);
+  }
+
+  function updateScore() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    scoreBoard.innerText = `Score: ${score} | Time: ${elapsed}s`;
+  }
+
+  function animateParticles() {
+    clearCanvas();
+    const particles = [];
+    for (let i = 0; i < 30; i++) {
+      particles.push({
+        x: Math.random() * overlay.width,
+        y: Math.random() * overlay.height,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4
+      });
+    }
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      particles.forEach(p => {
+        ctx.fillStyle = 'rgba(255, 255, 100, 0.8)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        p.x += p.vx;
+        p.y += p.vy;
+      });
+      frame++;
+      if (frame < 60) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateSolid() {
+    clearCanvas();
+    const rows = 5, cols = 6;
+    const spacing = 50;
+    const startX = (overlay.width - cols * spacing) / 2;
+    const startY = (overlay.height - rows * spacing) / 2;
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const x = startX + j * spacing + Math.sin(frame * 0.2) * 3;
+          const y = startY + i * spacing + Math.cos(frame * 0.2) * 3;
+          ctx.fillStyle = 'rgba(100, 150, 255, 0.8)';
+          ctx.beginPath();
+          ctx.arc(x, y, 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      frame++;
+      if (frame < 60) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateGas() {
+    clearCanvas();
+    const particles = [];
+    for (let i = 0; i < 15; i++) {
+      particles.push({
+        x: Math.random() * overlay.width,
+        y: Math.random() * overlay.height,
+        vx: (Math.random() - 0.5) * 8,
+        vy: (Math.random() - 0.5) * 8
+      });
+    }
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      particles.forEach(p => {
+        ctx.fillStyle = 'rgba(150, 255, 150, 0.7)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > overlay.width) p.vx *= -1;
+        if (p.y < 0 || p.y > overlay.height) p.vy *= -1;
+      });
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateDensity() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const x1 = overlay.width / 3;
+      const x2 = (overlay.width / 3) * 2;
+      const y = overlay.height / 2;
+      
+      for (let i = 0; i < 20; i++) {
+        ctx.fillStyle = 'rgba(255, 100, 100, 0.6)';
+        ctx.beginPath();
+        ctx.arc(x1 + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 40, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      for (let i = 0; i < 8; i++) {
+        ctx.fillStyle = 'rgba(100, 100, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(x2 + (Math.random() - 0.5) * 80, y + (Math.random() - 0.5) * 80, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      frame++;
+      if (frame < 50) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateBoiling() {
+    clearCanvas();
+    const bubbles = [];
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      if (frame % 5 === 0) {
+        bubbles.push({
+          x: overlay.width / 2 + (Math.random() - 0.5) * 100,
+          y: overlay.height,
+          r: 5 + Math.random() * 10
+        });
+      }
+      bubbles.forEach((b, i) => {
+        ctx.fillStyle = 'rgba(100, 200, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+        b.y -= 3;
+        if (b.y < 0) bubbles.splice(i, 1);
+      });
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateMelting() {
+    clearCanvas();
+    let progress = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      ctx.fillStyle = `rgba(150, 220, 255, ${1 - progress})`;
+      ctx.fillRect(centerX - 60, centerY - 60, 120, 120);
+      
+      ctx.fillStyle = `rgba(100, 180, 255, ${progress})`;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY + 40 * progress, 60, 0, Math.PI * 2);
+      ctx.fill();
+      
+      progress += 0.02;
+      if (progress < 1) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateEvaporation() {
+    clearCanvas();
+    const particles = [];
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      
+      ctx.fillStyle = 'rgba(100, 180, 255, 0.5)';
+      ctx.fillRect(overlay.width / 2 - 80, overlay.height - 100, 160, 80);
+      
+      if (frame % 3 === 0) {
+        particles.push({
+          x: overlay.width / 2 + (Math.random() - 0.5) * 100,
+          y: overlay.height - 100,
+          alpha: 1
+        });
+      }
+      
+      particles.forEach((p, i) => {
+        ctx.fillStyle = `rgba(150, 200, 255, ${p.alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        p.y -= 2;
+        p.alpha -= 0.02;
+        if (p.alpha <= 0) particles.splice(i, 1);
+      });
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateChemical() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2 + frame * 0.05;
+        const x = centerX + Math.cos(angle) * (50 + frame);
+        const y = centerY + Math.sin(angle) * (50 + frame);
+        ctx.fillStyle = `rgba(255, ${200 - frame * 2}, 100, ${1 - frame / 60})`;
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      frame++;
+      if (frame < 60) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateConductor() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const startX = overlay.width / 4;
+      const endX = (overlay.width / 4) * 3;
+      const y = overlay.height / 2;
+      
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(startX, y);
+      ctx.lineTo(endX, y);
+      ctx.stroke();
+      
+      const progress = (frame % 40) / 40;
+      const x = startX + (endX - startX) * progress;
+      
+      ctx.fillStyle = 'rgba(255, 255, 100, 0.9)';
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
+      ctx.fill();
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function clearCanvas() {
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+  }
+</script>
+</body>
+</html>
