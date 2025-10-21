@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Atomic Structure & Chemical Bonds Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      overflow: hidden;
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #questionBox {
+      position: absolute;
+      top: 10vh;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      max-width: 90vw;
+      text-align: center;
+      font-size: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    #startBtn {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      padding: 25px 40px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #startBtn:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+    button.optionBtn {
+      margin: 10px;
+      padding: 14px 24px;
+      font-size: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button.optionBtn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    input[type="text"] {
+      font-size: 16px;
+      padding: 12px;
+      width: 80%;
+      margin-top: 15px;
+      border-radius: 8px;
+      border: 2px solid #667eea;
+      outline: none;
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 18px;
+      background: rgba(255,255,255,0.95);
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="overlay"></canvas>
+<div id="questionBox" style="display:none;"></div>
+<div id="scoreBoard">Score: 0 | Time: 0s</div>
+<button id="startBtn" onclick="startQuiz()">Start Chemistry Quiz</button>
+
+<script>
+  const overlay = document.getElementById('overlay');
+  const ctx = overlay.getContext('2d');
+  const questionBox = document.getElementById('questionBox');
+  const scoreBoard = document.getElementById('scoreBoard');
+  let currentQuestion = 0;
+  let score = 0;
+  let startTime = null;
+
+  function resizeCanvas() {
+    overlay.width = window.innerWidth;
+    overlay.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const questions = [
+    {
+      type: "mcq",
+      question: "What is the smallest unit of an element?",
+      options: ["Atom", "Molecule", "Compound"],
+      answer: "Atom",
+      animate: animateAtom
+    },
+    {
+      type: "mcq",
+      question: "Which particle has a negative charge?",
+      options: ["Electron", "Proton", "Neutron"],
+      answer: "Electron",
+      animate: animateElectrons
+    },
+    {
+      type: "mcq",
+      question: "Where are protons and neutrons located in an atom?",
+      options: ["In the nucleus", "Orbiting the nucleus", "Outside the atom"],
+      answer: "In the nucleus",
+      animate: animateAtom
+    },
+    {
+      type: "mcq",
+      question: "What determines which element an atom is?",
+      options: ["Number of protons", "Number of neutrons", "Number of electrons"],
+      answer: "Number of protons",
+      animate: animateAtom
+    },
+    {
+      type: "mcq",
+      question: "When an atom is neutral, the number of electrons equals the number of:",
+      options: ["Protons", "Neutrons", "Nuclei"],
+      answer: "Protons",
+      animate: animateElectrons
+    },
+    {
+      type: "text",
+      question: "How many natural elements are there?",
+      answer: "92"
+    },
+    {
+      type: "mcq",
+      question: "What is a substance made up of only one type of atom called?",
+      options: ["Element", "Compound", "Mixture"],
+      answer: "Element",
+      animate: animateAtom
+    },
+    {
+      type: "mcq",
+      question: "What is H2O an example of?",
+      options: ["Compound", "Element", "Mixture"],
+      answer: "Compound",
+      animate: animateMolecule
+    },
+    {
+      type: "mcq",
+      question: "How many hydrogen atoms are in one molecule of water (H2O)?",
+      options: ["2", "1", "3"],
+      answer: "2",
+      animate: animateMolecule
+    },
+    {
+      type: "mcq",
+      question: "What is the smallest unit of a compound?",
+      options: ["Molecule", "Atom", "Ion"],
+      answer: "Molecule",
+      animate: animateMolecule
+    },
+    {
+      type: "mcq",
+      question: "Blood is an example of a:",
+      options: ["Mixture", "Compound", "Element"],
+      answer: "Mixture",
+      animate: animateMixture
+    },
+    {
+      type: "mcq",
+      question: "In a mixture, substances retain their:",
+      options: ["Chemical properties", "New properties", "Combined properties"],
+      answer: "Chemical properties",
+      animate: animateMixture
+    },
+    {
+      type: "mcq",
+      question: "How many electrons do atoms want in their valence shell to be stable?",
+      options: ["8", "6", "10"],
+      answer: "8",
+      animate: animateElectrons
+    },
+    {
+      type: "mcq",
+      question: "Which type of bond involves sharing electrons?",
+      options: ["Covalent bond", "Ionic bond", "Metallic bond"],
+      answer: "Covalent bond",
+      animate: animateCovalent
+    },
+    {
+      type: "mcq",
+      question: "Which type of bond is weak and easy to dissociate?",
+      options: ["Ionic bond", "Covalent bond", "Both equally"],
+      answer: "Ionic bond",
+      animate: animateIonic
+    },
+    {
+      type: "mcq",
+      question: "Water (H2O) is held together by:",
+      options: ["Covalent bonds", "Ionic bonds", "Metallic bonds"],
+      answer: "Covalent bonds",
+      animate: animateCovalent
+    },
+    {
+      type: "mcq",
+      question: "What is an atom or group of atoms that has gained or lost electrons called?",
+      options: ["Ion", "Molecule", "Compound"],
+      answer: "Ion",
+      animate: animateIonic
+    },
+    {
+      type: "mcq",
+      question: "A negatively charged ion is called a:",
+      options: ["Anion", "Cation", "Neutron"],
+      answer: "Anion",
+      animate: animateIonic
+    },
+    {
+      type: "mcq",
+      question: "A positively charged ion is called a:",
+      options: ["Cation", "Anion", "Electron"],
+      answer: "Cation",
+      animate: animateIonic
+    },
+    {
+      type: "mcq",
+      question: "Which forms ionic bonds?",
+      options: ["Metallic atom & nonmetallic atom", "Nonmetallic atom & nonmetallic atom", "Two metallic atoms"],
+      answer: "Metallic atom & nonmetallic atom",
+      answer: "Metallic atom & nonmetallic atom",
+      animate: animateIonic
+    },
+    {
+      type: "mcq",
+      question: "Which forms covalent bonds?",
+      options: ["Nonmetallic atom & nonmetallic atom", "Metallic atom & nonmetallic atom", "Two metallic atoms"],
+      answer: "Nonmetallic atom & nonmetallic atom",
+      animate: animateCovalent
+    },
+    {
+      type: "mcq",
+      question: "Do metals like to gain or lose electrons?",
+      options: ["Lose electrons", "Gain electrons", "Share electrons"],
+      answer: "Lose electrons",
+      animate: animateIonic
+    },
+    {
+      type: "mcq",
+      question: "Do non-metals like to gain or lose electrons?",
+      options: ["Gain electrons", "Lose electrons", "Neither"],
+      answer: "Gain electrons",
+      animate: animateCovalent
+    },
+    {
+      type: "mcq",
+      question: "What type of bond is NaCl (table salt)?",
+      options: ["Ionic", "Covalent", "Metallic"],
+      answer: "Ionic",
+      animate: animateIonic
+    },
+    {
+      type: "mcq",
+      question: "What type of bond is O2?",
+      options: ["Covalent", "Ionic", "Metallic"],
+      answer: "Covalent",
+      animate: animateCovalent
+    },
+    {
+      type: "mcq",
+      question: "Sodium (Na+) is an electrolyte that helps balance:",
+      options: ["Fluid levels", "Blood sugar", "Bone density"],
+      answer: "Fluid levels",
+      animate: animateElectrolyte
+    },
+    {
+      type: "mcq",
+      question: "Which electrolyte helps regulate blood pressure?",
+      options: ["Chloride (Cl-)", "Calcium (Ca+)", "Magnesium (Mg2+)"],
+      answer: "Chloride (Cl-)",
+      animate: animateElectrolyte
+    },
+    {
+      type: "mcq",
+      question: "Bicarbonate (HCO3-) helps regulate:",
+      options: ["Blood pH levels", "Muscle contractions", "Fluid balance"],
+      answer: "Blood pH levels",
+      animate: animateElectrolyte
+    }
+  ];
+
+  function startQuiz() {
+    document.getElementById('startBtn').style.display = 'none';
+    score = 0;
+    currentQuestion = 0;
+    startTime = Date.now();
+    askNext();
+  }
+
+  function askNext() {
+    if (currentQuestion >= questions.length) {
+      const totalTime = Math.floor((Date.now() - startTime) / 1000);
+      const percentage = Math.round((score / questions.length) * 100);
+      questionBox.innerHTML = `<h2>🎉 Quiz Complete!</h2>
+        <p style="font-size: 24px;">Score: ${score} / ${questions.length} (${percentage}%)</p>
+        <p>Time taken: ${totalTime} seconds</p>
+        <p>${percentage >= 80 ? '⭐ Excellent work!' : percentage >= 60 ? '👍 Good job!' : '📚 Keep studying!'}</p>`;
+      questionBox.style.display = 'block';
+      return;
+    }
+
+    const q = questions[currentQuestion];
+    questionBox.style.display = 'block';
+
+    if (q.type === "mcq") {
+      questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+        q.options.map(opt => `<button class="optionBtn" onclick="checkAnswer('${opt.replace(/'/g, "\\'")}', '${q.answer.replace(/'/g, "\\'")}', ${q.animate ? 'true' : 'false'})">${opt}</button>`).join("");
+    } else if (q.type === "text") {
+      questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+        `<input type="text" id="textInput" placeholder="Type your answer..."><br><button class="optionBtn" onclick="checkTextAnswer()">Submit</button>`;
+    }
+
+    updateScore();
+  }
+
+  function checkAnswer(selected, correct, hasAnimation) {
+    const isCorrect = selected === correct;
+    questionBox.innerHTML = isCorrect
+      ? `<span style="color:lightgreen; font-size: 22px;">✅ Correct!</span>`
+      : `<span style="color:#ff6b6b; font-size: 20px;">❌ The correct answer was <strong>${correct}</strong>.</span>`;
+
+    if (isCorrect) {
+      score++;
+      if (hasAnimation) questions[currentQuestion].animate();
+    }
+
+    setTimeout(() => {
+      currentQuestion++;
+      clearCanvas();
+      askNext();
+    }, 2500);
+  }
+
+  function checkTextAnswer() {
+    const userInput = document.getElementById('textInput').value.trim().toLowerCase();
+    const correct = questions[currentQuestion].answer.toLowerCase();
+    const isCorrect = userInput.includes(correct) || correct.includes(userInput);
+
+    questionBox.innerHTML = isCorrect
+      ? `<span style="color:lightgreen; font-size: 22px;">✅ Correct!</span>`
+      : `<span style="color:#ff6b6b; font-size: 20px;">❌ The correct answer was <strong>${questions[currentQuestion].answer}</strong>.</span>`;
+
+    if (isCorrect) score++;
+
+    setTimeout(() => {
+      currentQuestion++;
+      clearCanvas();
+      askNext();
+    }, 2500);
+  }
+
+  function updateScore() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    scoreBoard.innerText = `Score: ${score} | Time: ${elapsed}s`;
+  }
+
+  function animateAtom() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      // Nucleus
+      ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Electrons orbiting
+      for (let i = 0; i < 3; i++) {
+        const angle = (i / 3) * Math.PI * 2 + frame * 0.05;
+        const radius = 60 + i * 30;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.fillStyle = 'rgba(100, 200, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateElectrons() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      for (let i = 0; i < 5; i++) {
+        const angle = (i / 5) * Math.PI * 2 + frame * 0.08;
+        const radius = 80;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        ctx.fillStyle = 'rgba(100, 200, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Negative sign
+        ctx.fillStyle = 'white';
+        ctx.fillRect(x - 5, y - 1, 10, 2);
+      }
+      
+      frame++;
+      if (frame < 60) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateMolecule() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      // Oxygen (red)
+      ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 25, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Two Hydrogens (blue)
+      const angle = Math.sin(frame * 0.05) * 0.3;
+      const h1x = centerX - 50 * Math.cos(angle);
+      const h1y = centerY - 50 * Math.sin(angle);
+      const h2x = centerX + 50 * Math.cos(angle);
+      const h2y = centerY - 50 * Math.sin(angle);
+      
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(h1x, h1y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(h2x, h2y);
+      ctx.stroke();
+      
+      ctx.fillStyle = 'rgba(100, 200, 255, 0.9)';
+      ctx.beginPath();
+      ctx.arc(h1x, h1y, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(h2x, h2y, 15, 0, Math.PI * 2);
+      ctx.fill();
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateMixture() {
+    clearCanvas();
+    const particles = [];
+    for (let i = 0; i < 20; i++) {
+      particles.push({
+        x: Math.random() * overlay.width,
+        y: Math.random() * overlay.height,
+        type: Math.random() > 0.5 ? 'a' : 'b',
+        vx: (Math.random() - 0.5) * 3,
+        vy: (Math.random() - 0.5) * 3
+      });
+    }
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      particles.forEach(p => {
+        ctx.fillStyle = p.type === 'a' ? 'rgba(255, 150, 150, 0.8)' : 'rgba(150, 150, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > overlay.width) p.vx *= -1;
+        if (p.y < 0 || p.y > overlay.height) p.vy *= -1;
+      });
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateCovalent() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      const offset = 40;
+      
+      // Two atoms
+      ctx.fillStyle = 'rgba(150, 200, 255, 0.8)';
+      ctx.beginPath();
+      ctx.arc(centerX - offset, centerY, 30, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(centerX + offset, centerY, 30, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Shared electrons
+      const electronY = centerY + Math.sin(frame * 0.1) * 10;
+      ctx.fillStyle = 'rgba(255, 255, 100, 0.9)';
+      ctx.beginPath();
+      ctx.arc(centerX - 10, electronY, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(centerX + 10, electronY, 6, 0, Math.PI * 2);
+      ctx.fill();
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateIonic() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerY = overlay.height / 2;
+      const progress = Math.min(frame / 40, 1);
+      
+      // Metal atom (losing electron)
+      const metalX = overlay.width / 3;
+      ctx.fillStyle = 'rgba(255, 200, 100, 0.8)';
+      ctx.beginPath();
+      ctx.arc(metalX, centerY, 25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'white';
+      ctx.font = '20px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('+', metalX, centerY + 7);
+      
+      // Non-metal atom (gaining electron)
+      const nonMetalX = (overlay.width / 3) * 2;
+      ctx.fillStyle = 'rgba(150, 200, 255, 0.8)';
+      ctx.beginPath();
+      ctx.arc(nonMetalX, centerY, 25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'white';
+      ctx.fillText('-', nonMetalX, centerY + 7);
+      
+      // Electron transfer
+      const electronX = metalX + (nonMetalX - metalX) * progress;
+      ctx.fillStyle = 'rgba(255, 255, 100, 0.9)';
+      ctx.beginPath();
+      ctx.arc(electronX, centerY, 8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateElectrolyte() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      // Positive ions
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2 + frame * 0.03;
+        const x = centerX + Math.cos(angle) * 80;
+        const y = centerY + Math.sin(angle) * 80;
+        ctx.fillStyle = 'rgba(255, 150, 150, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x, y, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('+', x, y + 5);
+      }
+      
+      // Negative ions
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2 - frame * 0.03;
+        const x = centerX + Math.cos(angle) * 120;
+        const y = centerY + Math.sin(angle) * 120;
+        ctx.fillStyle = 'rgba(150, 150, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x, y, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('-', x, y + 5);
+      }
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function clearCanvas() {
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+  }
+</script>
+</body>
+</html>
