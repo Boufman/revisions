@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Cardiovascular System Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      overflow: hidden;
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #questionBox {
+      position: absolute;
+      top: 10vh;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.95);
+      color: #2c3e50;
+      padding: 25px;
+      border-radius: 15px;
+      max-width: 90vw;
+      text-align: center;
+      font-size: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    #startBtn {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      padding: 25px 40px;
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #startBtn:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+    button.optionBtn {
+      margin: 10px;
+      padding: 14px 24px;
+      font-size: 16px;
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button.optionBtn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .matchingContainer {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .matchColumn {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .matchItem {
+      padding: 12px 18px;
+      background: #ecf0f1;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 3px solid transparent;
+    }
+    .matchItem:hover {
+      background: #bdc3c7;
+    }
+    .matchItem.selected {
+      border-color: #e74c3c;
+      background: #fadbd8;
+    }
+    input[type="text"] {
+      font-size: 16px;
+      padding: 12px;
+      width: 80%;
+      margin-top: 15px;
+      border-radius: 8px;
+      border: 2px solid #e74c3c;
+      outline: none;
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 18px;
+      background: rgba(255,255,255,0.95);
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      font-weight: bold;
+      color: #2c3e50;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="overlay"></canvas>
+<div id="questionBox" style="display:none;"></div>
+<div id="scoreBoard">Score: 0 | Time: 0s</div>
+<button id="startBtn" onclick="startQuiz()">Start Cardiovascular Quiz ❤️</button>
+
+<script>
+  const overlay = document.getElementById('overlay');
+  const ctx = overlay.getContext('2d');
+  const questionBox = document.getElementById('questionBox');
+  const scoreBoard = document.getElementById('scoreBoard');
+  let currentQuestion = 0;
+  let score = 0;
+  let startTime = null;
+  let matchingSelections = { left: null, right: null };
+
+  function resizeCanvas() {
+    overlay.width = window.innerWidth;
+    overlay.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const questions = [
+    {
+      type: "mcq",
+      question: "Where is the heart located in the body?",
+      options: ["Between the lungs, left of midline", "In the abdomen", "Behind the stomach"],
+      answer: "Between the lungs, left of midline",
+      animate: animateHeart
+    },
+    {
+      type: "mcq",
+      question: "What is the main function of the heart?",
+      options: ["To pump blood", "To filter blood", "To store blood"],
+      answer: "To pump blood",
+      animate: animateHeart
+    },
+    {
+      type: "mcq",
+      question: "How many chambers does the heart have?",
+      options: ["4", "2", "6"],
+      answer: "4",
+      animate: animateHeart
+    },
+    {
+      type: "mcq",
+      question: "Which layer of the heart wall is responsible for pumping blood?",
+      options: ["Myocardium", "Pericardium", "Endocardium"],
+      answer: "Myocardium",
+      animate: animateHeart
+    },
+    {
+      type: "mcq",
+      question: "Which heart chamber has the thickest wall?",
+      options: ["Left ventricle", "Right ventricle", "Left atrium"],
+      answer: "Left ventricle",
+      animate: animateHeart
+    },
+    {
+      type: "matching",
+      question: "Match the valve to its location:",
+      pairs: [
+        { left: "Tricuspid valve", right: "Between right atrium and right ventricle" },
+        { left: "Bicuspid (Mitral) valve", right: "Between left atrium and left ventricle" },
+        { left: "Aortic valve", right: "Into the aorta" }
+      ]
+    },
+    {
+      type: "mcq",
+      question: "What initiates the electrical impulse that begins the heartbeat?",
+      options: ["Sinoatrial (SA) node", "Atrioventricular (AV) node", "Bundle of His"],
+      answer: "Sinoatrial (SA) node",
+      animate: animateElectricalImpulse
+    },
+    {
+      type: "mcq",
+      question: "What is the SA node also known as?",
+      options: ["Pacemaker", "Conductor", "Regulator"],
+      answer: "Pacemaker",
+      animate: animateElectricalImpulse
+    },
+    {
+      type: "text",
+      question: "What is the normal heart rate range set by the SA node? (Answer: 60-100)",
+      answer: "60-100"
+    },
+    {
+      type: "mcq",
+      question: "Which vessels carry blood AWAY from the heart?",
+      options: ["Arteries", "Veins", "Capillaries"],
+      answer: "Arteries",
+      animate: animateBloodFlow
+    },
+    {
+      type: "mcq",
+      question: "Which vessels carry blood TOWARDS the heart?",
+      options: ["Veins", "Arteries", "Capillaries"],
+      answer: "Veins",
+      animate: animateBloodFlow
+    },
+    {
+      type: "mcq",
+      question: "Where does gas exchange (O2 and CO2) occur?",
+      options: ["Capillaries", "Arteries", "Veins"],
+      answer: "Capillaries",
+      animate: animateGasExchange
+    },
+    {
+      type: "mcq",
+      question: "What is the largest artery in the body?",
+      options: ["Aorta", "Pulmonary artery", "Carotid artery"],
+      answer: "Aorta",
+      animate: animateBloodFlow
+    },
+    {
+      type: "mcq",
+      question: "Which blood vessels have valves to prevent backflow?",
+      options: ["Veins", "Arteries", "Both equally"],
+      answer: "Veins",
+      animate: animateBloodFlow
+    },
+    {
+      type: "matching",
+      question: "Match the circulation system to its function:",
+      pairs: [
+        { left: "Pulmonary circulation", right: "Blood to lungs and back" },
+        { left: "Systemic circulation", right: "Blood to body and back" },
+        { left: "Coronary circulation", right: "Blood supply to heart muscle" }
+      ]
+    },
+    {
+      type: "mcq",
+      question: "What percentage of blood is liquid plasma?",
+      options: ["55%", "45%", "70%"],
+      answer: "55%",
+      animate: animateBloodComponents
+    },
+    {
+      type: "mcq",
+      question: "What is the main component of plasma?",
+      options: ["Water (90%)", "Proteins", "Glucose"],
+      answer: "Water (90%)",
+      animate: animateBloodComponents
+    },
+    {
+      type: "mcq",
+      question: "Which blood cells are responsible for oxygen transport?",
+      options: ["Red blood cells (Erythrocytes)", "White blood cells (Leukocytes)", "Platelets (Thrombocytes)"],
+      answer: "Red blood cells (Erythrocytes)",
+      animate: animateRedBloodCells
+    },
+    {
+      type: "mcq",
+      question: "What is the lifespan of a red blood cell?",
+      options: ["80-120 days", "10 days", "6-8 hours"],
+      answer: "80-120 days",
+      animate: animateRedBloodCells
+    },
+    {
+      type: "mcq",
+      question: "Which blood cells help with blood clotting?",
+      options: ["Platelets (Thrombocytes)", "Red blood cells", "White blood cells"],
+      answer: "Platelets (Thrombocytes)",
+      animate: animateBloodClotting
+    },
+    {
+      type: "mcq",
+      question: "What is the primary function of white blood cells?",
+      options: ["Protection against infection", "Oxygen transport", "Blood clotting"],
+      answer: "Protection against infection",
+      animate: animateWhiteBloodCells
+    },
+    {
+      type: "text",
+      question: "What is the normal pH range of blood? (Answer: 7.35-7.45)",
+      answer: "7.35-7.45"
+    },
+    {
+      type: "matching",
+      question: "Match the blood function to its category:",
+      pairs: [
+        { left: "Transport oxygen & nutrients", right: "Transport function" },
+        { left: "Regulate body temperature", right: "Regulation function" },
+        { left: "Blood clotting", right: "Protection function" }
+      ]
+    },
+    {
+      type: "mcq",
+      question: "Which vessels return blood from the upper body to the heart?",
+      options: ["Superior vena cava", "Inferior vena cava", "Pulmonary veins"],
+      answer: "Superior vena cava",
+      animate: animateBloodFlow
+    },
+    {
+      type: "mcq",
+      question: "Which vessels return oxygenated blood from the lungs to the heart?",
+      options: ["Pulmonary veins", "Pulmonary arteries", "Aorta"],
+      answer: "Pulmonary veins",
+      animate: animateBloodFlow
+    },
+    {
+      type: "mcq",
+      question: "What assists the movement of blood through veins?",
+      options: ["Skeletal muscle contractions", "Heart valves", "Blood pressure alone"],
+      answer: "Skeletal muscle contractions",
+      animate: animateBloodFlow
+    },
+    {
+      type: "mcq",
+      question: "How thick is the wall of a capillary?",
+      options: ["One cell thick", "Three cells thick", "Many cells thick"],
+      answer: "One cell thick",
+      animate: animateGasExchange
+    },
+    {
+      type: "mcq",
+      question: "What percentage of total body weight does blood comprise?",
+      options: ["8%", "15%", "5%"],
+      answer: "8%",
+      animate: animateBloodComponents
+    }
+  ];
+
+  function startQuiz() {
+    document.getElementById('startBtn').style.display = 'none';
+    score = 0;
+    currentQuestion = 0;
+    startTime = Date.now();
+    askNext();
+  }
+
+  function askNext() {
+    if (currentQuestion >= questions.length) {
+      const totalTime = Math.floor((Date.now() - startTime) / 1000);
+      const percentage = Math.round((score / questions.length) * 100);
+      questionBox.innerHTML = `<h2>🎉 Quiz Complete!</h2>
+        <p style="font-size: 24px;">Score: ${score} / ${questions.length} (${percentage}%)</p>
+        <p>Time taken: ${totalTime} seconds</p>
+        <p>${percentage >= 80 ? '⭐ Excellent work! Your heart knowledge is pumping!' : percentage >= 60 ? '👍 Good job! Keep studying the cardiovascular system!' : '📚 Keep studying! The heart is complex but you\'ll master it!'}</p>`;
+      questionBox.style.display = 'block';
+      return;
+    }
+
+    const q = questions[currentQuestion];
+    questionBox.style.display = 'block';
+
+    if (q.type === "mcq") {
+      questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+        q.options.map(opt => `<button class="optionBtn" onclick="checkAnswer('${opt.replace(/'/g, "\\'")}', '${q.answer.replace(/'/g, "\\'")}', ${q.animate ? 'true' : 'false'})">${opt}</button>`).join("");
+    } else if (q.type === "text") {
+      questionBox.innerHTML = `<strong>${q.question}</strong><br><br>` +
+        `<input type="text" id="textInput" placeholder="Type your answer..."><br><button class="optionBtn" onclick="checkTextAnswer()">Submit</button>`;
+    } else if (q.type === "matching") {
+      matchingSelections = { left: null, right: null };
+      const shuffledRight = [...q.pairs.map(p => p.right)].sort(() => Math.random() - 0.5);
+      questionBox.innerHTML = `<strong>${q.question}</strong><br>
+        <p style="font-size: 14px; color: #7f8c8d;">Select one from each column to match them</p>
+        <div class="matchingContainer">
+          <div class="matchColumn">
+            ${q.pairs.map((p, i) => `<div class="matchItem" onclick="selectMatch('left', ${i})">${p.left}</div>`).join("")}
+          </div>
+          <div class="matchColumn">
+            ${shuffledRight.map((r, i) => `<div class="matchItem" onclick="selectMatch('right', ${i})">${r}</div>`).join("")}
+          </div>
+        </div>
+        <button class="optionBtn" onclick="checkMatching()" style="margin-top: 20px;">Check Match</button>`;
+    }
+
+    updateScore();
+  }
+
+  function selectMatch(side, index) {
+    const items = document.querySelectorAll('.matchColumn')[side === 'left' ? 0 : 1].querySelectorAll('.matchItem');
+    items.forEach(item => item.classList.remove('selected'));
+    items[index].classList.add('selected');
+    matchingSelections[side] = index;
+  }
+
+  function checkMatching() {
+    const q = questions[currentQuestion];
+    if (matchingSelections.left === null || matchingSelections.right === null) {
+      alert('Please select one item from each column!');
+      return;
+    }
+
+    const selectedLeft = q.pairs[matchingSelections.left].left;
+    const selectedRight = document.querySelectorAll('.matchColumn')[1].querySelectorAll('.matchItem')[matchingSelections.right].textContent;
+    const correctRight = q.pairs[matchingSelections.left].right;
+
+    const isCorrect = selectedRight === correctRight;
+    
+    questionBox.innerHTML = isCorrect
+      ? `<span style="color:#27ae60; font-size: 22px;">✅ Correct match!</span><br><p>${selectedLeft} ➔ ${selectedRight}</p>`
+      : `<span style="color:#e74c3c; font-size: 20px;">❌ Incorrect</span><br><p><strong>${selectedLeft}</strong> should match with<br><strong>${correctRight}</strong></p>`;
+
+    if (isCorrect) score++;
+
+    setTimeout(() => {
+      currentQuestion++;
+      clearCanvas();
+      askNext();
+    }, 3000);
+  }
+
+  function checkAnswer(selected, correct, hasAnimation) {
+    const isCorrect = selected === correct;
+    questionBox.innerHTML = isCorrect
+      ? `<span style="color:#27ae60; font-size: 22px;">✅ Correct!</span>`
+      : `<span style="color:#e74c3c; font-size: 20px;">❌ The correct answer was <strong>${correct}</strong>.</span>`;
+
+    if (isCorrect) {
+      score++;
+      if (hasAnimation) questions[currentQuestion].animate();
+    }
+
+    setTimeout(() => {
+      currentQuestion++;
+      clearCanvas();
+      askNext();
+    }, 2500);
+  }
+
+  function checkTextAnswer() {
+    const userInput = document.getElementById('textInput').value.trim().toLowerCase();
+    const correct = questions[currentQuestion].answer.toLowerCase();
+    const isCorrect = userInput.includes(correct) || correct.includes(userInput) || userInput.replace(/\s/g, '') === correct.replace(/\s/g, '');
+
+    questionBox.innerHTML = isCorrect
+      ? `<span style="color:#27ae60; font-size: 22px;">✅ Correct!</span>`
+      : `<span style="color:#e74c3c; font-size: 20px;">❌ The correct answer was <strong>${questions[currentQuestion].answer}</strong>.</span>`;
+
+    if (isCorrect) score++;
+
+    setTimeout(() => {
+      currentQuestion++;
+      clearCanvas();
+      askNext();
+    }, 2500);
+  }
+
+  function updateScore() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    scoreBoard.innerText = `Score: ${score} | Time: ${elapsed}s`;
+  }
+
+  function animateHeart() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      const scale = 1 + Math.sin(frame * 0.15) * 0.2;
+      
+      // Heart shape
+      ctx.fillStyle = `rgba(231, 76, 60, ${0.7 + Math.sin(frame * 0.15) * 0.3})`;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY + 20 * scale);
+      ctx.bezierCurveTo(centerX, centerY - 10 * scale, centerX - 50 * scale, centerY - 30 * scale, centerX - 50 * scale, centerY + 10 * scale);
+      ctx.bezierCurveTo(centerX - 50 * scale, centerY + 40 * scale, centerX, centerY + 60 * scale, centerX, centerY + 80 * scale);
+      ctx.bezierCurveTo(centerX, centerY + 60 * scale, centerX + 50 * scale, centerY + 40 * scale, centerX + 50 * scale, centerY + 10 * scale);
+      ctx.bezierCurveTo(centerX + 50 * scale, centerY - 30 * scale, centerX, centerY - 10 * scale, centerX, centerY + 20 * scale);
+      ctx.fill();
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateElectricalImpulse() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      // Heart outline
+      ctx.strokeStyle = 'rgba(231, 76, 60, 0.5)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Electrical pulse
+      const pulseRadius = (frame % 40) * 3;
+      ctx.strokeStyle = `rgba(241, 196, 15, ${1 - (frame % 40) / 40})`;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // SA node
+      ctx.fillStyle = 'rgba(241, 196, 15, 0.9)';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY - 30, 8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateBloodClotting() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      // Blood vessel with injury
+      ctx.strokeStyle = 'rgba(192, 57, 43, 0.6)';
+      ctx.lineWidth = 30;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 150, centerY);
+      ctx.lineTo(centerX + 150, centerY);
+      ctx.stroke();
+      
+      // Injury site
+      ctx.fillStyle = 'rgba(231, 76, 60, 0.4)';
+      ctx.fillRect(centerX - 20, centerY - 30, 40, 60);
+      
+      // Platelets gathering
+      const numPlatelets = Math.min(frame, 30);
+      for (let i = 0; i < numPlatelets; i++) {
+        const angle = (i / numPlatelets) * Math.PI * 2;
+        const radius = 25 - (frame / 80) * 10;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        ctx.fillStyle = 'rgba(243, 156, 18, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Clot forming
+      if (frame > 40) {
+        ctx.fillStyle = `rgba(192, 57, 43, ${(frame - 40) / 40})`;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateBloodFlow() {
+    clearCanvas();
+    let frame = 0;
+    const particles = [];
+    for (let i = 0; i < 30; i++) {
+      particles.push({
+        angle: (i / 30) * Math.PI * 2,
+        radius: 80,
+        speed: 0.05
+      });
+    }
+    
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      // Vessel
+      ctx.strokeStyle = 'rgba(192, 57, 43, 0.4)';
+      ctx.lineWidth = 40;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 80, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Blood cells
+      particles.forEach(p => {
+        p.angle += p.speed;
+        const x = centerX + Math.cos(p.angle) * p.radius;
+        const y = centerY + Math.sin(p.angle) * p.radius;
+        
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateGasExchange() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      // Capillary wall
+      ctx.strokeStyle = 'rgba(192, 57, 43, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 100, centerY);
+      ctx.lineTo(centerX + 100, centerY);
+      ctx.stroke();
+      
+      // O2 molecules (moving down)
+      for (let i = 0; i < 3; i++) {
+        const x = centerX - 60 + i * 60;
+        const y = centerY - 50 + (frame % 50) * 2;
+        ctx.fillStyle = 'rgba(46, 204, 113, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('O₂', x, y + 3);
+      }
+      
+      // CO2 molecules (moving up)
+      for (let i = 0; i < 3; i++) {
+        const x = centerX - 40 + i * 40;
+        const y = centerY + 50 - (frame % 50) * 2;
+        ctx.fillStyle = 'rgba(155, 89, 182, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.font = '9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('CO₂', x, y + 3);
+      }
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateBloodComponents() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      // Plasma (background)
+      ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
+      ctx.fillRect(centerX - 100, centerY - 80, 200, 160);
+      
+      // Red blood cells
+      for (let i = 0; i < 15; i++) {
+        const x = centerX - 80 + Math.random() * 160;
+        const y = centerY - 60 + Math.random() * 120;
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // White blood cells
+      for (let i = 0; i < 2; i++) {
+        const x = centerX - 60 + i * 120;
+        const y = centerY + Math.sin(frame * 0.1 + i) * 20;
+        ctx.fillStyle = 'rgba(236, 240, 241, 0.9)';
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(52, 73, 94, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateRedBloodCells() {
+    clearCanvas();
+    let frame = 0;
+    const cells = [];
+    for (let i = 0; i < 20; i++) {
+      cells.push({
+        x: Math.random() * overlay.width,
+        y: Math.random() * overlay.height,
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2
+      });
+    }
+    
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      
+      cells.forEach(cell => {
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
+        ctx.beginPath();
+        ctx.ellipse(cell.x, cell.y, 10, 6, frame * 0.05, 0, Math.PI * 2);
+        ctx.fill();
+        
+        cell.x += cell.vx;
+        cell.y += cell.vy;
+        
+        if (cell.x < 0 || cell.x > overlay.width) cell.vx *= -1;
+        if (cell.y < 0 || cell.y > overlay.height) cell.vy *= -1;
+      });
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function animateWhiteBloodCells() {
+    clearCanvas();
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const centerX = overlay.width / 2;
+      const centerY = overlay.height / 2;
+      
+      // White blood cell
+      ctx.fillStyle = 'rgba(236, 240, 241, 0.9)';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(52, 73, 94, 0.8)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Nucleus
+      ctx.fillStyle = 'rgba(155, 89, 182, 0.7)';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Pathogens being attacked
+      for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2 + frame * 0.1;
+        const x = centerX + Math.cos(angle) * 80;
+        const y = centerY + Math.sin(angle) * 80;
+        
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.6)';
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      frame++;
+      if (frame < 80) requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function clearCanvas() {
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+  }
+</script>
+</body>
+</html>
