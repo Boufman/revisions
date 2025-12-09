@@ -2,34 +2,90 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Anatomy Motion Coach</title>
-  
-  <!-- ResponsiveVoice - Natural Australian Voice (FREE key needed) -->
-  <script src="https://code.responsivevoice.org/responsivevoice.js?key=rAjUewXC"></script>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@latest"></script>
-  
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.12.0/dist/tf-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.12.0/dist/tf-backend-webgl.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-cpu@4.12.0/dist/tf-backend-cpu.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.0.0"></script>
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      padding: 20px;
+      padding: 15px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      text-align: center;
-      background-color: #f4f4f9;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      min-height: 100vh;
+    }
+    #instructions {
+      background: rgba(255,255,255,0.95);
       color: #333;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      text-align: left;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    #instructionText {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 15px 0;
+    }
+    #startPosition, #finishPosition {
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 12px;
+      font-size: 1rem;
+    }
+    #startPosition {
+      background: #fff3e0;
+      border-left: 5px solid #ff9800;
+    }
+    #finishPosition {
+      background: #e8f5e9;
+      border-left: 5px solid #4caf50;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    select, button {
+      padding: 14px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    select {
+      background: white;
+      color: #333;
+      min-width: 220px;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    button {
+      background: rgba(255,255,255,0.95);
+      color: #333;
+      flex: 1;
+      max-width: 180px;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
     }
     #container {
       position: relative;
-      display: inline-block;
       width: 100%;
       max-width: 640px;
-      margin: 0 auto;
-      border-radius: 12px;
+      margin: 0 auto 20px;
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
       background: #000;
     }
     #video {
@@ -45,132 +101,48 @@
       height: 100%;
       pointer-events: none;
     }
-    .selfie-mode {
-      transform: scaleX(-1);
-    }
-    #instructions {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      text-align: left;
-    }
-    #instructionText {
-      font-size: 1rem;
-      line-height: 1.6;
-      margin: 10px 0;
-    }
-    #startPosition, #finishPosition {
-      background: #fff3e0;
-      padding: 8px;
-      margin: 8px 0;
-      border-left: 4px solid #ff9800;
-      text-align: left;
-      font-size: 0.9rem;
-      border-radius: 4px;
-    }
-    #finishPosition {
-      border-left-color: #4caf50;
-      background: #e8f5e9;
-    }
+    .selfie-mode { transform: scaleX(-1); }
     #feedback {
-      font-size: 1.2rem;
-      font-weight: bold;
-      margin: 15px 0;
-      padding: 10px;
-      background: white;
-      border-radius: 8px;
-      min-height: 40px;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 15px;
-      flex-wrap: wrap;
-    }
-    button, select {
-      padding: 12px 16px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    select {
-      background: white;
+      font-size: 1.4rem;
+      font-weight: 700;
+      padding: 20px;
+      background: rgba(255,255,255,0.95);
       color: #333;
-      border: 2px solid #667eea;
+      border-radius: 16px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      max-width: 640px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
     }
-    #voiceToggle {
-      padding: 10px 15px;
-      font-size: 0.9rem;
-      background: #9c27b0;
-    }
-    #voiceToggle:hover {
-      background: #7b1fa2;
-    }
-    .voice-indicator {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #4caf50;
-      margin-right: 5px;
-      animation: pulse 1.5s infinite;
-    }
-    .voice-indicator.off {
-      background: #ccc;
-      animation: none;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
-    .voice-status {
-      background: #e3f2fd;
-      border: 1px solid #2196f3;
-      color: #1976d2;
-      padding: 8px;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      font-size: 0.9rem;
-    }
+    .status-loading { background: #fff3e0 !important; color: #e65100 !important; }
+    .status-good { background: #e8f5e9 !important; color: #2e7d32 !important; }
+    .status-warning { background: #fff3e0 !important; color: #f57c00 !important; }
+    .status-error { background: #ffebee !important; color: #c62828 !important; }
   </style>
 </head>
 <body>
-
-  <div class="voice-status" id="voiceStatus">
-    🦘 <strong>Australian Voice Coach Ready!</strong> (ResponsiveVoice)
-  </div>
-
   <div id="instructions">
-    <h2 style="margin-top:0">🏋️ Anatomy Motion Coach</h2>
-    <p id="instructionText">Select a muscle to begin</p>
-    <div id="startPosition">📍 <strong>START:</strong> <span id="startDesc">Position description</span></div>
-    <div id="finishPosition">✅ <strong>FINISH:</strong> <span id="finishDesc">Position description</span></div>
+    <h1 style="margin: 0 0 20px 0; font-size: 1.8rem;">🏋️ Anatomy Motion Coach</h1>
+    <p id="instructionText">Select a muscle</p>
+    <div id="startPosition">📍 <strong>START:</strong> <span id="startDesc">-</span></div>
+    <div id="finishPosition">✅ <strong>FINISH:</strong> <span id="finishDesc">-</span></div>
   </div>
 
   <div class="controls">
     <select id="muscleSelect">
-      <option value="Biceps Brachii">Biceps Brachii (Arm Flex)</option>
-      <option value="Deltoid">Deltoid (Arm Raise)</option>
-      <option value="Latissimus Dorsi">Latissimus Dorsi (Raise & Lower)</option>
-      <option value="Triceps Brachii">Triceps Brachii (Arm Extend)</option>
-      <option value="Hamstrings">Hamstrings (Leg Curl)</option>
-      <option value="Quadriceps">Quadriceps (Leg Extend)</option>
-      <option value="Gluteus Maximus">Gluteus Maximus (Hip Extend)</option>
+      <option value="Biceps Brachii">💪 Biceps Brachii (Arm Flex)</option>
+      <option value="Deltoid">🦾 Deltoid (Arm Raise)</option>
+      <option value="Latissimus Dorsi">🦋 Lats (Raise & Lower)</option>
+      <option value="Triceps Brachii">🦾 Triceps (Arm Extend)</option>
+      <option value="Hamstrings">🦵 Hamstrings (Leg Curl)</option>
+      <option value="Quadriceps">🦵 Quads (Leg Extend)</option>
+      <option value="Gluteus Maximus">🍑 Glutes (Hip Extend)</option>
     </select>
-    <button id="voiceToggle"><span class="voice-indicator"></span>Voice: ON</button>
-    <button id="startBtn">Start Camera</button>
-    <button id="toggleCameraBtn" style="display: none;">Switch Camera</button>
+    <button id="startBtn">🎥 Start Camera</button>
+    <button id="toggleCameraBtn" style="display: none;">🔄 Switch Camera</button>
   </div>
 
   <div id="container">
@@ -178,7 +150,7 @@
     <canvas id="canvas"></canvas>
   </div>
   
-  <div id="feedback">Select a muscle and press "Start Camera"</div>
+  <div id="feedback">Select muscle → Start Camera</div>
 
   <script>
     let video = document.getElementById('video');
@@ -188,18 +160,16 @@
     let muscleSelect = document.getElementById('muscleSelect');
     let instructionText = document.getElementById('instructionText');
     let startDesc = document.getElementById('startDesc');
-    let voiceToggle = document.getElementById('voiceToggle');
-    let voiceStatus = document.getElementById('voiceStatus');
-    
+    let finishDesc = document.getElementById('finishDesc');
+
     let detector;
     let isPoseCorrect = false;
     let correctPoseStartTime = 0;
     const HOLD_TIME_NEEDED = 2000;
     let currentFacingMode = 'environment';
     let frameCounter = 0;
-    let voiceEnabled = true;
-    let lastSpokenFeedback = '';
-    let responsiveVoiceReady = false;
+    let loadingAttempts = 0;
+    const MAX_ATTEMPTS = 3;
 
     const KEYPOINTS = {
       left_shoulder: 5, left_elbow: 7, left_wrist: 9,
@@ -210,132 +180,58 @@
 
     const MUSCLES = {
       'Biceps Brachii': {
-        instructions: 'Flex your biceps by bending your elbow.',
-        startPosition: 'Arm straight down at your side',
+        instructions: 'Flex biceps - bend elbow sharply',
+        startPosition: 'Arm straight down by side',
         finishPosition: 'Elbow bent 60-100° (fist near shoulder)',
-        check: checkElbowFlexion,
-        angleRange: [60, 100],
-        keypoints: ['shoulder', 'elbow', 'wrist'],
-        voiceHint: 'Bend your elbow and bring your fist up toward your shoulder mate'
+        check: checkElbowFlexion, angleRange: [60, 100], keypoints: ['shoulder', 'elbow', 'wrist']
       },
       'Deltoid': {
-        instructions: 'Raise your arm sideways (abduction) to shoulder level.',
-        startPosition: 'Arm at your side, hand pointing down',
-        finishPosition: 'Arm raised 80-100° to shoulder height',
-        check: checkShoulderAbduction,
-        angleRange: [80, 100],
-        keypoints: ['hip', 'shoulder', 'elbow'],
-        voiceHint: 'Raise your arm out to the side until it reaches shoulder level'
+        instructions: 'Raise arm sideways to shoulder level',
+        startPosition: 'Arm relaxed by side',
+        finishPosition: 'Arm raised 80-100° (parallel to ground)',
+        check: checkShoulderAbduction, angleRange: [80, 100], keypoints: ['hip', 'shoulder', 'elbow']
       },
       'Latissimus Dorsi': {
-        instructions: 'Raise your arm overhead, then pull it down to your side.',
-        startPosition: 'Arm raised overhead (hand pointing up)',
-        finishPosition: 'Arm pulled down beside your body (30-60° from vertical)',
-        check: checkShoulderAdduction,
-        angleRange: [30, 60],
-        keypoints: ['hip', 'shoulder', 'elbow'],
-        voiceHint: 'Start with your arm overhead, then pull it down to your side by engaging your lat muscles'
+        instructions: 'Raise arm overhead → pull down to side',
+        startPosition: 'Arm straight overhead',
+        finishPosition: 'Arm down beside body (30-60°)',
+        check: checkShoulderAdduction, angleRange: [30, 60], keypoints: ['hip', 'shoulder', 'elbow']
       },
       'Triceps Brachii': {
-        instructions: 'Extend your arm fully (straighten your elbow).',
-        startPosition: 'Elbow bent at 90° (fist near shoulder)',
-        finishPosition: 'Arm fully extended straight (150-180°)',
-        check: checkElbowExtension,
-        angleRange: [150, 180],
-        keypoints: ['shoulder', 'elbow', 'wrist'],
-        voiceHint: 'Straighten your arm completely by extending your elbow'
+        instructions: 'Fully extend/straighten elbow',
+        startPosition: 'Elbow bent 90°',
+        finishPosition: 'Arm locked straight (150-180°)',
+        check: checkElbowExtension, angleRange: [150, 180], keypoints: ['shoulder', 'elbow', 'wrist']
       },
       'Hamstrings': {
-        instructions: 'Flex your knee by bringing your foot toward your buttocks.',
-        startPosition: 'Leg straight down (standing or lying)',
-        finishPosition: 'Knee bent 50-100° (heel near buttock)',
-        check: checkKneeFlexion,
-        angleRange: [50, 100],
-        keypoints: ['hip', 'knee', 'ankle'],
-        voiceHint: 'Bend your knee and bring your heel up toward your buttocks'
+        instructions: 'Bend knee - heel to buttock',
+        startPosition: 'Leg straight',
+        finishPosition: 'Knee bent 50-100°',
+        check: checkKneeFlexion, angleRange: [50, 100], keypoints: ['hip', 'knee', 'ankle']
       },
       'Quadriceps': {
-        instructions: 'Extend your leg fully (straighten your knee).',
-        startPosition: 'Knee bent at 90°',
-        finishPosition: 'Leg fully extended straight (150-180°)',
-        check: checkKneeExtension,
-        angleRange: [150, 180],
-        keypoints: ['hip', 'knee', 'ankle'],
-        voiceHint: 'Straighten your leg completely by extending your knee'
+        instructions: 'Fully straighten knee/leg',
+        startPosition: 'Knee bent',
+        finishPosition: 'Leg locked straight (150-180°)',
+        check: checkKneeExtension, angleRange: [150, 180], keypoints: ['hip', 'knee', 'ankle']
       },
       'Gluteus Maximus': {
-        instructions: 'Extend your hip by moving your leg backward.',
-        startPosition: 'Leg straight down at your side',
-        finishPosition: 'Leg extended backward (160-180° from vertical)',
-        check: checkHipExtension,
-        angleRange: [160, 180],
-        keypoints: ['shoulder', 'hip', 'knee'],
-        voiceHint: 'Extend your leg backward by engaging your glute muscles'
+        instructions: 'Kick leg backward (hip extension)',
+        startPosition: 'Leg by side',
+        finishPosition: 'Leg back 160-180°',
+        check: checkHipExtension, angleRange: [160, 180], keypoints: ['shoulder', 'hip', 'knee']
       }
     };
 
-    // ===== RESPONSIVEVOICE AUSTRALIAN SPEECH =====
-    function speakText(text) {
-      if (!voiceEnabled || !responsiveVoiceReady) return;
-      
-      responsiveVoice.speak(text, "Australian Female", {
-        rate: 0.95,      // Natural speaking speed
-        pitch: 1.0,      // Natural tone
-        volume: 0.9,     // Clear but not too loud
-        onstart: () => console.log('🗣️ Speaking:', text)
-      });
-    }
-
-    // Check if ResponsiveVoice is loaded
-    function checkResponsiveVoice() {
-      if (typeof responsiveVoice !== 'undefined' && responsiveVoice.voiceSupport()) {
-        responsiveVoiceReady = true;
-        voiceStatus.textContent = '🦘 Australian Voice Coach Ready! (ResponsiveVoice)';
-        speakText('Gday! Anatomy Motion Coach ready mate.');
-      } else {
-        voiceStatus.textContent = '⚠️ Voice loading... Check your FREE key at responsivevoice.org';
-        setTimeout(checkResponsiveVoice, 1000);
-      }
-    }
-
-    voiceToggle.addEventListener('click', () => {
-      voiceEnabled = !voiceEnabled;
-      const indicator = voiceToggle.querySelector('.voice-indicator');
-      if (voiceEnabled) {
-        indicator.classList.remove('off');
-        voiceToggle.innerHTML = '<span class="voice-indicator"></span>Voice: ON';
-        speakText('Voice turned on mate');
-      } else {
-        indicator.classList.add('off');
-        voiceToggle.innerHTML = '<span class="voice-indicator off"></span>Voice: OFF';
-        if (responsiveVoiceReady) responsiveVoice.cancel();
-      }
-    });
-
-    // Announce exercise when muscle selected
-    function announceExercise() {
-      const muscle = MUSCLES[muscleSelect.value];
-      speakText(`${muscleSelect.value}. ${muscle.voiceHint}`);
-    }
-
     async function startCamera(facingMode = 'environment') {
-      if (video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-      }
+      if (video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
 
-      if (facingMode === 'user') {
-        video.classList.add('selfie-mode');
-      } else {
-        video.classList.remove('selfie-mode');
-      }
+      if (facingMode === 'user') video.classList.add('selfie-mode');
+      else video.classList.remove('selfie-mode');
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: facingMode, 
-            width: { ideal: 640 }, 
-            height: { ideal: 480 } 
-          },
+          video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
           audio: false
         });
         video.srcObject = stream;
@@ -345,38 +241,45 @@
           video.play();
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
-          
-          if (!detector) {
-            initializeBackend();
-          } else {
-            detectPose();
-          }
+          initializeBackend();
         };
       } catch (err) {
-        console.error("Camera error:", err);
         feedbackDiv.textContent = "❌ Camera access denied";
-        feedbackDiv.style.color = "red";
-        speakText('Camera access denied mate');
+        feedbackDiv.className = "status-error";
       }
     }
 
     async function initializeBackend() {
       try {
-        await tf.setBackend('webgl');
-        
-        const model = poseDetection.SupportedModels.MoveNet;
-        detector = await poseDetection.createDetector(model, {
-          modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING 
-        });
-        
-        console.log("✅ AI Model Ready");
-        feedbackDiv.textContent = "Ready! Perform the exercise.";
-        feedbackDiv.style.color = "blue";
-        speakText('Ready mate. Perform the exercise.');
+        feedbackDiv.textContent = `⏳ Loading AI... (${loadingAttempts + 1}/${MAX_ATTEMPTS})`;
+        feedbackDiv.className = "status-loading";
+
+        // Backend fallback
+        try {
+          await tf.setBackend('webgl');
+          await tf.ready();
+        } catch {
+          await tf.setBackend('cpu');
+          await tf.ready();
+        }
+
+        detector = await poseDetection.createDetector(
+          poseDetection.SupportedModels.MoveNet,
+          { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+        );
+
+        feedbackDiv.textContent = "✅ AI Ready! Hold pose 2 seconds";
+        feedbackDiv.className = "status-good";
         detectPose();
+
       } catch (err) {
-        feedbackDiv.textContent = "❌ AI loading failed";
-        feedbackDiv.style.color = "red";
+        loadingAttempts++;
+        if (loadingAttempts < MAX_ATTEMPTS) {
+          setTimeout(initializeBackend, 1500);
+        } else {
+          feedbackDiv.textContent = "⚠️ AI failed - refresh page";
+          feedbackDiv.className = "status-error";
+        }
       }
     }
 
@@ -398,20 +301,15 @@
 
         if (poses.length > 0) {
           let keypoints = poses[0].keypoints;
-          
           if (currentFacingMode === 'user') {
-            keypoints = keypoints.map(kp => ({
-              ...kp,
-              x: canvas.width - kp.x
-            }));
+            keypoints = keypoints.map(kp => ({ ...kp, x: canvas.width - kp.x }));
           }
 
           drawSkeleton(keypoints);
-          const muscle = MUSCLES[muscleSelect.value];
-          muscle.check(keypoints);
-          
-          tf.engine().startScope();
-          tf.engine().endScope();
+          MUSCLES[muscleSelect.value].check(keypoints);
+        } else {
+          feedbackDiv.textContent = "👀 Looking for pose...";
+          feedbackDiv.className = "status-warning";
         }
       } catch (err) {
         console.error(err);
@@ -422,9 +320,7 @@
     function drawSkeleton(keypoints) {
       const muscle = MUSCLES[muscleSelect.value];
       const kpNames = muscle.keypoints;
-      const sides = ['left', 'right'];
-
-      sides.forEach(side => {
+      ['left', 'right'].forEach(side => {
         const start = KEYPOINTS[`${side}_${kpNames[0]}`];
         const mid = KEYPOINTS[`${side}_${kpNames[1]}`];
         const end = KEYPOINTS[`${side}_${kpNames[2]}`];
@@ -433,10 +329,10 @@
         drawLine(keypoints, mid, end);
 
         [start, mid, end].forEach(idx => {
-          if (keypoints[idx] && keypoints[idx].score > 0.3) {
+          if (keypoints[idx]?.score > 0.3) {
             ctx.beginPath();
-            ctx.arc(keypoints[idx].x, keypoints[idx].y, 5, 0, 2 * Math.PI);
-            ctx.fillStyle = 'red';
+            ctx.arc(keypoints[idx].x, keypoints[idx].y, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ff4444';
             ctx.fill();
           }
         });
@@ -444,12 +340,12 @@
     }
 
     function drawLine(kp, i, j) {
-      if (kp[i] && kp[j] && kp[i].score > 0.3 && kp[j].score > 0.3) {
+      if (kp[i]?.score > 0.3 && kp[j]?.score > 0.3) {
         ctx.beginPath();
         ctx.moveTo(kp[i].x, kp[i].y);
         ctx.lineTo(kp[j].x, kp[j].y);
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#00ffcc';
         ctx.stroke();
       }
     }
@@ -457,22 +353,18 @@
     function calculateAngle(a, b, c) {
       const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
       let angle = Math.abs(radians * 180 / Math.PI);
-      if (angle > 180) angle = 360 - angle;
-      return angle;
+      return angle > 180 ? 360 - angle : angle;
     }
 
     function checkMotion(kp, limbs, muscleName, joint) {
-      let bestAngle = null;
-      let bestLimb = null;
+      let bestAngle = null, bestLimb = null;
 
       for (const limb of limbs) {
-        const { side } = limb;
         const points = Object.values(limb).slice(0, 3);
-
         if (points.every(p => p.score > 0.3)) {
           const angle = calculateAngle(...points);
-          
-          if (!bestAngle || Math.abs(angle - (MUSCLES[muscleName].angleRange[0] + MUSCLES[muscleName].angleRange[1]) / 2) < Math.abs(bestAngle - (MUSCLES[muscleName].angleRange[0] + MUSCLES[muscleName].angleRange[1]) / 2)) {
+          if (!bestAngle || Math.abs(angle - (MUSCLES[muscleName].angleRange[0] + MUSCLES[muscleName].angleRange[1]) / 2) < 
+              Math.abs(bestAngle - (MUSCLES[muscleName].angleRange[0] + MUSCLES[muscleName].angleRange[1]) / 2)) {
             bestAngle = angle;
             bestLimb = limb;
           }
@@ -480,138 +372,116 @@
       }
 
       if (bestLimb) {
-        const { side } = bestLimb;
         const points = Object.values(bestLimb).slice(0, 3);
         const midPoint = points[1];
+        const range = MUSCLES[muscleName].angleRange;
 
+        // Draw angle
         const text = `${bestAngle.toFixed(0)}°`;
-        ctx.font = 'bold 24px Arial';
+        ctx.font = 'bold 28px Arial';
         const textWidth = ctx.measureText(text).width;
-        
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillRect(midPoint.x + 10, midPoint.y - 20, textWidth + 10, 30);
-        
-        ctx.fillStyle = 'black';
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(midPoint.x + 10, midPoint.y - 25, textWidth + 15, 35);
+        ctx.fillStyle = '#fff';
         ctx.fillText(text, midPoint.x + 15, midPoint.y);
 
-        if (bestAngle >= MUSCLES[muscleName].angleRange[0] && bestAngle <= MUSCLES[muscleName].angleRange[1]) {
+        // Green circle if correct
+        if (bestAngle >= range[0] && bestAngle <= range[1]) {
           ctx.beginPath();
-          ctx.arc(midPoint.x, midPoint.y, 12, 0, 2 * Math.PI);
+          ctx.arc(midPoint.x, midPoint.y, 15, 0, 2 * Math.PI);
           ctx.fillStyle = '#00ff00';
           ctx.fill();
 
           if (!isPoseCorrect) {
             isPoseCorrect = true;
             correctPoseStartTime = Date.now();
-            speakText('Perfect form! Hold it there.');
           } else {
             const holdTime = Date.now() - correctPoseStartTime;
             const progress = Math.min(holdTime / HOLD_TIME_NEEDED, 1);
             
-            ctx.fillStyle = 'rgba(0,255,0,0.4)';
-            ctx.fillRect(0, 0, canvas.width * progress, 10);
+            ctx.fillStyle = `rgba(0,255,0,${progress})`;
+            ctx.fillRect(0, 0, canvas.width * progress, 12);
 
             if (holdTime >= HOLD_TIME_NEEDED) {
-              feedbackDiv.textContent = `✅ EXCELLENT! Rep Complete!`;
-              feedbackDiv.style.color = "green";
-              feedbackDiv.style.backgroundColor = "#e8f5e9";
-              
-              if (lastSpokenFeedback !== 'complete') {
-                speakText('Excellent mate! Rep complete.');
-                lastSpokenFeedback = 'complete';
-              }
+              feedbackDiv.textContent = `✅ PERFECT! ${muscleName} COMPLETE`;
+              feedbackDiv.className = "status-good";
             } else {
-              const remaining = (2 - holdTime/1000).toFixed(1);
-              feedbackDiv.textContent = `Hold for ${remaining}s more...`;
-              feedbackDiv.style.color = "#ff9800";
-              feedbackDiv.style.backgroundColor = "#fff3e0";
+              feedbackDiv.textContent = `⏳ Hold ${((HOLD_TIME_NEEDED - holdTime)/1000).toFixed(1)}s`;
+              feedbackDiv.className = "status-warning";
             }
           }
         } else {
           isPoseCorrect = false;
-          const range = MUSCLES[muscleName].angleRange;
-          feedbackDiv.textContent = `Adjust: Need ${range[0]}-${range[1]}°. Current: ${bestAngle.toFixed(0)}°`;
-          feedbackDiv.style.color = "#d32f2f";
-          feedbackDiv.style.backgroundColor = "#ffebee";
+          feedbackDiv.textContent = `${range[0]}-${range[1]}° needed | Now ${bestAngle.toFixed(0)}°`;
+          feedbackDiv.className = "status-warning";
         }
       } else {
-        feedbackDiv.textContent = `⚠️ Move closer to camera. Fully visible limb required.`;
-        feedbackDiv.style.color = "#ff9800";
+        feedbackDiv.textContent = "⚠️ Show full limb to camera";
+        feedbackDiv.className = "status-warning";
       }
     }
 
-    // Exercise check functions (unchanged)
-    function checkElbowFlexion(kp) {
-      checkMotion(kp, [
-        { shoulder: kp[KEYPOINTS.left_shoulder], elbow: kp[KEYPOINTS.left_elbow], wrist: kp[KEYPOINTS.left_wrist], side: 'Left' },
-        { shoulder: kp[KEYPOINTS.right_shoulder], elbow: kp[KEYPOINTS.right_elbow], wrist: kp[KEYPOINTS.right_wrist], side: 'Right' }
-      ], 'Biceps Brachii', 'elbow');
-    }
-    function checkShoulderAbduction(kp) {
-      checkMotion(kp, [
-        { hip: kp[KEYPOINTS.left_hip], shoulder: kp[KEYPOINTS.left_shoulder], elbow: kp[KEYPOINTS.left_elbow], side: 'Left' },
-        { hip: kp[KEYPOINTS.right_hip], shoulder: kp[KEYPOINTS.right_shoulder], elbow: kp[KEYPOINTS.right_elbow], side: 'Right' }
-      ], 'Deltoid', 'shoulder');
-    }
-    function checkShoulderAdduction(kp) {
-      checkMotion(kp, [
-        { hip: kp[KEYPOINTS.left_hip], shoulder: kp[KEYPOINTS.left_shoulder], elbow: kp[KEYPOINTS.left_elbow], side: 'Left' },
-        { hip: kp[KEYPOINTS.right_hip], shoulder: kp[KEYPOINTS.right_shoulder], elbow: kp[KEYPOINTS.right_elbow], side: 'Right' }
-      ], 'Latissimus Dorsi', 'shoulder');
-    }
-    function checkElbowExtension(kp) {
-      checkMotion(kp, [
-        { shoulder: kp[KEYPOINTS.left_shoulder], elbow: kp[KEYPOINTS.left_elbow], wrist: kp[KEYPOINTS.left_wrist], side: 'Left' },
-        { shoulder: kp[KEYPOINTS.right_shoulder], elbow: kp[KEYPOINTS.right_elbow], wrist: kp[KEYPOINTS.right_wrist], side: 'Right' }
-      ], 'Triceps Brachii', 'elbow');
-    }
-    function checkKneeFlexion(kp) {
-      checkMotion(kp, [
-        { hip: kp[KEYPOINTS.left_hip], knee: kp[KEYPOINTS.left_knee], ankle: kp[KEYPOINTS.left_ankle], side: 'Left' },
-        { hip: kp[KEYPOINTS.right_hip], knee: kp[KEYPOINTS.right_knee], ankle: kp[KEYPOINTS.right_ankle], side: 'Right' }
-      ], 'Hamstrings', 'knee');
-    }
-    function checkKneeExtension(kp) {
-      checkMotion(kp, [
-        { hip: kp[KEYPOINTS.left_hip], knee: kp[KEYPOINTS.left_knee], ankle: kp[KEYPOINTS.left_ankle], side: 'Left' },
-        { hip: kp[KEYPOINTS.right_hip], knee: kp[KEYPOINTS.right_knee], ankle: kp[KEYPOINTS.right_ankle], side: 'Right' }
-      ], 'Quadriceps', 'knee');
-    }
-    function checkHipExtension(kp) {
-      checkMotion(kp, [
-        { shoulder: kp[KEYPOINTS.left_shoulder], hip: kp[KEYPOINTS.left_hip], knee: kp[KEYPOINTS.left_knee], side: 'Left' },
-        { shoulder: kp[KEYPOINTS.right_shoulder], hip: kp[KEYPOINTS.right_hip], knee: kp[KEYPOINTS.right_knee], side: 'Right' }
-      ], 'Gluteus Maximus', 'hip');
-    }
+    // All check functions
+    const checkFunctions = {
+      checkElbowFlexion: kp => checkMotion(kp, [
+        { shoulder: kp[KEYPOINTS.left_shoulder], elbow: kp[KEYPOINTS.left_elbow], wrist: kp[KEYPOINTS.left_wrist], side: 'L' },
+        { shoulder: kp[KEYPOINTS.right_shoulder], elbow: kp[KEYPOINTS.right_elbow], wrist: kp[KEYPOINTS.right_wrist], side: 'R' }
+      ], 'Biceps Brachii', 'elbow'),
+      checkShoulderAbduction: kp => checkMotion(kp, [
+        { hip: kp[KEYPOINTS.left_hip], shoulder: kp[KEYPOINTS.left_shoulder], elbow: kp[KEYPOINTS.left_elbow], side: 'L' },
+        { hip: kp[KEYPOINTS.right_hip], shoulder: kp[KEYPOINTS.right_shoulder], elbow: kp[KEYPOINTS.right_elbow], side: 'R' }
+      ], 'Deltoid', 'shoulder'),
+      checkShoulderAdduction: kp => checkMotion(kp, [
+        { hip: kp[KEYPOINTS.left_hip], shoulder: kp[KEYPOINTS.left_shoulder], elbow: kp[KEYPOINTS.left_elbow], side: 'L' },
+        { hip: kp[KEYPOINTS.right_hip], shoulder: kp[KEYPOINTS.right_shoulder], elbow: kp[KEYPOINTS.right_elbow], side: 'R' }
+      ], 'Latissimus Dorsi', 'shoulder'),
+      checkElbowExtension: kp => checkMotion(kp, [
+        { shoulder: kp[KEYPOINTS.left_shoulder], elbow: kp[KEYPOINTS.left_elbow], wrist: kp[KEYPOINTS.left_wrist], side: 'L' },
+        { shoulder: kp[KEYPOINTS.right_shoulder], elbow: kp[KEYPOINTS.right_elbow], wrist: kp[KEYPOINTS.right_wrist], side: 'R' }
+      ], 'Triceps Brachii', 'elbow'),
+      checkKneeFlexion: kp => checkMotion(kp, [
+        { hip: kp[KEYPOINTS.left_hip], knee: kp[KEYPOINTS.left_knee], ankle: kp[KEYPOINTS.left_ankle], side: 'L' },
+        { hip: kp[KEYPOINTS.right_hip], knee: kp[KEYPOINTS.right_knee], ankle: kp[KEYPOINTS.right_ankle], side: 'R' }
+      ], 'Hamstrings', 'knee'),
+      checkKneeExtension: kp => checkMotion(kp, [
+        { hip: kp[KEYPOINTS.left_hip], knee: kp[KEYPOINTS.left_knee], ankle: kp[KEYPOINTS.left_ankle], side: 'L' },
+        { hip: kp[KEYPOINTS.right_hip], knee: kp[KEYPOINTS.right_knee], ankle: kp[KEYPOINTS.right_ankle], side: 'R' }
+      ], 'Quadriceps', 'knee'),
+      checkHipExtension: kp => checkMotion(kp, [
+        { shoulder: kp[KEYPOINTS.left_shoulder], hip: kp[KEYPOINTS.left_hip], knee: kp[KEYPOINTS.left_knee], side: 'L' },
+        { shoulder: kp[KEYPOINTS.right_shoulder], hip: kp[KEYPOINTS.right_hip], knee: kp[KEYPOINTS.right_knee], side: 'R' }
+      ], 'Gluteus Maximus', 'hip')
+    };
 
-    // Event listeners
-    document.getElementById('startBtn').addEventListener('click', () => {
-      startCamera(currentFacingMode);
-      document.getElementById('startBtn').style.display = 'none';
-      document.getElementById('toggleCameraBtn').style.display = 'inline-block';
+    Object.keys(MUSCLES).forEach(name => {
+      MUSCLES[name].check = checkFunctions[`check${name.replace(/ /g,'')}`];
     });
 
-    document.getElementById('toggleCameraBtn').addEventListener('click', () => {
+    // Event Listeners
+    document.getElementById('startBtn').onclick = () => {
+      document.getElementById('startBtn').style.display = 'none';
+      document.getElementById('toggleCameraBtn').style.display = 'inline-flex';
+      startCamera(currentFacingMode);
+    };
+
+    document.getElementById('toggleCameraBtn').onclick = () => {
       currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
       startCamera(currentFacingMode);
-    });
+    };
 
-    muscleSelect.addEventListener('change', () => {
+    muscleSelect.onchange = () => {
       const muscle = MUSCLES[muscleSelect.value];
-      startDesc.textContent = muscle.startPosition;
       instructionText.textContent = muscle.instructions;
+      startDesc.textContent = muscle.startPosition;
+      finishDesc.textContent = muscle.finishPosition;
       isPoseCorrect = false;
-      lastSpokenFeedback = '';
-      feedbackDiv.textContent = "Ready! Press 'Start Camera'";
-      feedbackDiv.style.color = "blue";
-      feedbackDiv.style.backgroundColor = "white";
-      
-      announceExercise();
-    });
+      feedbackDiv.textContent = "Ready! → Start Camera";
+      feedbackDiv.className = "";
+    };
 
-    // Initialize
+    // Auto-select first muscle
+    muscleSelect.selectedIndex = 0;
     muscleSelect.dispatchEvent(new Event('change'));
-    checkResponsiveVoice();
   </script>
 </body>
 </html>
