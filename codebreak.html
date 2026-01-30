@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Medical Terminology - Break the Code</title>
-   <style>
+  <style>
     :root {
       --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
       --glass-bg: rgba(255, 255, 255, 0.08);
@@ -109,7 +109,32 @@
 <script>
 // ──────────────────────────────────────────────── Data
 const allQuestions = [
-  // ... (keep all existing questions array unchanged) ...
+  { id:1, sentence:"The patient was <span class='term' data-term='hypoglycaemic'>hypoglycaemic</span>", answerBreak:"hypo/glyc/aem/ic", meanings:["low","sugar","blood","pertaining to"], explanation:"low blood sugar" },
+  { id:2, sentence:"There was swelling in the <span class='term' data-term='interphalangeal'>interphalangeal</span> joints", answerBreak:"inter/phalange/al", meanings:["between","finger or toe bones","pertaining to"], explanation:"the joints in the fingers or toes (not knuckles)" },
+  { id:3, sentence:"The young girl experienced <span class='term' data-term='tachycardia'>tachycardia</span>", answerBreak:"tachy/cardia", meanings:["fast","heart"], explanation:"a rapidly beating heart" },
+  { id:4, sentence:"The patient underwent a <span class='term' data-term='cholecystectomy'>cholecystectomy</span>", answerBreak:"chole/cyst/ec/tom/y", meanings:["bile","bag","out","cut","process of"], explanation:"surgical removal of the gall bladder" },
+  { id:5, sentence:"The results showed <span class='term' data-term='glycosuria'>glycosuria</span>", answerBreak:"glycos/uria", meanings:["sugar","urine"], explanation:"sugar in the urine" },
+  { id:6, sentence:"The patient had <span class='term' data-term='hepatosplenomegaly'>hepatosplenomegaly</span>", answerBreak:"hepato/spleno/mega/ly", meanings:["liver","spleen","bigger","condition of"], explanation:"an enlarged liver & spleen" },
+  { id:7, sentence:"The patient reported <span class='term' data-term='polyarthralgia'>polyarthralgia</span>", answerBreak:"poly/arthr/algia", meanings:["many","joint","pain"], explanation:"pain in several joints" },
+  { id:8, sentence:"Referral was made to a <span class='term' data-term='neurologist'>neurologist</span>", answerBreak:"neuro/log/ist", meanings:["brain or nervous system","study of","specialist"], explanation:"a specialist of the brain/nervous system" },
+  { id:9, sentence:"The doctor ordered an <span class='term' data-term='electrocardiograph'>electrocardiograph</span>", answerBreak:"electro/cardio/graph", meanings:["electrical","heart","picture"], explanation:"a image showing electrical impulses of the heart" },
+  { id:10, sentence:"A <span class='term' data-term='tympanostomy'>tympanostomy</span> was performed", answerBreak:"tympano/stomy", meanings:["ear drum","hole cut into"], explanation:"surgically made a hole in the ear drum usually to release fluids" },
+  { id:11, sentence:"The patient showed signs consistent with <span class='term' data-term='adenoid hypertrophy'>adenoid hypertrophy</span>", special:"adenoid", answerBreak:"hyper/trophy", meanings:["above","growth"], explanation:"overgrown or enlarged" },
+  { id:12, sentence:"The sample was sent to the <span class='term' data-term='histopathology'>histopathology</span> clinic", answerBreak:"histo/patho/logy", meanings:["tissues","disease","study of"], explanation:"study of disease in tissues" },
+  { id:13, sentence:"There was a risk of <span class='term' data-term='gastritis'>gastritis</span>", answerBreak:"gastr/itis", meanings:["stomach","inflammation of"], explanation:"inflammation of the stomach" },
+  { id:14, sentence:"The doctor diagnosed her with <span class='term' data-term='cardiomyopathy'>cardiomyopathy</span>", answerBreak:"cardio/myo/pathy", meanings:["heart","muscle","disease"], explanation:"disease of the heart muscle" },
+  { id:15, sentence:"The patient underwent a partial pulmonary <span class='term' data-term='lobectomy'>lobectomy</span>", special:"pulmonary", answerBreak:"lob/ec/tom/y", meanings:["lobe","out","cut","process of"], explanation:"cut out one lobe of the lung" },
+  { id:16, sentence:"The patient attended <span class='term' data-term='antenatal'>antenatal</span> classes", answerBreak:"ante/natal", meanings:["before","birth"], explanation:"before birth" },
+  { id:17, sentence:"The <span class='term' data-term='melanoma'>melanoma</span> measured 7 mm across", answerBreak:"melan/oma", meanings:["dark","tumour"], explanation:"dark tumour" },
+  { id:18, sentence:"The patient had a transient <span class='term' data-term='ischaemic'>ischaemic</span> attack", special:"TIA (transient ischaemic attack)", answerBreak:"isc/haemic", meanings:["stop","blood"], explanation:"a blockage in blood flow, TIA also commonly called stroke if the TIA is in the brain" },
+  { id:19, sentence:"Renal <span class='term' data-term='pyelography'>pyelography</span> confirmed stones were present", answerBreak:"pyelo/graphy", meanings:["pelvis","picture"], explanation:"imaging of the renal pelvis" },
+  { id:20, sentence:"The patient was found to have <span class='term' data-term='osteoporosis'>osteoporosis</span>", answerBreak:"osteo/por/osis", meanings:["bone","hole","condition of"], explanation:"condition of porous bones" },
+  { id:21, sentence:"The patient suffered from a generalised <span class='term' data-term='lymphadenopathy'>lymphadenopathy</span>", answerBreak:"lymph/adeno/pathy", meanings:["lymph","gland","disease"], explanation:"disease of the lymph glands" },
+  { id:22, sentence:"The patient suffered from <span class='term' data-term='dysentery'>dysentery</span>", answerBreak:"dys/enter/y", meanings:["bad or poor","small intestines","process of"], explanation:"something wrong with small intestines" },
+  { id:23, sentence:"The impact resulted in <span class='term' data-term='intracranial'>intracranial</span> bleeding", answerBreak:"intra/cranial", meanings:["inside","skull"], explanation:"bleeding inside the skull" },
+  { id:24, sentence:"Elderly people often have <span class='term' data-term='atherosclerosis'>atherosclerosis</span>", answerBreak:"athero/scler/osis", meanings:["fatty plaque","dry or hard","condition of"], explanation:"usually relating to the arteries & veins that have become hardened and coated in fatty plaques" },
+  { id:25, sentence:"An <span class='term' data-term='tracheotomy'>tracheotomy</span> was performed", answerBreak:"trachea/tom/y", meanings:["wind pipe","cut","process of"], explanation:"cut into the windpipe" },
+  { id:26, sentence:"The patient developed <span class='term' data-term='hyperglycaemia'>hyperglycaemia</span>", answerBreak:"hyper/glyc/aem/ia", meanings:["above","sugar","blood","condition of"], explanation:"high blood sugar" }
 ];
 
 let questions = [], current = 0, score = 0, startTime = null, timerInterval;
@@ -134,10 +159,9 @@ function successVibe() { vibrate([80, 40, 80]); confettiBurst(); }
 function wrongVibe() { vibrate(200); }
 
 function confettiBurst() {
-  const colors = ['#00ff9d','#00d4ff','#ffdd00'];
-  const w = window.innerWidth || 800; 
+  const w = window.innerWidth || 800;
   const h = window.innerHeight || 600;
-  
+  const colors = ['#00ff9d','#00d4ff','#ffdd00'];
   for(let i=0; i<60; i++) {
     const x = Math.random()*w;
     const y = Math.random()*h*0.6;
@@ -214,23 +238,21 @@ function renderQuestion(q) {
     qBox.appendChild(note);
   }
 
-  setupSplitting(termEl.innerText, q.answerBreak, q);
+  setupSplitting(termEl, q);
 }
 
-function setupSplitting(fullTerm, correctBreak, q) {
-  const piecesDiv = document.getElementById('pieces');
-  const termEl = qBox.querySelector('.term');
-  
-  let isDragging = false, currentSplits = [], lastX = null, lastY = null;
+function setupSplitting(termEl, q) {
+  const correctBreak = q.answerBreak.split('/');
+  const fullTerm = termEl.innerText;
+  let isDragging = false, lastX = null, lastY = null;
   const rect = termEl.getBoundingClientRect();
+  const piecesDiv = document.getElementById('pieces');
   
   ctx.clearRect(0, 0, overlay.width, overlay.height);
-  
-  // Touch handlers with passive: false
+
   termEl.addEventListener('touchstart', e => {
     e.preventDefault();
     isDragging = false;
-    currentSplits = [];
     lastX = null;
     lastY = null;
   }, { passive: false });
@@ -251,44 +273,71 @@ function setupSplitting(fullTerm, correctBreak, q) {
     }
     lastX = touch.clientX;
     lastY = touch.clientY;
-    
+
     const xRel = touch.clientX - rect.left;
     const charPos = Math.floor((xRel / rect.width) * fullTerm.length);
-    if (charPos > 0 && charPos < fullTerm.length && !currentSplits.includes(charPos)) {
-      currentSplits.push(charPos);
-      trySplit(charPos, fullTerm, correctBreak, q, piecesDiv, termEl);
+    
+    if (charPos > 0 && charPos < fullTerm.length) {
+      const prefix = fullTerm.slice(0, charPos);
+      const suffix = fullTerm.slice(charPos);
+      
+      // Try to match current split to correct parts
+      if (correctBreak.includes(prefix) && correctBreak.includes(suffix)) {
+        vibrate(60);
+        piecesDiv.innerHTML = '';
+        
+        const piece1 = document.createElement('div');
+        piece1.className = 'piece';
+        piece1.draggable = true;
+        piece1.textContent = prefix;
+        piece1.dataset.part = prefix;
+        piece1.addEventListener('touchstart', e => dragStart(e, piece1), { passive: false });
+        piece1.addEventListener('mousedown', e => dragStart(e, piece1));
+        piecesDiv.appendChild(piece1);
+
+        const piece2 = document.createElement('div');
+        piece2.className = 'piece';
+        piece2.draggable = true;
+        piece2.textContent = suffix;
+        piece2.dataset.part = suffix;
+        piece2.addEventListener('touchstart', e => dragStart(e, piece2), { passive: false });
+        piece2.addEventListener('mousedown', e => dragStart(e, piece2));
+        piecesDiv.appendChild(piece2);
+
+        termEl.classList.remove('expanded');
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        
+        setupDropZones(q);
+        finishBreaking(q);
+      }
     }
   }, { passive: false });
 
   termEl.addEventListener('touchend', () => {
     if (isDragging) {
       ctx.clearRect(0, 0, overlay.width, overlay.height);
-      if (currentSplits.length + 1 >= correctBreak.split('/').length) finishBreaking(q);
     }
   }, { passive: false });
 }
 
-function trySplit(at, fullTerm, correctBreak, q, piecesDiv, termEl) {
-  const attempt = fullTerm.slice(0,at) + '/' + fullTerm.slice(at);
+function setupDropZones(q) {
+  ['prefixZone','rootZone','suffixZone'].forEach(id => {
+    const z = document.getElementById(id);
+    z.addEventListener('dragover', e => e.preventDefault());
+    z.addEventListener('drop', e => drop(e, z, q));
+    z.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+    z.addEventListener('touchend', e => drop(e, z, q), { passive: false });
+  });
+}
+
+function drop(e, zone, q) {
+  e.preventDefault();
+  if (!dragged) return;
   
-  if(correctBreak.startsWith(attempt.split('/').slice(0,-1).join('/'))) {
-    vibrate(60);
-    const piece = document.createElement('div');
-    piece.className = 'piece';
-    piece.draggable = true;
-    piece.textContent = fullTerm.slice(0,at);
-    piece.dataset.part = fullTerm.slice(0,at);
-    piece.addEventListener('touchstart', e => dragStart(e, piece), { passive: false });
-    piece.addEventListener('mousedown', e => dragStart(e, piece));
-    piecesDiv.appendChild(piece);
-    termEl.innerHTML = `<span class="term" data-term="${q.term}">${fullTerm.slice(at)}</span>`;
-    
-    if(fullTerm.slice(at).length === 0) finishBreaking(q);
-  } else {
-    wrongVibe();
-    piecesDiv.style.animation = 'shake 0.4s';
-    setTimeout(() => piecesDiv.style.animation = '', 400);
-  }
+  zone.appendChild(dragged);
+  dragged.style.opacity = 1;
+  successVibe();
+  dragged = null;
 }
 
 function finishBreaking(q) {
@@ -318,11 +367,11 @@ function finishBreaking(q) {
 }
 
 let dragged = null;
-function dragStart(e, el, isMeaning=false) {
+function dragStart(e, el, isMeaning = false) {
   dragged = el;
   el.style.opacity = 0.6;
   
-  if(e.type.includes('touch')) {
+  if (e.type.includes('touch')) {
     e.preventDefault();
     const touch = e.touches[0];
     el.dataset.offsetX = touch.clientX - el.getBoundingClientRect().left;
@@ -333,43 +382,13 @@ function dragStart(e, el, isMeaning=false) {
   }
 }
 
-function dragOver(e) {
-  e.preventDefault();
-}
-
-function drop(e, zone) {
-  e.preventDefault();
-  if(!dragged) return;
-  const isMeaning = dragged.classList.contains('meaning');
-  
-  if(isMeaning) {
-    zone.appendChild(dragged);
-    dragged.style.opacity = 1;
-    dragged = null;
-  } else {
-    zone.appendChild(dragged);
-    dragged.style.opacity = 1;
-    successVibe();
-    dragged = null;
-  }
-}
-
-['prefixZone','rootZone','suffixZone'].forEach(id => {
-  const z = document.getElementById(id);
-  z.addEventListener('dragover', dragOver);
-  z.addEventListener('drop', e => drop(e, z));
-  
-  z.addEventListener('touchmove', dragOver, { passive: false });
-  z.addEventListener('touchend', e => drop(e, z), { passive: false });
-});
-
 function checkExplanation(q) {
   const input = document.getElementById('explanation').value.trim().toLowerCase();
   const correct = q.explanation.toLowerCase();
-  const keywords = correct.split(' ').filter(w=>w.length>3);
+  const keywords = correct.split(' ').filter(w => w.length > 3);
   const matched = keywords.some(kw => input.includes(kw));
   
-  if(matched || input.includes(correct)) {
+  if (matched || input.includes(correct)) {
     score++;
     successVibe();
     qBox.innerHTML += `<p style="color:var(--correct); margin-top:16px;">✅ Correct! ${q.explanation}</p>`;
@@ -380,28 +399,30 @@ function checkExplanation(q) {
   
   setTimeout(() => {
     current++;
-    pCtx.clearRect(0,0, window.innerWidth || 800, window.innerHeight || 600);
+    pCtx.clearRect(0, 0, window.innerWidth || 800, window.innerHeight || 600);
     nextQuestion();
   }, 3000);
 }
 
+// Drag movement
 document.addEventListener('touchmove', e => {
-  if(dragged) {
+  if (dragged) {
     const touch = e.touches[0];
     dragged.style.position = 'absolute';
-    dragged.style.left = (touch.clientX - parseFloat(dragged.dataset.offsetX||0)) + 'px';
-    dragged.style.top = (touch.clientY - parseFloat(dragged.dataset.offsetY||0)) + 'px';
+    dragged.style.left = (touch.clientX - parseFloat(dragged.dataset.offsetX || 0)) + 'px';
+    dragged.style.top = (touch.clientY - parseFloat(dragged.dataset.offsetY || 0)) + 'px';
   }
 }, { passive: false });
 
 document.addEventListener('mousemove', e => {
-  if(dragged) {
+  if (dragged) {
     dragged.style.position = 'absolute';
-    dragged.style.left = (e.clientX - parseFloat(dragged.dataset.offsetX||0)) + 'px';
-    dragged.style.top = (e.clientY - parseFloat(dragged.dataset.offsetY||0)) + 'px';
+    dragged.style.left = (e.clientX - parseFloat(dragged.dataset.offsetX || 0)) + 'px';
+    dragged.style.top = (e.clientY - parseFloat(dragged.dataset.offsetY || 0)) + 'px';
   }
 });
 
+// Teacher mode
 if(location.search.includes('teacher=true')) {
   qBox.innerHTML += `<p style="color:var(--accent);">Teacher Mode Active — All questions, answers shown.</p>`;
   startGame(true);
