@@ -89,7 +89,6 @@
     }
     #particles { position:absolute; inset:0; pointer-events:none; }
     .hidden { display:none !important; }
-    @keyframes shake { 0%,100% {transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
   </style>
 </head>
 <body>
@@ -107,7 +106,7 @@
 </div>
 
 <script>
-// ──────────────────────────────────────────────── Data
+// ──────────────────────────────────────────────── Data (exact from your files + hyperglycaemia)
 const allQuestions = [
   { id:1, sentence:"The patient was <span class='term' data-term='hypoglycaemic'>hypoglycaemic</span>", answerBreak:"hypo/glyc/aem/ic", meanings:["low","sugar","blood","pertaining to"], explanation:"low blood sugar" },
   { id:2, sentence:"There was swelling in the <span class='term' data-term='interphalangeal'>interphalangeal</span> joints", answerBreak:"inter/phalange/al", meanings:["between","finger or toe bones","pertaining to"], explanation:"the joints in the fingers or toes (not knuckles)" },
@@ -134,10 +133,56 @@ const allQuestions = [
   { id:23, sentence:"The impact resulted in <span class='term' data-term='intracranial'>intracranial</span> bleeding", answerBreak:"intra/cranial", meanings:["inside","skull"], explanation:"bleeding inside the skull" },
   { id:24, sentence:"Elderly people often have <span class='term' data-term='atherosclerosis'>atherosclerosis</span>", answerBreak:"athero/scler/osis", meanings:["fatty plaque","dry or hard","condition of"], explanation:"usually relating to the arteries & veins that have become hardened and coated in fatty plaques" },
   { id:25, sentence:"An <span class='term' data-term='tracheotomy'>tracheotomy</span> was performed", answerBreak:"trachea/tom/y", meanings:["wind pipe","cut","process of"], explanation:"cut into the windpipe" },
+  // Added term
   { id:26, sentence:"The patient developed <span class='term' data-term='hyperglycaemia'>hyperglycaemia</span>", answerBreak:"hyper/glyc/aem/ia", meanings:["above","sugar","blood","condition of"], explanation:"high blood sugar" }
 ];
 
 let questions = []; let current = 0; let score = 0; let startTime = null; let timerInterval;
 const qBox = document.getElementById('questionBox');
 const overlay = document.getElementById('overlay');
-const ctx =
+const ctx = overlay.getContext('2d');
+const particlesCanvas = document.getElementById('particles');
+const pCtx = particlesCanvas.getContext('2d');
+
+function resizeCanvases() {
+  overlay.width = particlesCanvas.width = window.innerWidth;
+  overlay.height = particlesCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvases);
+resizeCanvases();
+
+// ──────────────────────────────────────────────── Helpers
+function vibrate(ms = 100) {
+  if (navigator.vibrate) navigator.vibrate(ms);
+}
+
+function successVibe() { vibrate([80, 40, 80]); confettiBurst(); }
+function wrongVibe() { vibrate(200); }
+
+// Simple low-resource confetti
+function confettiBurst() {
+  const colors = ['#00ff9d','#00d4ff','#ffdd00'];
+  for(let i=0; i<60; i++) {
+    const x = Math.random()*innerWidth;
+    const y = Math.random()*innerHeight*0.6;
+    const vx = (Math.random()-0.5)*12;
+    const vy = -Math.random()*8-4;
+    const size = Math.random()*6+3;
+    const c = colors[Math.floor(Math.random()*colors.length)];
+    let life = 60;
+    const anim = () => {
+      if(life-- <=0) return;
+      pCtx.fillStyle = c;
+      pCtx.globalAlpha = life/60;
+      pCtx.fillRect(x+vx*(60-life)/10, y+vy*(60-life)/10 + (60-life)**2/100, size, size);
+      requestAnimationFrame(anim);
+    };
+    anim();
+  }
+  pCtx.globalAlpha = 1;
+}
+
+// ──────────────────────────────────────────────── Game Logic
+function startGame(isTeacher = false) {
+  const urlParams = new URLSearchParams(location.search);
+  const
