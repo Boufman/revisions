@@ -89,6 +89,7 @@
     }
     #particles { position:absolute; inset:0; pointer-events:none; }
     .hidden { display:none !important; }
+    @keyframes shake { 0%,100% {transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
   </style>
 </head>
 <body>
@@ -106,7 +107,7 @@
 </div>
 
 <script>
-// ──────────────────────────────────────────────── Data (exact from your files + hyperglycaemia)
+// ──────────────────────────────────────────────── Data
 const allQuestions = [
   { id:1, sentence:"The patient was <span class='term' data-term='hypoglycaemic'>hypoglycaemic</span>", answerBreak:"hypo/glyc/aem/ic", meanings:["low","sugar","blood","pertaining to"], explanation:"low blood sugar" },
   { id:2, sentence:"There was swelling in the <span class='term' data-term='interphalangeal'>interphalangeal</span> joints", answerBreak:"inter/phalange/al", meanings:["between","finger or toe bones","pertaining to"], explanation:"the joints in the fingers or toes (not knuckles)" },
@@ -133,7 +134,6 @@ const allQuestions = [
   { id:23, sentence:"The impact resulted in <span class='term' data-term='intracranial'>intracranial</span> bleeding", answerBreak:"intra/cranial", meanings:["inside","skull"], explanation:"bleeding inside the skull" },
   { id:24, sentence:"Elderly people often have <span class='term' data-term='atherosclerosis'>atherosclerosis</span>", answerBreak:"athero/scler/osis", meanings:["fatty plaque","dry or hard","condition of"], explanation:"usually relating to the arteries & veins that have become hardened and coated in fatty plaques" },
   { id:25, sentence:"An <span class='term' data-term='tracheotomy'>tracheotomy</span> was performed", answerBreak:"trachea/tom/y", meanings:["wind pipe","cut","process of"], explanation:"cut into the windpipe" },
-  // Added term
   { id:26, sentence:"The patient developed <span class='term' data-term='hyperglycaemia'>hyperglycaemia</span>", answerBreak:"hyper/glyc/aem/ia", meanings:["above","sugar","blood","condition of"], explanation:"high blood sugar" }
 ];
 
@@ -155,11 +155,9 @@ resizeCanvases();
 function vibrate(ms = 100) {
   if (navigator.vibrate) navigator.vibrate(ms);
 }
-
 function successVibe() { vibrate([80, 40, 80]); confettiBurst(); }
 function wrongVibe() { vibrate(200); }
 
-// Simple low-resource confetti
 function confettiBurst() {
   const colors = ['#00ff9d','#00d4ff','#ffdd00'];
   for(let i=0; i<60; i++) {
@@ -182,7 +180,253 @@ function confettiBurst() {
   pCtx.globalAlpha = 1;
 }
 
-// ──────────────────────────────────────────────── Game Logic
+// ──────────────────────── Game Logic
 function startGame(isTeacher = false) {
   const urlParams = new URLSearchParams(location.search);
-  const
+  const teacher = isTeacher || urlParams.get('teacher') === 'true';
+  questions = teacher ? allQuestions : [...allQuestions].sort(()=>Math.random()-0.5).slice(0,10);
+  current = 0; score = 0; startTime = Date.now();
+  if(!teacher) timerInterval = setInterval(updateTimer, 1000);
+  nextQuestion();
+}
+
+function updateTimer() {
+  const t = Math.floor((Date.now() - startTime)/1000);
+  document.getElementById('scoreBoard').innerText = `Score: ${score} | Question: ${current+1}/${questions.length} | Time: ${t}s`;
+}
+
+function nextQuestion() {
+  if(current >= questions.length) {
+    clearInterval(timerInterval);
+    const t = Math.floor((Date.now() - startTime)/1000);
+    qBox.innerHTML = `<h2>Session Complete!</h2>
+      <p>Score: ${score} / ${questions.length}</p>
+      <p>Time: ${t} seconds</p>
+      <button onclick="location.reload()">Play Again</button>`;
+    return;
+  }
+  renderQuestion(questions[current]);
+}
+
+function renderQuestion(q) {
+  const partsCount = q.answerBreak.split('/').length;
+  qBox.innerHTML = `
+    <h3>Question ${current+1}/${questions.length}</h3>
+    <p>${q.sentence}</p>
+    <p>Break "<strong>${q.term || q.sentence.match(/data-term='(.*?)'/)[1]}</strong>" into <strong>${partsCount}</strong> part${partsCount>1?'s':''}.</p>
+    <div id="pieces"></div>
+    <div id="prefixZone" class="dropzone">Prefix</div>
+    <div id="rootZone" class="dropzone">Root / Combining Form</div>
+    <div id="suffixZone" class="dropzone">Suffix</div>
+    <div id="meaningsZone" class="meaning-pool hidden"></div>
+    <input type="text" id="explanation" placeholder="Explain what the condition/term means..." class="hidden"/>
+    <button id="submitExp" class="hidden">Submit Explanation</button>
+  `;
+
+  const termEl = qBox.querySelector('.term');
+  termEl.onclick = () => {
+    termEl.classList.toggle('expanded');
+    vibrate(30);
+  };
+
+  if(q.special) {
+    const note = document.createElement('p');
+    note.style.color = 'var(--accent)';
+    note.innerHTML = `Note: Look up "<strong>${q.special}</strong>" in your dictionary (no breaking needed).`;
+    qBox.appendChild(note);
+  }
+
+  setupSplitting(termEl.innerText, q.answerBreak, q);
+}
+
+function setupSplitting(fullTerm, correctBreak, q) {
+  const piecesDiv = document.getElementById('pieces');
+  const termEl = qBox.querySelector('.term');
+  
+  let isDragging = false;
+  let currentSplits = [];
+  let lastX = null;
+  let lastY = null;
+  const rect = termEl.getBoundingClientRect();
+  
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  
+  termEl.ontouchstart = e => {
+    e.preventDefault();
+    isDragging = false;
+    currentSplits = [];
+    lastX = null;
+    lastY = null;
+  };
+
+  termEl.ontouchmove = e => {
+    e.preventDefault();
+    if (!isDragging) isDragging = true;
+    
+    const touch = e.touches[0];
+    const x = touch.clientX;
+    const y = touch.clientY;
+    
+    if (lastX !== null) {
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = 'rgba(0,212,255,0.8)';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+    
+    lastX = x;
+    lastY = y;
+    
+    const xRel = x - rect.left;
+    const charPos = Math.floor((xRel / rect.width) * fullTerm.length);
+    
+    if (charPos > 0 && charPos < fullTerm.length && !currentSplits.includes(charPos)) {
+      currentSplits.push(charPos);
+      trySplit(charPos, fullTerm, correctBreak, q, piecesDiv, termEl);
+    }
+  };
+
+  termEl.ontouchend = termEl.ontouchcancel = () => {
+    if (isDragging) {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      if (currentSplits.length + 1 >= correctBreak.split('/').length) finishBreaking(q);
+    }
+  };
+}
+
+function trySplit(at, fullTerm, correctBreak, q, piecesDiv, termEl) {
+  const attempt = fullTerm.slice(0,at) + '/' + fullTerm.slice(at);
+  
+  if(correctBreak.startsWith(attempt.split('/').slice(0,-1).join('/'))) {
+    vibrate(60);
+    const piece = document.createElement('div');
+    piece.className = 'piece';
+    piece.draggable = true;
+    piece.textContent = fullTerm.slice(0,at);
+    piece.dataset.part = fullTerm.slice(0,at);
+    piece.ontouchstart = piece.onmousedown = e => dragStart(e, piece);
+    piecesDiv.appendChild(piece);
+    termEl.innerHTML = `<span class="term" data-term="${q.term}">${fullTerm.slice(at)}</span>`;
+    
+    if(fullTerm.slice(at).length === 0) finishBreaking(q);
+  } else {
+    wrongVibe();
+    piecesDiv.style.animation = 'shake 0.4s';
+    setTimeout(() => piecesDiv.style.animation = '', 400);
+  }
+}
+
+function finishBreaking(q) {
+  document.querySelectorAll('.piece').forEach(p => {
+    p.draggable = true;
+    p.ontouchstart = p.onmousedown = e => dragStart(e, p);
+  });
+
+  const pool = document.getElementById('meaningsZone');
+  pool.classList.remove('hidden');
+  pool.innerHTML = '';
+  const shuffled = [...q.meanings].sort(() => Math.random() - 0.5);
+  shuffled.forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'meaning';
+    el.textContent = m;
+    el.draggable = true;
+    el.ontouchstart = el.onmousedown = e => dragStart(e, el, true);
+    pool.appendChild(el);
+  });
+
+  document.getElementById('explanation').classList.remove('hidden');
+  document.getElementById('submitExp').classList.remove('hidden');
+  document.getElementById('submitExp').onclick = () => checkExplanation(q);
+}
+
+let dragged = null;
+function dragStart(e, el, isMeaning=false) {
+  dragged = el;
+  el.style.opacity = 0.6;
+  if(e.type.includes('touch')) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    el.dataset.offsetX = touch.clientX - el.getBoundingClientRect().left;
+    el.dataset.offsetY = touch.clientY - el.getBoundingClientRect().top;
+  }
+}
+
+function dragOver(e) {
+  e.preventDefault();
+}
+
+function drop(e, zone) {
+  e.preventDefault();
+  if(!dragged) return;
+  const isMeaning = dragged.classList.contains('meaning');
+  
+  if(isMeaning) {
+    zone.appendChild(dragged);
+    dragged.style.opacity = 1;
+    dragged = null;
+  } else {
+    zone.appendChild(dragged);
+    dragged.style.opacity = 1;
+    successVibe();
+    dragged = null;
+  }
+}
+
+['prefixZone','rootZone','suffixZone'].forEach(id => {
+  const z = document.getElementById(id);
+  z.ondragover = dragOver;
+  z.ondrop = e => drop(e, z);
+  z.ontouchmove = dragOver;
+  z.ontouchend = e => drop(e, z);
+});
+
+function checkExplanation(q) {
+  const input = document.getElementById('explanation').value.trim().toLowerCase();
+  const correct = q.explanation.toLowerCase();
+  const keywords = correct.split(' ').filter(w=>w.length>3);
+  const matched = keywords.some(kw => input.includes(kw));
+  
+  if(matched || input.includes(correct)) {
+    score++;
+    successVibe();
+    qBox.innerHTML += `<p style="color:var(--correct); margin-top:16px;">✅ Correct! ${q.explanation}</p>`;
+  } else {
+    wrongVibe();
+    qBox.innerHTML += `<p style="color:var(--wrong); margin-top:16px;">❌ Expected: ${q.explanation}</p>`;
+  }
+  
+  setTimeout(() => {
+    current++;
+    pCtx.clearRect(0,0,innerWidth,innerHeight);
+    nextQuestion();
+  }, 3000);
+}
+
+document.addEventListener('touchmove', e => {
+  if(dragged) {
+    const touch = e.touches[0];
+    dragged.style.position = 'absolute';
+    dragged.style.left = (touch.clientX - parseFloat(dragged.dataset.offsetX||0)) + 'px';
+    dragged.style.top = (touch.clientY - parseFloat(dragged.dataset.offsetY||0)) + 'px';
+  }
+}, {passive:false});
+
+document.addEventListener('mousemove', e => {
+  if(dragged) {
+    dragged.style.position = 'absolute';
+    dragged.style.left = e.clientX + 'px';
+    dragged.style.top = e.clientY + 'px';
+  }
+});
+
+if(location.search.includes('teacher=true')) {
+  qBox.innerHTML += `<p style="color:var(--accent);">Teacher Mode Active — All questions, answers shown.</p>`;
+  startGame(true);
+}
+</script>
+</body>
+</html>
