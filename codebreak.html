@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Medical Terminology - Break the Code</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --accent: #00d4ff;
+      --correct: #00ff9d;
+      --wrong: #ff4d6d;
+      --text: #e0f7ff;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      height:100%; font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg-gradient); color: var(--text);
+      overflow:hidden; touch-action: manipulation;
+    }
+    #ui {
+      position: absolute; inset:0;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" /><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0"/></filter><rect width="100" height="100" filter="url(%23n)" opacity="0.07"/></svg>') repeat,
+                  var(--bg-gradient);
+      backdrop-filter: blur(1px);
+    }
+    #overlay { position:absolute; inset:0; pointer-events:none; }
+    #questionBox {
+      position: absolute; top: 8vh; left: 5vw; right: 5vw;
+      background: var(--glass-bg); backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border); border-radius: 24px;
+      padding: 24px 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      text-align: center; font-size: 1.1rem; line-height: 1.5;
+      max-height: 70vh; overflow-y: auto;
+    }
+    .term { color: var(--accent); font-weight: bold; cursor: pointer; text-decoration: underline; }
+    .term.expanded { font-size: 1.4rem; background: rgba(0,212,255,0.15); border-radius: 12px; padding: 4px 12px; }
+    #pieces { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 20px 0; min-height: 60px; }
+    .piece {
+      background: rgba(255,255,255,0.12); backdrop-filter: blur(8px);
+      border: 1px solid var(--glass-border); border-radius: 12px;
+      padding: 12px 18px; font-size: 1.2rem; cursor: grab; user-select: none;
+      transition: all 0.2s;
+    }
+    .piece:active { transform: scale(1.1); box-shadow: 0 0 20px var(--accent); }
+    .dropzone {
+      background: rgba(0,0,0,0.2); border: 2px dashed var(--accent);
+      border-radius: 16px; padding: 16px; margin: 12px auto; width: 90%;
+      min-height: 80px; display: flex; flex-wrap: wrap; gap: 10px;
+      font-weight: bold; color: var(--accent);
+    }
+    .meaning-pool { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 20px 0; }
+    .meaning {
+      background: rgba(255,255,255,0.1); padding: 10px 16px; border-radius: 20px;
+      cursor: grab; transition: 0.2s;
+    }
+    .meaning.correct { background: var(--correct); color: black; }
+    input[type="text"] {
+      width: 90%; padding: 14px; margin: 16px auto; display: block;
+      background: rgba(255,255,255,0.15); border: none; border-radius: 12px;
+      color: white; font-size: 1.1rem; text-align: center;
+    }
+    button { 
+      background: linear-gradient(45deg, #00d4ff, #0095ff);
+      border: none; color: white; font-size: 1.2rem; padding: 14px 32px;
+      border-radius: 50px; margin: 16px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,212,255,0.4);
+      transition: transform 0.15s;
+    }
+    button:active { transform: scale(0.96); }
+    #scoreBoard {
+      position: absolute; top: 2vh; right: 4vw; background: var(--glass-bg);
+      backdrop-filter: blur(12px); padding: 10px 16px; border-radius: 16px;
+      font-size: 1.1rem; border: 1px solid var(--glass-border);
+    }
+    #particles { position:absolute; inset:0; pointer-events:none; }
+    .hidden { display:none !important; }
+  </style>
+</head>
+<body>
+
+<canvas id="overlay"></canvas>
+<canvas id="particles"></canvas>
+
+<div id="ui">
+  <div id="scoreBoard">Score: 0 | Question: 1/10 | Time: 0s</div>
+  <div id="questionBox">
+    <h2>Welcome!</h2>
+    <p>Tap "Start" to get 10 random terms.<br>Use your medical dictionary/notes — no Google!</p>
+    <button onclick="startGame()">Start Session</button>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────── Data (exact from your files + hyperglycaemia)
+const allQuestions = [
+  { id:1, sentence:"The patient was <span class='term' data-term='hypoglycaemic'>hypoglycaemic</span>", answerBreak:"hypo/glyc/aem/ic", meanings:["low","sugar","blood","pertaining to"], explanation:"low blood sugar" },
+  { id:2, sentence:"There was swelling in the <span class='term' data-term='interphalangeal'>interphalangeal</span> joints", answerBreak:"inter/phalange/al", meanings:["between","finger or toe bones","pertaining to"], explanation:"the joints in the fingers or toes (not knuckles)" },
+  { id:3, sentence:"The young girl experienced <span class='term' data-term='tachycardia'>tachycardia</span>", answerBreak:"tachy/cardia", meanings:["fast","heart"], explanation:"a rapidly beating heart" },
+  { id:4, sentence:"The patient underwent a <span class='term' data-term='cholecystectomy'>cholecystectomy</span>", answerBreak:"chole/cyst/ec/tom/y", meanings:["bile","bag","out","cut","process of"], explanation:"surgical removal of the gall bladder" },
+  { id:5, sentence:"The results showed <span class='term' data-term='glycosuria'>glycosuria</span>", answerBreak:"glycos/uria", meanings:["sugar","urine"], explanation:"sugar in the urine" },
+  { id:6, sentence:"The patient had <span class='term' data-term='hepatosplenomegaly'>hepatosplenomegaly</span>", answerBreak:"hepato/spleno/mega/ly", meanings:["liver","spleen","bigger","condition of"], explanation:"an enlarged liver & spleen" },
+  { id:7, sentence:"The patient reported <span class='term' data-term='polyarthralgia'>polyarthralgia</span>", answerBreak:"poly/arthr/algia", meanings:["many","joint","pain"], explanation:"pain in several joints" },
+  { id:8, sentence:"Referral was made to a <span class='term' data-term='neurologist'>neurologist</span>", answerBreak:"neuro/log/ist", meanings:["brain or nervous system","study of","specialist"], explanation:"a specialist of the brain/nervous system" },
+  { id:9, sentence:"The doctor ordered an <span class='term' data-term='electrocardiograph'>electrocardiograph</span>", answerBreak:"electro/cardio/graph", meanings:["electrical","heart","picture"], explanation:"a image showing electrical impulses of the heart" },
+  { id:10, sentence:"A <span class='term' data-term='tympanostomy'>tympanostomy</span> was performed", answerBreak:"tympano/stomy", meanings:["ear drum","hole cut into"], explanation:"surgically made a hole in the ear drum usually to release fluids" },
+  { id:11, sentence:"The patient showed signs consistent with <span class='term' data-term='adenoid hypertrophy'>adenoid hypertrophy</span>", special:"adenoid", answerBreak:"hyper/trophy", meanings:["above","growth"], explanation:"overgrown or enlarged" },
+  { id:12, sentence:"The sample was sent to the <span class='term' data-term='histopathology'>histopathology</span> clinic", answerBreak:"histo/patho/logy", meanings:["tissues","disease","study of"], explanation:"study of disease in tissues" },
+  { id:13, sentence:"There was a risk of <span class='term' data-term='gastritis'>gastritis</span>", answerBreak:"gastr/itis", meanings:["stomach","inflammation of"], explanation:"inflammation of the stomach" },
+  { id:14, sentence:"The doctor diagnosed her with <span class='term' data-term='cardiomyopathy'>cardiomyopathy</span>", answerBreak:"cardio/myo/pathy", meanings:["heart","muscle","disease"], explanation:"disease of the heart muscle" },
+  { id:15, sentence:"The patient underwent a partial pulmonary <span class='term' data-term='lobectomy'>lobectomy</span>", special:"pulmonary", answerBreak:"lob/ec/tom/y", meanings:["lobe","out","cut","process of"], explanation:"cut out one lobe of the lung" },
+  { id:16, sentence:"The patient attended <span class='term' data-term='antenatal'>antenatal</span> classes", answerBreak:"ante/natal", meanings:["before","birth"], explanation:"before birth" },
+  { id:17, sentence:"The <span class='term' data-term='melanoma'>melanoma</span> measured 7 mm across", answerBreak:"melan/oma", meanings:["dark","tumour"], explanation:"dark tumour" },
+  { id:18, sentence:"The patient had a transient <span class='term' data-term='ischaemic'>ischaemic</span> attack", special:"TIA (transient ischaemic attack)", answerBreak:"isc/haemic", meanings:["stop","blood"], explanation:"a blockage in blood flow, TIA also commonly called stroke if the TIA is in the brain" },
+  { id:19, sentence:"Renal <span class='term' data-term='pyelography'>pyelography</span> confirmed stones were present", answerBreak:"pyelo/graphy", meanings:["pelvis","picture"], explanation:"imaging of the renal pelvis" },
+  { id:20, sentence:"The patient was found to have <span class='term' data-term='osteoporosis'>osteoporosis</span>", answerBreak:"osteo/por/osis", meanings:["bone","hole","condition of"], explanation:"condition of porous bones" },
+  { id:21, sentence:"The patient suffered from a generalised <span class='term' data-term='lymphadenopathy'>lymphadenopathy</span>", answerBreak:"lymph/adeno/pathy", meanings:["lymph","gland","disease"], explanation:"disease of the lymph glands" },
+  { id:22, sentence:"The patient suffered from <span class='term' data-term='dysentery'>dysentery</span>", answerBreak:"dys/enter/y", meanings:["bad or poor","small intestines","process of"], explanation:"something wrong with small intestines" },
+  { id:23, sentence:"The impact resulted in <span class='term' data-term='intracranial'>intracranial</span> bleeding", answerBreak:"intra/cranial", meanings:["inside","skull"], explanation:"bleeding inside the skull" },
+  { id:24, sentence:"Elderly people often have <span class='term' data-term='atherosclerosis'>atherosclerosis</span>", answerBreak:"athero/scler/osis", meanings:["fatty plaque","dry or hard","condition of"], explanation:"usually relating to the arteries & veins that have become hardened and coated in fatty plaques" },
+  { id:25, sentence:"An <span class='term' data-term='tracheotomy'>tracheotomy</span> was performed", answerBreak:"trachea/tom/y", meanings:["wind pipe","cut","process of"], explanation:"cut into the windpipe" },
+  // Added term
+  { id:26, sentence:"The patient developed <span class='term' data-term='hyperglycaemia'>hyperglycaemia</span>", answerBreak:"hyper/glyc/aem/ia", meanings:["above","sugar","blood","condition of"], explanation:"high blood sugar" }
+];
+
+let questions = []; // random 10
+let current = 0;
+let score = 0;
+let startTime = null;
+let timerInterval;
+
+const qBox = document.getElementById('questionBox');
+const overlay = document.getElementById('overlay');
+const ctx = overlay.getContext('2d');
+const particlesCanvas = document.getElementById('particles');
+const pCtx = particlesCanvas.getContext('2d');
+
+function resizeCanvases() {
+  overlay.width = particlesCanvas.width = window.innerWidth;
+  overlay.height = particlesCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvases);
+resizeCanvases();
+
+// ──────────────────────────────────────────────── Helpers
+function vibrate(ms = 100) {
+  if (navigator.vibrate) navigator.vibrate(ms);
+}
+
+function successVibe() { vibrate([80, 40, 80]); confettiBurst(); }
+function wrongVibe() { vibrate(200); }
+
+// Simple low-resource confetti
+function confettiBurst() {
+  const colors = ['#00ff9d','#00d4ff','#ffdd00'];
+  for(let i=0; i<60; i++) {
+    const x = Math.random()*innerWidth;
+    const y = Math.random()*innerHeight*0.6;
+    const vx = (Math.random()-0.5)*12;
+    const vy = -Math.random()*8-4;
+    const size = Math.random()*6+3;
+    const c = colors[Math.floor(Math.random()*colors.length)];
+    let life = 60;
+    const anim = () => {
+      if(life-- <=0) return;
+      pCtx.fillStyle = c;
+      pCtx.globalAlpha = life/60;
+      pCtx.fillRect(x+vx*(60-life)/10, y+vy*(60-life)/10 + (60-life)**2/100, size, size);
+      requestAnimationFrame(anim);
+    };
+    anim();
+  }
+  pCtx.globalAlpha = 1;
+}
+
+// ──────────────────────────────────────────────── Game Logic
+function startGame(isTeacher = false) {
+  const urlParams = new URLSearchParams(location.search);
+  const teacher = isTeacher || urlParams.get('teacher') === 'true';
+
+  questions = teacher ? allQuestions : [...allQuestions].sort(()=>Math.random()-0.5).slice(0,10);
+  current = 0; score = 0; startTime = Date.now();
+  if(!teacher) timerInterval = setInterval(updateTimer, 1000);
+  nextQuestion();
+}
+
+function updateTimer() {
+  const t = Math.floor((Date.now() - startTime)/1000);
+  document.getElementById('scoreBoard').innerText = `Score: ${score} | Question: ${current+1}/${questions.length} | Time: ${t}s`;
+}
+
+function nextQuestion() {
+  if(current >= questions.length) {
+    clearInterval(timerInterval);
+    const t = Math.floor((Date.now() - startTime)/1000);
+    qBox.innerHTML = `<h2>Session Complete!</h2>
+      <p>Score: ${score} / ${questions.length}</p>
+      <p>Time: ${t} seconds</p>
+      <button onclick="location.reload()">Play Again</button>`;
+    return;
+  }
+  renderQuestion(questions[current]);
+}
+
+function renderQuestion(q) {
+  const partsCount = q.answerBreak.split('/').length;
+  qBox.innerHTML = `
+    <h3>Question ${current+1}/${questions.length}</h3>
+    <p>${q.sentence}</p>
+    <p>Break "<strong>${q.term || q.sentence.match(/data-term='(.*?)'/)[1]}</strong>" into <strong>${partsCount}</strong> part${partsCount>1?'s':''}.</p>
+    <div id="pieces"></div>
+    <div id="prefixZone" class="dropzone">Prefix</div>
+    <div id="rootZone" class="dropzone">Root / Combining Form</div>
+    <div id="suffixZone" class="dropzone">Suffix</div>
+    <div id="meaningsZone" class="meaning-pool hidden"></div>
+    <input type="text" id="explanation" placeholder="Explain what the condition/term means..." class="hidden"/>
+    <button id="submitExp" class="hidden">Submit Explanation</button>
+  `;
+
+  const termEl = qBox.querySelector('.term');
+  termEl.onclick = () => {
+    termEl.classList.toggle('expanded');
+    vibrate(30);
+  };
+
+  // Special lookup note
+  if(q.special) {
+    const note = document.createElement('p');
+    note.style.color = 'var(--accent)';
+    note.innerHTML = `Note: Look up "<strong>${q.special}</strong>" in your dictionary (no breaking needed).`;
+    qBox.appendChild(note);
+  }
+
+  setupSplitting(termEl.innerText, q.answerBreak, q);
+}
+
+function setupSplitting(fullTerm, correctBreak, q) {
+  const piecesDiv = document.getElementById('pieces');
+  let currentText = fullTerm;
+  let splits = [];
+
+  function trySplit(at) {
+    const attempt = currentText.slice(0,at) + '/' + currentText.slice(at);
+    if(correctBreak.startsWith(attempt.split('/').slice(0,-1).join('/'))) {
+      vibrate(60);
+      const part = document.createElement('div');
+      part.className = 'piece';
+      part.draggable = true;
+      part.textContent = currentText.slice(0,at);
+      part.dataset.part = currentText.slice(0,at);
+      part.ontouchstart = part.onmousedown = e => dragStart(e, part);
+      piecesDiv.appendChild(part);
+
+      currentText = currentText.slice(at);
+      splits.push(at);
+      if(splits.length +1 === correctBreak.split('/').length) {
+        finishBreaking(q);
+      }
+    } else {
+      wrongVibe();
+      piecesDiv.style.animation = 'shake 0.4s';
+      setTimeout(()=>piecesDiv.style.animation='',400);
+    }
+  }
+
+  // Tap to split (approximate position)
+  let tapTimer;
+  termEl.ontouchstart = e => {
+    e.preventDefault();
+    tapTimer = setTimeout(() => {
+      const touch = e.touches[0];
+      const rect = termEl.getBoundingClientRect();
+      const relX = touch.clientX - rect.left;
+      const charWidthApprox = rect.width / fullTerm.length;
+      const splitPos = Math.round(relX / charWidthApprox);
+      trySplit(splitPos);
+    }, 300); // long-press feel
+  };
+  termEl.ontouchend = () => clearTimeout(tapTimer);
+
+  // Fallback: show hint button after few secs if stuck (teacher mode auto)
+}
+
+function finishBreaking(q) {
+  // Move pieces to drag from pieces div
+  document.querySelectorAll('.piece').forEach(p => {
+    p.draggable = true;
+    p.ontouchstart = p.onmousedown = e => dragStart(e, p);
+  });
+
+  // Show meaning pool (shuffled)
+  const pool = document.getElementById('meaningsZone');
+  pool.classList.remove('hidden');
+  pool.innerHTML = '';
+  const shuffled = [...q.meanings].sort(()=>Math.random()-0.5);
+  shuffled.forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'meaning';
+    el.textContent = m;
+    el.draggable = true;
+    el.ontouchstart = el.onmousedown = e => dragStart(e, el, true);
+    pool.appendChild(el);
+  });
+
+  // Show explanation input
+  document.getElementById('explanation').classList.remove('hidden');
+  document.getElementById('submitExp').classList.remove('hidden');
+  document.getElementById('submitExp').onclick = () => checkExplanation(q);
+}
+
+let dragged = null;
+function dragStart(e, el, isMeaning=false) {
+  dragged = el;
+  el.style.opacity = 0.6;
+  if(e.type.includes('touch')) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    el.dataset.offsetX = touch.clientX - el.getBoundingClientRect().left;
+    el.dataset.offsetY = touch.clientY - el.getBoundingClientRect().top;
+  }
+}
+
+function dragOver(e) {
+  e.preventDefault();
+}
+function drop(e, zone) {
+  e.preventDefault();
+  if(!dragged) return;
+  const isMeaning = dragged.classList.contains('meaning');
+  if(isMeaning) {
+    // Match to piece (assume zones have pieces already)
+    // For simplicity: append to zone, check later
+    zone.appendChild(dragged);
+    dragged.style.opacity = 1;
+    dragged = null;
+  } else {
+    // Piece to zone
+    if(zone.id.includes('prefix') && !dragged.dataset.part.startsWith(q.answerBreak.split('/')[0])) {
+      wrongVibe(); return;
+    }
+    // Similar rough checks for root/suffix...
+    zone.appendChild(dragged);
+    dragged.style.opacity = 1;
+    successVibe();
+    dragged = null;
+  }
+}
+
+// Add listeners to zones
+['prefixZone','rootZone','suffixZone'].forEach(id => {
+  const z = document.getElementById(id);
+  z.ondragover = dragOver;
+  z.ondrop = e => drop(e, z);
+  z.ontouchmove = dragOver;
+  z.ontouchend = e => drop(e, z);
+});
+
+function checkExplanation(q) {
+  const input = document.getElementById('explanation').value.trim().toLowerCase();
+  const correct = q.explanation.toLowerCase();
+  const keywords = correct.split(' ').filter(w=>w.length>3);
+  const matched = keywords.some(kw => input.includes(kw));
+  if(matched || input.includes(correct)) {
+    score++;
+    successVibe();
+    qBox.innerHTML += `<p style="color:var(--correct); margin-top:16px;">✅ Correct! ${q.explanation}</p>`;
+  } else {
+    wrongVibe();
+    qBox.innerHTML += `<p style="color:var(--wrong); margin-top:16px;">❌ Expected: ${q.explanation}</p>`;
+  }
+  setTimeout(() => {
+    current++;
+    pCtx.clearRect(0,0,innerWidth,innerHeight);
+    nextQuestion();
+  }, 3000);
+}
+
+// Touch/mouse unify
+document.addEventListener('touchmove', e => {
+  if(dragged) {
+    const touch = e.touches[0];
+    dragged.style.position = 'absolute';
+    dragged.style.left = (touch.clientX - parseFloat(dragged.dataset.offsetX||0)) + 'px';
+    dragged.style.top = (touch.clientY - parseFloat(dragged.dataset.offsetY||0)) + 'px';
+  }
+}, {passive:false});
+
+document.addEventListener('mousemove', e => {
+  if(dragged) {
+    dragged.style.position = 'absolute';
+    dragged.style.left = e.clientX + 'px';
+    dragged.style.top = e.clientY + 'px';
+  }
+});
+
+// ──────────────────────────────────────────────── Init
+if(location.search.includes('teacher=true')) {
+  qBox.innerHTML += `<p style="color:var(--accent);">Teacher Mode Active — All questions, answers shown.</p>`;
+  startGame(true);
+}
+</script>
+</body>
+</html>
