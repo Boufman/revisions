@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Medical Terminology Master</title>
+  <style>
+    /* WeChat-inspired theme */
+    :root {
+      --primary: #07C160; /* WeChat green */
+      --secondary: #FFC300; /* Gold for rewards */
+      --accent: #0080FF; /* Blue accent */
+      --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      --glass-bg: rgba(255, 255, 255, 0.1);
+      --glass-border: rgba(255, 255, 255, 0.2);
+      --text: #ffffff;
+      --correct: #07C160;
+      --wrong: #FA5151;
+      --panel-bg: rgba(0, 0, 0, 0.5);
+    }
+    
+    * { 
+      margin:0; 
+      padding:0; 
+      box-sizing:border-box; 
+      touch-action: manipulation; 
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    html, body {
+      height:100%; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-gradient); 
+      color: var(--text);
+      overflow:hidden;
+    }
+    
+    /* Header with user info */
+    .header {
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+    
+    .coins {
+      background: rgba(255, 195, 0, 0.2);
+      border: 1px solid var(--secondary);
+      border-radius: 20px;
+      padding: 4px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: bold;
+    }
+    
+    /* Main game container */
+    .game-container {
+      padding-top: 70px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      max-width: 800px;
+      margin: 0 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Progress section */
+    .progress-section {
+      padding: 15px 20px;
+    }
+    
+    .progress-container {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      height: 10px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+    
+    /* Streak counter */
+    .streak-counter {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: rgba(255, 195, 0, 0.2);
+      border: 2px solid var(--secondary);
+      border-radius: 15px;
+      padding: 8px 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 100;
+      font-weight: bold;
+    }
+    
+    .streak-flame {
+      color: #FF6B00;
+      animation: float 2s infinite;
+    }
+    
+    /* Question area */
+    .question-area {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .sentence {
+      font-size: 1.2rem;
+      text-align: center;
+      margin-bottom: 30px;
+      line-height: 1.5;
+      padding: 0 10px;
+    }
+    
+    /* Term display */
+    .term-display {
+      position: relative;
+      margin: 20px 0 40px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    
+    .term {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--primary);
+      padding: 15px 25px;
+      background: rgba(7, 193, 96, 0.1);
+      border-radius: 20px;
+      border: 2px solid var(--primary);
+      transition: all 0.3s;
+      cursor: pointer;
+      text-align: center;
+      position: relative;
+      max-width: 90%;
+    }
+    
+    .term.expanded {
+      transform: scale(1.15);
+      box-shadow: 0 0 30px rgba(7, 193, 96, 0.3);
+      z-index: 100;
+    }
+    
+    /* Tap hint */
+    .tap-hint {
+      position: absolute;
+      bottom: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.6);
+      white-space: nowrap;
+    }
+    
+    /* Cutting guide */
+    .cutting-guide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    .cut-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(to bottom, transparent, var(--secondary), transparent);
+      display: none;
+      animation: pulse 1s infinite;
+    }
+    
+    .cut-hint {
+      position: absolute;
+      top: -40px;
+      transform: translateX(-50%);
+      background: var(--secondary);
+      color: black;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      display: none;
+      font-weight: bold;
+    }
+    
+    /* Scissor tool */
+    .scissor-tool {
+      position: fixed;
+      width: 60px;
+      height: 60px;
+      background: var(--secondary);
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      box-shadow: 0 4px 20px rgba(255, 195, 0, 0.5);
+      cursor: grab;
+      z-index: 1000;
+      transition: transform 0.2s;
+      user-select: none;
+      touch-action: none;
+    }
+    
+    .scissor-tool:active {
+      transform: scale(0.9);
+      cursor: grabbing;
+    }
+    
+    /* Pieces container */
+    .pieces-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 30px 0;
+      min-height: 70px;
+      padding: 10px;
+    }
+    
+    .piece {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 15px;
+      padding: 12px 20px;
+      font-size: 1.2rem;
+      border: 2px solid transparent;
+      transition: all 0.3s;
+      cursor: grab;
+      position: relative;
+    }
+    
+    .piece.correct {
+      border-color: var(--correct);
+      background: rgba(7, 193, 96, 0.2);
+    }
+    
+    .piece.incorrect {
+      border-color: var(--wrong);
+      background: rgba(250, 81, 81, 0.2);
+    }
+    
+    /* Drop zones */
+    .drop-zones {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      margin: 20px 10px;
+      width: 100%;
+    }
+    
+    .dropzone {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 15px;
+      padding: 20px 10px;
+      min-height: 100px;
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      transition: all 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    
+    .dropzone.active {
+      border-color: var(--primary);
+      background: rgba(7, 193, 96, 0.1);
+      transform: scale(1.05);
+    }
+    
+    .dropzone.correct {
+      border-color: var(--correct);
+      background: rgba(7, 193, 96, 0.2);
+    }
+    
+    .zone-label {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-top: 5px;
+    }
+    
+    /* Meaning matching */
+    .meanings-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin: 20px 0;
+      padding: 10px;
+      width: 100%;
+    }
+    
+    .meaning-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 15px;
+      text-align: center;
+      cursor: grab;
+      transition: all 0.3s;
+      font-size: 1rem;
+    }
+    
+    .meaning-card.matched {
+      background: rgba(7, 193, 96, 0.3);
+      border: 2px solid var(--correct);
+    }
+    
+    /* Achievement popup */
+    .achievement-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 25px;
+      z-index: 10000;
+      text-align: center;
+      animation: slideIn 0.5s ease-out;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      display: none;
+      width: 85%;
+      max-width: 400px;
+    }
+    
+    .achievement-icon {
+      font-size: 3.5rem;
+      margin-bottom: 15px;
+      animation: bounce 1s infinite alternate;
+    }
+    
+    /* Buttons */
+    .game-button {
+      background: linear-gradient(45deg, var(--primary), var(--accent));
+      border: none;
+      color: white;
+      font-size: 1.1rem;
+      padding: 14px 32px;
+      border-radius: 50px;
+      margin: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,212,255,0.4);
+      transition: transform 0.2s;
+      font-weight: bold;
+    }
+    
+    .game-button:active {
+      transform: scale(0.96);
+    }
+    
+    /* Feedback effects */
+    .feedback-correct {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1000;
+      animation: popIn 0.5s ease-out;
+    }
+    
+    .feedback-wrong {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1000;
+      animation: shake 0.5s ease-out;
+    }
+    
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-20px); }
+    }
+    
+    @keyframes popIn {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+      70% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .term { font-size: 1.7rem; padding: 12px 20px; }
+      .pieces-container { gap: 8px; }
+      .piece { padding: 10px 15px; font-size: 1rem; }
+      .drop-zones { grid-template-columns: 1fr; }
+      .scissor-tool { width: 50px; height: 50px; font-size: 1.5rem; }
+    }
+    
+    @media (max-width: 480px) {
+      .term { font-size: 1.5rem; }
+      .streak-counter { top: 70px; right: 10px; padding: 6px 12px; font-size: 0.9rem; }
+    }
+    
+    /* Utility classes */
+    .hidden { display: none !important; }
+    .visible { display: block !important; }
+    .flex { display: flex !important; }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="user-info">
+      <div class="avatar">MD</div>
+      <div>
+        <div style="font-weight: bold;">Term Master</div>
+        <div style="font-size: 0.8rem; opacity: 0.8;">Level 3</div>
+      </div>
+    </div>
+    <div class="coins">
+      <span>⭐</span>
+      <span id="coinCount">150</span>
+    </div>
+  </div>
+
+  <!-- Streak counter -->
+  <div class="streak-counter">
+    <span class="streak-flame">🔥</span>
+    <span id="streakCount">7 Streak</span>
+  </div>
+
+  <!-- Main game container -->
+  <div class="game-container">
+    <div class="progress-section">
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div style="text-align: center; font-size: 0.9rem; opacity: 0.8;">
+        Question <span id="currentQuestion">1</span> of <span id="totalQuestions">10</span>
+      </div>
+    </div>
+
+    <div class="question-area" id="questionArea">
+      <!-- Content will be dynamically generated -->
+    </div>
+  </div>
+
+  <!-- Scissor tool -->
+  <div class="scissor-tool" id="scissorTool">✂️</div>
+
+  <!-- Achievement popup -->
+  <div class="achievement-popup" id="achievementPopup">
+    <div class="achievement-icon">🏆</div>
+    <h3>Achievement Unlocked!</h3>
+    <p id="achievementText">5 Correct Answers in a Row</p>
+    <p style="color: var(--secondary); margin-top: 10px; font-weight: bold;">+50 Coins</p>
+  </div>
+
+  <!-- Feedback effects -->
+  <div class="feedback-correct" id="feedbackCorrect">✅</div>
+  <div class="feedback-wrong" id="feedbackWrong">❌</div>
+
+  <script>
+    // Game data
+    const gameData = {
+      questions: [
+        {
+          id: 1,
+          sentence: "The patient was <span class='term'>hypoglycaemic</span>",
+          term: "hypoglycaemic",
+          breakdown: ["hypo", "glyc", "aem", "ic"],
+          meanings: ["low", "sugar", "blood", "pertaining to"],
+          correctOrder: ["prefix", "root", "root", "suffix"],
+          explanation: "low blood sugar",
+          category: "Endocrinology",
+          difficulty: 1
+        },
+        {
+          id: 2,
+          sentence: "There was swelling in the <span class='term'>interphalangeal</span> joints",
+          term: "interphalangeal",
+          breakdown: ["inter", "phalange", "al"],
+          meanings: ["between", "finger or toe bones", "pertaining to"],
+          correctOrder: ["prefix", "root", "suffix"],
+          explanation: "pertaining to between the finger or toe bones",
+          category: "Anatomy",
+          difficulty: 2
+        },
+        {
+          id: 3,
+          sentence: "The patient experienced <span class='term'>tachycardia</span>",
+          term: "tachycardia",
+          breakdown: ["tachy", "cardia"],
+          meanings: ["fast", "heart"],
+          correctOrder: ["prefix", "root"],
+          explanation: "rapid heart rate",
+          category: "Cardiology",
+          difficulty: 1
+        }
+        // Add more questions as needed
+      ],
+      
+      state: {
+        score: 0,
+        coins: 150,
+        streak: 0,
+        level: 3,
+        currentQuestionIndex: 0,
+        totalQuestions: 3,
+        achievements: [],
+        userData: JSON.parse(localStorage.getItem('medTermMaster')) || {
+          totalCorrect: 0,
+          totalPlayed: 0,
+          bestStreak: 0,
+          unlockedTerms: [],
+          coins: 150
+        }
+      },
+      
+      draggedElement: null,
+      touchOffset: { x: 0, y: 0 },
+      isDragging: false,
+      currentTerm: null
+    };
+
+    // Initialize game
+    function initGame() {
+      loadUserData();
+      updateUI();
+      loadQuestion(gameData.state.currentQuestionIndex);
+      setupEventListeners();
+    }
+
+    // Load user data from localStorage
+    function loadUserData() {
+      const saved = localStorage.getItem('medTermMaster');
+      if (saved) {
+        const data = JSON.parse(saved);
+        gameData.state.coins = data.coins || 150;
+        gameData.state.userData = data;
+      }
+    }
+
+    // Save user data
+    function saveUserData() {
+      gameData.state.userData.coins = gameData.state.coins;
+      gameData.state.userData.totalCorrect = gameData.state.score;
+      gameData.state.userData.totalPlayed = gameData.state.currentQuestionIndex + 1;
+      gameData.state.userData.bestStreak = Math.max(
+        gameData.state.userData.bestStreak,
+        gameData.state.streak
+      );
+      
+      localStorage.setItem('medTermMaster', JSON.stringify(gameData.state.userData));
+    }
+
+    // Update UI elements
+    function updateUI() {
+      document.getElementById('coinCount').textContent = gameData.state.coins;
+      document.getElementById('streakCount').textContent = `${gameData.state.streak} Streak`;
+      document.getElementById('currentQuestion').textContent = gameData.state.currentQuestionIndex + 1;
+      document.getElementById('totalQuestions').textContent = gameData.state.totalQuestions;
+      
+      const progress = ((gameData.state.currentQuestionIndex) / gameData.state.totalQuestions) * 100;
+      document.getElementById('progressBar').style.width = `${progress}%`;
+    }
+
+    // Load a question
+    function loadQuestion(index) {
+      if (index >= gameData.questions.length) {
+        endGame();
+        return;
+      }
+      
+      const question = gameData.questions[index];
+      gameData.currentTerm = question.term;
+      
+      const questionArea = document.getElementById('questionArea');
+      questionArea.innerHTML = `
+        <div class="sentence">${question.sentence}</div>
+        
+        <div class="term-display">
+          <div class="term" id="mainTerm">${question.term}</div>
+          <div class="tap-hint">Tap to expand ▼</div>
+        </div>
+        
+        <div class="pieces-container" id="piecesContainer">
+          <!-- Pieces will appear after cutting -->
+        </div>
+        
+        <div class="drop-zones" id="dropZones">
+          <div class="dropzone" data-type="prefix" id="prefixZone">
+            <div style="font-size: 2rem;">🔰</div>
+            <div class="zone-label">Prefix</div>
+          </div>
+          <div class="dropzone" data-type="root" id="rootZone">
+            <div style="font-size: 2rem;">🎯</div>
+            <div class="zone-label">Root Word</div>
+          </div>
+          <div class="dropzone" data-type="suffix" id="suffixZone">
+            <div style="font-size: 2rem;">🏷️</div>
+            <div class="zone-label">Suffix</div>
+          </div>
+        </div>
+        
+        <div class="meanings-container hidden" id="meaningsContainer">
+          <!-- Meanings will be added here -->
+        </div>
+        
+        <button class="game-button hidden" id="nextButton" onclick="nextQuestion()">Next Question</button>
+      `;
+      
+      setupTermInteraction();
+      updateUI();
+    }
+
+    // Setup term tap and expansion
+    function setupTermInteraction() {
+      const term = document.getElementById('mainTerm');
+      let tapTimeout;
+      
+      term.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        tapTimeout = setTimeout(() => {
+          showTermHint();
+        }, 800);
+      }, { passive: false });
+      
+      term.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        clearTimeout(tapTimeout);
+        
+        term.classList.toggle('expanded');
+        if (term.classList.contains('expanded')) {
+          showScissorTool();
+        } else {
+          hideScissorTool();
+        }
+      }, { passive: false });
+      
+      // Also support click for desktop
+      term.addEventListener('click', () => {
+        term.classList.toggle('expanded');
+        if (term.classList.contains('expanded')) {
+          showScissorTool();
+        } else {
+          hideScissorTool();
+        }
+      });
+    }
+
+    // Show term hint (long press)
+    function showTermHint() {
+      const question = gameData.questions[gameData.state.currentQuestionIndex];
+      if (gameData.state.coins >= 20) {
+        gameData.state.coins -= 20;
+        updateUI();
+        showMessage(`Hint: This term has ${question.breakdown.length} parts`);
+      } else {
+        showMessage("You need more coins for hints! Complete questions to earn coins.");
+      }
+    }
+
+    // Show scissor tool
+    function showScissorTool() {
+      const scissor = document.getElementById('scissorTool');
+      scissor.style.display = 'flex';
+      scissor.style.left = '50%';
+      scissor.style.top = '250px';
+      
+      setupScissorDrag();
+    }
+
+    // Hide scissor tool
+    function hideScissorTool() {
+      const scissor = document.getElementById('scissorTool');
+      scissor.style.display = 'none';
+    }
+
+    // Setup scissor dragging
+    function setupScissorDrag() {
+      const scissor = document.getElementById('scissorTool');
+      const term = document.getElementById('mainTerm');
+      
+      let isDragging = false;
+      let startX, startY;
+      
+      scissor.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        startX = touch.clientX - scissor.offsetLeft;
+        startY = touch.clientY - scissor.offsetTop;
+        isDragging = true;
+        scissor.style.cursor = 'grabbing';
+      }, { passive: false });
+      
+      document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        scissor.style.left = (touch.clientX - startX) + 'px';
+        scissor.style.top = (touch.clientY - startY) + 'px';
+        
+        // Check if scissor is over the term
+        const termRect = term.getBoundingClientRect();
+        const scissorRect = scissor.getBoundingClientRect();
+        
+        if (isOverlapping(termRect, scissorRect)) {
+          showCutGuide(scissorRect.left);
+        }
+      }, { passive: false });
+      
+      document.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        scissor.style.cursor = 'grab';
+        
+        const touch = e.changedTouches[0];
+        const termRect = term.getBoundingClientRect();
+        
+        // Check if drop was on term
+        if (touch.clientX >= termRect.left && touch.clientX <= termRect.right &&
+            touch.clientY >= termRect.top && touch.clientY <= termRect.bottom) {
+          handleCut(touch.clientX - termRect.left, termRect.width);
+        }
+      });
+      
+      // Mouse events for desktop
+      scissor.addEventListener('mousedown', (e) => {
+        startX = e.clientX - scissor.offsetLeft;
+        startY = e.clientY - scissor.offsetTop;
+        isDragging = true;
+        scissor.style.cursor = 'grabbing';
+      });
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        scissor.style.left = (e.clientX - startX) + 'px';
+        scissor.style.top = (e.clientY - startY) + 'px';
+        
+        const termRect = term.getBoundingClientRect();
+        const scissorRect = scissor.getBoundingClientRect();
+        
+        if (isOverlapping(termRect, scissorRect)) {
+          showCutGuide(scissorRect.left);
+        }
+      });
+      
+      document.addEventListener('mouseup', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        scissor.style.cursor = 'grab';
+        
+        const termRect = term.getBoundingClientRect();
+        
+        if (e.clientX >= termRect.left && e.clientX <= termRect.right &&
+            e.clientY >= termRect.top && e.clientY <= termRect.bottom) {
+          handleCut(e.clientX - termRect.left, termRect.width);
+        }
+      });
+    }
+
+    // Show cutting guide
+    function showCutGuide(xPosition) {
+      const termDisplay = document.querySelector('.term-display');
+      
+      // Remove existing guides
+      const existingGuides = termDisplay.querySelectorAll('.cut-line, .cut-hint');
+      existingGuides.forEach(g => g.remove());
+      
+      const guide = document.createElement('div');
+      guide.className = 'cut-line';
+      guide.style.left = xPosition + 'px';
+      
+      const hint = document.createElement('div');
+      hint.className = 'cut-hint';
+      hint.textContent = 'Release to cut';
+      hint.style.left = xPosition + 'px';
+      
+      termDisplay.appendChild(guide);
+      termDisplay.appendChild(hint);
+      
+      guide.style.display = 'block';
+      hint.style.display = 'block';
+    }
+
+    // Handle cutting action
+    function handleCut(cutPosition, termWidth) {
+      const question = gameData.questions[gameData.state.currentQuestionIndex];
+      const term = question.term;
+      const cutRatio = cutPosition / termWidth;
+      
+      // Calculate optimal cut positions based on breakdown
+      const cutPositions = [];
+      let currentLength = 0;
+      
+      for (let i = 0; i < question.breakdown.length - 1; i++) {
+        currentLength += question.breakdown[i].length;
+        cutPositions.push(currentLength / term.length);
+      }
+      
+      // Find closest valid cut position
+      let closestPos = 0;
+      let minDiff = 1;
+      
+      for (const pos of cutPositions) {
+        const diff = Math.abs(pos - cutRatio);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestPos = pos;
+        }
+      }
+      
+      // If cut is reasonably close to a valid position
+      if (minDiff < 0.15) {
+        const cutIndex = Math.round(closestPos * term.length);
+        splitTerm(term, cutIndex, question);
+        showFeedback('correct');
+        gameData.state.streak++;
+        updateUI();
+      } else {
+        showFeedback('wrong');
+        gameData.state.streak = 0;
+        updateUI();
+      }
+      
+      // Hide guides
+      const guides = document.querySelectorAll('.cut-line, .cut-hint');
+      guides.forEach(g => g.remove());
+    }
+
+    // Split term into pieces
+    function splitTerm(term, cutIndex, question) {
+      const piecesContainer = document.getElementById('piecesContainer');
+      piecesContainer.innerHTML = '';
+      
+      // Create pieces based on actual breakdown
+      question.breakdown.forEach((piece, index) => {
+        const pieceEl = document.createElement('div');
+        pieceEl.className = 'piece';
+        pieceEl.textContent = piece;
+        pieceEl.dataset.part = piece;
+        pieceEl.dataset.type = question.correctOrder[index];
+        pieceEl.draggable = true;
+        
+        // Touch events
+        pieceEl.addEventListener('touchstart', (e) => handlePieceTouchStart(e, pieceEl), { passive: false });
+        pieceEl.addEventListener('mousedown', (e) => handlePieceTouchStart(e, pieceEl));
+        
+        piecesContainer.appendChild(pieceEl);
+      });
+      
+      setupDropZones();
+      hideScissorTool();
+      
+      // Collapse term
+      const termEl = document.getElementById('mainTerm');
+      termEl.classList.remove('expanded');
+      
+      // Show meanings after a delay
+      setTimeout(() => {
+        setupMeaningsMatching(question);
+      }, 500);
+    }
+
+    // Handle piece dragging start
+    function handlePieceTouchStart(e, piece) {
+      e.preventDefault();
+      gameData.draggedElement = piece;
+      
+      const rect = piece.getBoundingClientRect();
+      if (e.type === 'touchstart') {
+        const touch = e.touches[0];
+        gameData.touchOffset.x = touch.clientX - rect.left;
+        gameData.touchOffset.y = touch.clientY - rect.top;
+      } else {
+        gameData.touchOffset.x = e.clientX - rect.left;
+        gameData.touchOffset.y = e.clientY - rect.top;
+      }
+      
+      piece.style.opacity = '0.7';
+      piece.style.position = 'fixed';
+      piece.style.zIndex = '10000';
+      
+      // Start tracking drag
+      if (e.type === 'touchstart') {
+        document.addEventListener('touchmove', handlePieceTouchMove, { passive: false });
+        document.addEventListener('touchend', handlePieceTouchEnd);
+      } else {
+        document.addEventListener('mousemove', handlePieceTouchMove);
+        document.addEventListener('mouseup', handlePieceTouchEnd);
+      }
+    }
+
+    // Handle piece dragging move
+    function handlePieceTouchMove(e) {
+      if (!gameData.draggedElement) return;
+      e.preventDefault();
+      
+      let clientX, clientY;
+      if (e.type === 'touchmove') {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      
+      gameData.draggedElement.style.left = (clientX - gameData.touchOffset.x) + 'px';
+      gameData.draggedElement.style.top = (clientY - gameData.touchOffset.y) + 'px';
+      
+      // Highlight drop zones
+      const dropZones = document.querySelectorAll('.dropzone');
+      dropZones.forEach(zone => {
+        const rect = zone.getBoundingClientRect();
+        if (clientX > rect.left && clientX < rect.right &&
+            clientY > rect.top && clientY < rect.bottom) {
+          zone.classList.add('active');
+        } else {
+          zone.classList.remove('active');
+        }
+      });
+    }
+
+    // Handle piece dragging end
+    function handlePieceTouchEnd(e) {
+      if (!gameData.draggedElement) return;
+      
+      let clientX, clientY;
+      if (e.type === 'touchend') {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      
+      const dragged = gameData.draggedElement;
+      const dropZones = document.querySelectorAll('.dropzone');
+      let dropped = false;
+      
+      dropZones.forEach(zone => {
+        const rect = zone.getBoundingClientRect();
+        if (clientX > rect.left && clientX < rect.right &&
+            clientY > rect.top && clientY < rect.bottom) {
+          
+          // Check if correct zone
+          const pieceType = dragged.dataset.type;
+          const zoneType = zone.dataset.type;
+          
+          if (pieceType === zoneType) {
+            zone.appendChild(dragged);
+            dragged.classList.add('correct');
+            dragged.style.position = 'static';
+            dragged.style.opacity = '1';
+            
+            // Add to correct pieces counter
+            const correctPieces = document.querySelectorAll('.piece.correct').length;
+            const totalPieces = gameData.questions[gameData.state.currentQuestionIndex].breakdown.length;
+            
+            if (correctPieces === totalPieces) {
+              showAllCorrect();
+            }
+            
+            showFeedback('correct');
+            gameData.state.coins += 10;
+            gameData.state.streak++;
+            updateUI();
+          } else {
+            dragged.classList.add('incorrect');
+            showFeedback('wrong');
+            gameData.state.streak = 0;
+            
+            // Return piece after delay
+            setTimeout(() => {
+              dragged.classList.remove('incorrect');
+              dragged.style.position = 'static';
+              dragged.style.opacity = '1';
+              document.getElementById('piecesContainer').appendChild(dragged);
+            }, 800);
+          }
+          
+          dropped = true;
+        }
+        zone.classList.remove('active');
+      });
+      
+      if (!dropped) {
+        dragged.style.position = 'static';
+        dragged.style.opacity = '1';
+        document.getElementById('piecesContainer').appendChild(dragged);
+      }
+      
+      // Cleanup
+      gameData.draggedElement = null;
+      document.removeEventListener('touchmove', handlePieceTouchMove);
+      document.removeEventListener('touchend', handlePieceTouchEnd);
+      document.removeEventListener('mousemove', handlePieceTouchMove);
+      document.removeEventListener('mouseup', handlePieceTouchEnd);
+    }
+
+    // Setup drop zones
+    function setupDropZones() {
+      const dropZones = document.querySelectorAll('.dropzone');
+      dropZones.forEach(zone => {
+        zone.addEventListener('dragover', (e) => e.preventDefault());
+        zone.addEventListener('drop', (e) => e.preventDefault());
+      });
+    }
+
+    // Setup meanings matching
+    function setupMeaningsMatching(question) {
+      const meaningsContainer = document.getElementById('meaningsContainer');
+      meaningsContainer.classList.remove('hidden');
+      meaningsContainer.innerHTML = '<h3 style="text-align: center; margin-bottom: 15px;">Match the Meanings</h3>';
+      
+      // Shuffle meanings
+      const shuffledMeanings = [...question.meanings].sort(() => Math.random() - 0.5);
+      
+      shuffledMeanings.forEach((meaning, index) => {
+        const card = document.createElement('div');
+        card.className = 'meaning-card';
+        card.textContent = meaning;
+        card.dataset.meaning = meaning;
+        card.dataset.index = index;
+        
+        // Touch events
+        card.addEventListener('touchstart', (e) => handleMeaningTouchStart(e, card), { passive: false });
+        card.addEventListener('mousedown', (e) => handleMeaningTouchStart(e, card));
+        
+        meaningsContainer.appendChild(card);
+      });
+      
+      // Show next button
+      document.getElementById('nextButton').classList.remove('hidden');
+    }
+
+    // Handle meaning card touch
+    function handleMeaningTouchStart(e, card) {
+      e.preventDefault();
+      // For now, just mark as matched when tapped
+      card.classList.add('matched');
+      showFeedback('correct');
+      gameData.state.coins += 5;
+      updateUI();
+    }
+
+    // Show all pieces correct
+    function showAllCorrect() {
+      gameData.state.score++;
+      showMessage("Perfect! All pieces in correct places!", 'success');
+      
+      // Check for achievements
+      checkAchievements();
+    }
+
+    // Check and unlock achievements
+    function checkAchievements() {
+      const achievements = [
+        { 
+          id: 'streak_3', 
+          condition: () => gameData.state.streak >= 3,
+          title: 'Hot Streak', 
+          description: '3 correct answers in a row',
+          reward: 30 
+        },
+        { 
+          id: 'coins_200', 
+          condition: () => gameData.state.coins >= 200,
+          title: 'Coin Collector', 
+          description: 'Reach 200 coins',
+          reward: 50 
+        },
+        { 
+          id: 'first_5', 
+          condition: () => gameData.state.score >= 5,
+          title: 'Quick Learner', 
+          description: 'Answer 5 questions correctly',
+          reward: 100 
+        }
+      ];
+      
+      achievements.forEach(achievement => {
+        if (!gameData.state.achievements.includes(achievement.id) && achievement.condition()) {
+          unlockAchievement(achievement);
+        }
+      });
+    }
+
+    // Unlock achievement
+    function unlockAchievement(achievement) {
+      gameData.state.achievements.push(achievement.id);
+      gameData.state.coins += achievement.reward;
+      
+      const popup = document.getElementById('achievementPopup');
+      document.getElementById('achievementText').textContent = 
+        `${achievement.title}: ${achievement.description}`;
+      
+      popup.style.display = 'block';
+      updateUI();
+      saveUserData();
+      
+      setTimeout(() => {
+        popup.style.display = 'none';
+      }, 3000);
+    }
+
+    // Show feedback animation
+    function showFeedback(type) {
+      const feedback = type === 'correct' 
+        ? document.getElementById('feedbackCorrect')
+        : document.getElementById('feedbackWrong');
+      
+      feedback.style.opacity = '1';
+      feedback.style.display = 'block';
+      
+      setTimeout(() => {
+        feedback.style.opacity = '0';
+      }, 500);
+      
+      // Vibrate if supported
+      if (navigator.vibrate) {
+        navigator.vibrate(type === 'correct' ? 100 : 200);
+      }
+    }
+
+    // Show message
+    function showMessage(text, type = 'info') {
+      const message = document.createElement('div');
+      message.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: ${type === 'success' ? 'rgba(7, 193, 96, 0.9)' : 'rgba(0, 0, 0, 0.9)'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 15px;
+        z-index: 10000;
+        font-weight: bold;
+        text-align: center;
+        max-width: 80%;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      `;
+      message.textContent = text;
+      document.body.appendChild(message);
+      
+      setTimeout(() => message.remove(), 2000);
+    }
+
+    // Next question
+    function nextQuestion() {
+      gameData.state.currentQuestionIndex++;
+      
+      if (gameData.state.currentQuestionIndex < gameData.state.totalQuestions) {
+        loadQuestion(gameData.state.currentQuestionIndex);
+      } else {
+        endGame();
+      }
+    }
+
+    // End game
+    function endGame() {
+      const questionArea = document.getElementById('questionArea');
+      questionArea.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px;">
+          <h2 style="margin-bottom: 20px;">Session Complete! 🎉</h2>
+          <div style="background: rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; margin: 20px 0;">
+            <p style="font-size: 1.2rem; margin: 10px 0;">Score: ${gameData.state.score}/${gameData.state.totalQuestions}</p>
+            <p style="font-size: 1.2rem; margin: 10px 0;">Coins Earned: ${gameData.state.coins}</p>
+            <p style="font-size: 1.2rem; margin: 10px 0;">Best Streak: ${gameData.state.streak}</p>
+          </div>
+          <button class="game-button" onclick="location.reload()">Play Again</button>
+        </div>
+      `;
+      
+      saveUserData();
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // Prevent pinch zoom
+      document.addEventListener('gesturestart', (e) => e.preventDefault());
+      document.addEventListener('gesturechange', (e) => e.preventDefault());
+      document.addEventListener('gestureend', (e) => e.preventDefault());
+      
+      // Prevent double-tap zoom
+      let lastTap = 0;
+      document.addEventListener('touchend', (e) => {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+          e.preventDefault();
+        }
+        lastTap = currentTime;
+      }, { passive: false });
+    }
+
+    // Utility function to check overlap
+    function isOverlapping(rect1, rect2) {
+      return !(rect1.right < rect2.left || 
+               rect1.left > rect2.right || 
+               rect1.bottom < rect2.top || 
+               rect1.top > rect2.bottom);
+    }
+
+    // Initialize game when loaded
+    window.addEventListener('DOMContentLoaded', initGame);
+  </script>
+</body>
+</html>
