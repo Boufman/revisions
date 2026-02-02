@@ -967,19 +967,19 @@
       const parts = question.answerBreak.split('/');
       
       // Determine type for each piece based on common medical terminology patterns
-    const types = parts.map(part => {
-      if (part === 'hypo' || part === 'hyper' || part === 'inter' || part === 'ante' || part === 'intra' || 
-          part === 'poly' || part === 'tachy' || part === 'dys' || part === 'iso') {
-        return 'prefix';
-      } else if (part === 'ic' || part === 'al' || part === 'y' || part === 'ia' || part === 'itis' || 
-                 part === 'pathy' || part === 'osis' || part === 'ectomy' || part === 'tomy' || 
-                 part === 'stomy' || part === 'graphy' || part === 'logy' || part === 'ist' || 
-                 part === 'algia' || part === 'megaly' || part === 'emia' || part === 'uria' || part === 'ec')|| part === 'tom' || part === 'y') {
-        return 'suffix';
-      } else {
-        return 'root';
-      }
-    });
+      const types = parts.map(part => {
+        if (part === 'hypo' || part === 'hyper' || part === 'inter' || part === 'ante' || part === 'intra' || 
+            part === 'poly' || part === 'tachy' || part === 'dys' || part === 'iso') {
+          return 'prefix';
+        } else if (part === 'ic' || part === 'al' || part === 'y' || part === 'ia' || part === 'itis' || 
+                   part === 'pathy' || part === 'osis' || part === 'ectomy' || part === 'tomy' || 
+                   part === 'stomy' || part === 'graphy' || part === 'logy' || part === 'ist' || 
+                   part === 'algia' || part === 'megaly' || part === 'emia' || part === 'uria' || part === 'ec') {
+          return 'suffix';
+        } else {
+          return 'root';
+        }
+      });
       
       parts.forEach((piece, index) => {
         const pieceElement = document.createElement('div');
@@ -1176,71 +1176,40 @@
     }
     
     function handleMeaningDrop(meaning, zone, zoneType) {
-  const question = gameState.currentQuestionData;
-  
-  // Get all pieces in this zone
-  const piecesInZone = zone.querySelectorAll('.piece.correct');
-  let isCorrect = false;
-  
-  // Check if this meaning matches ANY piece in the zone
-  for (const piece of piecesInZone) {
-    const pieceIndex = parseInt(piece.dataset.index);
-    if (pieceIndex < question.meanings.length && meaning.textContent === question.meanings[pieceIndex]) {
-      isCorrect = true;
-      break;
-    }
-  }
-  
-  if (isCorrect) {
-    zone.appendChild(meaning);
-    meaning.classList.add('matched');
-    meaning.style.position = 'static';
-    showFeedback('correct');
-    gameState.coins += 10;
-    gameState.streak++;
-    
-    checkMeaningsComplete();
-  } else {
-    meaning.classList.add('wrong');
-    showFeedback('wrong');
-    gameState.streak = 0;
-    
-    setTimeout(() => {
-      meaning.classList.remove('wrong');
-      meaning.style.position = 'static';
-      meaningsContainer.appendChild(meaning);
-    }, 800);
-  }
-  
-  updateUI();
-}
-        
-        if (meaning.textContent === expectedMeaning) {
-          // Correct meaning in correct zone
-          zone.appendChild(meaning);
-          meaning.classList.add('matched');
-          meaning.style.position = 'static';
-          showFeedback('correct');
-          gameState.coins += 10;
-          gameState.streak++;
-          
-          checkMeaningsComplete();
-        } else {
-          // Wrong meaning for this zone
-          meaning.classList.add('wrong');
-          showFeedback('wrong');
-          gameState.streak = 0;
-          
-          setTimeout(() => {
-            meaning.classList.remove('wrong');
-            meaning.style.position = 'static';
-            meaningsContainer.appendChild(meaning);
-          }, 800);
+      const question = gameState.currentQuestionData;
+      
+      // Get all pieces in this zone
+      const piecesInZone = zone.querySelectorAll('.piece.correct');
+      let isCorrect = false;
+      
+      // Check if this meaning matches ANY piece in the zone
+      for (const piece of piecesInZone) {
+        const pieceIndex = parseInt(piece.dataset.index);
+        if (pieceIndex < question.meanings.length && meaning.textContent === question.meanings[pieceIndex]) {
+          isCorrect = true;
+          break;
         }
-      } else {
-        // No piece in this zone yet
+      }
+      
+      if (isCorrect) {
+        zone.appendChild(meaning);
+        meaning.classList.add('matched');
         meaning.style.position = 'static';
-        meaningsContainer.appendChild(meaning);
+        showFeedback('correct');
+        gameState.coins += 10;
+        gameState.streak++;
+        
+        checkMeaningsComplete();
+      } else {
+        meaning.classList.add('wrong');
+        showFeedback('wrong');
+        gameState.streak = 0;
+        
+        setTimeout(() => {
+          meaning.classList.remove('wrong');
+          meaning.style.position = 'static';
+          meaningsContainer.appendChild(meaning);
+        }, 800);
       }
       
       updateUI();
