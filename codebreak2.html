@@ -317,6 +317,11 @@
       border: 2px solid #00ff9d;
     }
     
+    .meaning-item.wrong {
+      border-color: #ff4d6d;
+      background: rgba(255, 77, 109, 0.2);
+    }
+    
     .meanings-container {
       display: flex;
       flex-wrap: wrap;
@@ -647,108 +652,34 @@
   <div class="feedback wrong" id="feedbackWrong">✗</div>
   
   <script>
-    // Game Data - Complete questions
-    const gameQuestions = [
-      {
-        id: 1,
-        sentence: "The patient was <span class='term'>hypoglycaemic</span>",
-        term: "hypoglycaemic",
-        breakdown: ["hypo", "glyc", "aem", "ic"],
-        meanings: ["low", "sugar", "blood", "pertaining to"],
-        correctOrder: ["prefix", "root", "root", "suffix"],
-        explanation: "low blood sugar",
-        category: "Endocrinology"
-      },
-      {
-        id: 2,
-        sentence: "There was swelling in the <span class='term'>interphalangeal</span> joints",
-        term: "interphalangeal",
-        breakdown: ["inter", "phalange", "al"],
-        meanings: ["between", "finger or toe bones", "pertaining to"],
-        correctOrder: ["prefix", "root", "suffix"],
-        explanation: "pertaining to between the finger or toe bones",
-        category: "Anatomy"
-      },
-      {
-        id: 3,
-        sentence: "The patient experienced <span class='term'>tachycardia</span>",
-        term: "tachycardia",
-        breakdown: ["tachy", "cardia"],
-        meanings: ["fast", "heart"],
-        correctOrder: ["prefix", "root"],
-        explanation: "rapid heart rate",
-        category: "Cardiology"
-      },
-      {
-        id: 4,
-        sentence: "The patient underwent a <span class='term'>cholecystectomy</span>",
-        term: "cholecystectomy",
-        breakdown: ["chole", "cyst", "ectomy"],
-        meanings: ["bile", "bladder", "surgical removal"],
-        correctOrder: ["root", "root", "suffix"],
-        explanation: "surgical removal of the gallbladder",
-        category: "Surgery"
-      },
-      {
-        id: 5,
-        sentence: "The results showed <span class='term'>glycosuria</span>",
-        term: "glycosuria",
-        breakdown: ["glycos", "uria"],
-        meanings: ["sugar", "urine"],
-        correctOrder: ["root", "suffix"],
-        explanation: "sugar in the urine",
-        category: "Urology"
-      },
-      {
-        id: 6,
-        sentence: "The patient had <span class='term'>hepatosplenomegaly</span>",
-        term: "hepatosplenomegaly",
-        breakdown: ["hepato", "spleno", "megaly"],
-        meanings: ["liver", "spleen", "enlargement"],
-        correctOrder: ["root", "root", "suffix"],
-        explanation: "enlargement of the liver and spleen",
-        category: "Gastroenterology"
-      },
-      {
-        id: 7,
-        sentence: "The patient reported <span class='term'>polyarthralgia</span>",
-        term: "polyarthralgia",
-        breakdown: ["poly", "arthr", "algia"],
-        meanings: ["many", "joint", "pain"],
-        correctOrder: ["prefix", "root", "suffix"],
-        explanation: "pain in multiple joints",
-        category: "Rheumatology"
-      },
-      {
-        id: 8,
-        sentence: "Referral was made to a <span class='term'>neurologist</span>",
-        term: "neurologist",
-        breakdown: ["neuro", "logist"],
-        meanings: ["nerve", "specialist"],
-        correctOrder: ["root", "suffix"],
-        explanation: "specialist in nervous system disorders",
-        category: "Neurology"
-      },
-      {
-        id: 9,
-        sentence: "The doctor ordered an <span class='term'>electrocardiograph</span>",
-        term: "electrocardiograph",
-        breakdown: ["electro", "cardio", "graph"],
-        meanings: ["electric", "heart", "recording instrument"],
-        correctOrder: ["root", "root", "suffix"],
-        explanation: "instrument for recording heart's electrical activity",
-        category: "Cardiology"
-      },
-      {
-        id: 10,
-        sentence: "A <span class='term'>tympanostomy</span> was performed",
-        term: "tympanostomy",
-        breakdown: ["tympano", "stomy"],
-        meanings: ["eardrum", "surgical opening"],
-        correctOrder: ["root", "suffix"],
-        explanation: "surgical opening in the eardrum",
-        category: "Otolaryngology"
-      }
+    // All 26 questions from original data
+    const allQuestions = [
+      { id:1, sentence:"The patient was <span class='term' data-term='hypoglycaemic'>hypoglycaemic</span>", answerBreak:"hypo/glyc/aem/ic", meanings:["low","sugar","blood","pertaining to"], explanation:"low blood sugar" },
+      { id:2, sentence:"There was swelling in the <span class='term' data-term='interphalangeal'>interphalangeal</span> joints", answerBreak:"inter/phalange/al", meanings:["between","finger or toe bones","pertaining to"], explanation:"the joints in the fingers or toes (not knuckles)" },
+      { id:3, sentence:"The young girl experienced <span class='term' data-term='tachycardia'>tachycardia</span>", answerBreak:"tachy/cardia", meanings:["fast","heart"], explanation:"a rapidly beating heart" },
+      { id:4, sentence:"The patient underwent a <span class='term' data-term='cholecystectomy'>cholecystectomy</span>", answerBreak:"chole/cyst/ec/tom/y", meanings:["bile","bag","out","cut","process of"], explanation:"surgical removal of the gall bladder" },
+      { id:5, sentence:"The results showed <span class='term' data-term='glycosuria'>glycosuria</span>", answerBreak:"glycos/uria", meanings:["sugar","urine"], explanation:"sugar in the urine" },
+      { id:6, sentence:"The patient had <span class='term' data-term='hepatosplenomegaly'>hepatosplenomegaly</span>", answerBreak:"hepato/spleno/mega/ly", meanings:["liver","spleen","bigger","condition of"], explanation:"an enlarged liver & spleen" },
+      { id:7, sentence:"The patient reported <span class='term' data-term='polyarthralgia'>polyarthralgia</span>", answerBreak:"poly/arthr/algia", meanings:["many","joint","pain"], explanation:"pain in several joints" },
+      { id:8, sentence:"Referral was made to a <span class='term' data-term='neurologist'>neurologist</span>", answerBreak:"neuro/log/ist", meanings:["brain or nervous system","study of","specialist"], explanation:"a specialist of the brain/nervous system" },
+      { id:9, sentence:"The doctor ordered an <span class='term' data-term='electrocardiograph'>electrocardiograph</span>", answerBreak:"electro/cardio/graph", meanings:["electrical","heart","picture"], explanation:"a image showing electrical impulses of the heart" },
+      { id:10, sentence:"A <span class='term' data-term='tympanostomy'>tympanostomy</span> was performed", answerBreak:"tympano/stomy", meanings:["ear drum","hole cut into"], explanation:"surgically made a hole in the ear drum usually to release fluids" },
+      { id:11, sentence:"The patient showed signs consistent with <span class='term' data-term='adenoid hypertrophy'>adenoid hypertrophy</span>", special:"adenoid", answerBreak:"hyper/trophy", meanings:["above","growth"], explanation:"overgrown or enlarged" },
+      { id:12, sentence:"The sample was sent to the <span class='term' data-term='histopathology'>histopathology</span> clinic", answerBreak:"histo/patho/logy", meanings:["tissues","disease","study of"], explanation:"study of disease in tissues" },
+      { id:13, sentence:"There was a risk of <span class='term' data-term='gastritis'>gastritis</span>", answerBreak:"gastr/itis", meanings:["stomach","inflammation of"], explanation:"inflammation of the stomach" },
+      { id:14, sentence:"The doctor diagnosed her with <span class='term' data-term='cardiomyopathy'>cardiomyopathy</span>", answerBreak:"cardio/myo/pathy", meanings:["heart","muscle","disease"], explanation:"disease of the heart muscle" },
+      { id:15, sentence:"The patient underwent a partial pulmonary <span class='term' data-term='lobectomy'>lobectomy</span>", special:"pulmonary", answerBreak:"lob/ec/tom/y", meanings:["lobe","out","cut","process of"], explanation:"cut out one lobe of the lung" },
+      { id:16, sentence:"The patient attended <span class='term' data-term='antenatal'>antenatal</span> classes", answerBreak:"ante/natal", meanings:["before","birth"], explanation:"before birth" },
+      { id:17, sentence:"The <span class='term' data-term='melanoma'>melanoma</span> measured 7 mm across", answerBreak:"melan/oma", meanings:["dark","tumour"], explanation:"dark tumour" },
+      { id:18, sentence:"The patient had a transient <span class='term' data-term='ischaemic'>ischaemic</span> attack", special:"TIA (transient ischaemic attack)", answerBreak:"isc/haemic", meanings:["stop","blood"], explanation:"a blockage in blood flow, TIA also commonly called stroke if the TIA is in the brain" },
+      { id:19, sentence:"Renal <span class='term' data-term='pyelography'>pyelography</span> confirmed stones were present", answerBreak:"pyelo/graphy", meanings:["pelvis","picture"], explanation:"imaging of the renal pelvis" },
+      { id:20, sentence:"The patient was found to have <span class='term' data-term='osteoporosis'>osteoporosis</span>", answerBreak:"osteo/por/osis", meanings:["bone","hole","condition of"], explanation:"condition of porous bones" },
+      { id:21, sentence:"The patient suffered from a generalised <span class='term' data-term='lymphadenopathy'>lymphadenopathy</span>", answerBreak:"lymph/adeno/pathy", meanings:["lymph","gland","disease"], explanation:"disease of the lymph glands" },
+      { id:22, sentence:"The patient suffered from <span class='term' data-term='dysentery'>dysentery</span>", answerBreak:"dys/enter/y", meanings:["bad or poor","small intestines","process of"], explanation:"something wrong with small intestines" },
+      { id:23, sentence:"The impact resulted in <span class='term' data-term='intracranial'>intracranial</span> bleeding", answerBreak:"intra/cranial", meanings:["inside","skull"], explanation:"bleeding inside the skull" },
+      { id:24, sentence:"Elderly people often have <span class='term' data-term='atherosclerosis'>atherosclerosis</span>", answerBreak:"athero/scler/osis", meanings:["fatty plaque","dry or hard","condition of"], explanation:"usually relating to the arteries & veins that have become hardened and coated in fatty plaques" },
+      { id:25, sentence:"An <span class='term' data-term='tracheotomy'>tracheotomy</span> was performed", answerBreak:"trachea/tom/y", meanings:["wind pipe","cut","process of"], explanation:"cut into the windpipe" },
+      { id:26, sentence:"The patient developed <span class='term' data-term='hyperglycaemia'>hyperglycaemia</span>", answerBreak:"hyper/glyc/aem/ia", meanings:["above","sugar","blood","condition of"], explanation:"high blood sugar" }
     ];
     
     // Game State
@@ -763,6 +694,8 @@
       draggedElement: null,
       draggedElementType: null, // 'piece' or 'meaning'
       currentQuestionData: null,
+      selectedQuestions: [],
+      pieceToMeaningMap: {},
       touchStartX: 0,
       touchStartY: 0
     };
@@ -796,18 +729,15 @@
     }
     
     function adjustForMobile() {
-      // Set proper height for mobile browsers
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
       
-      // Prevent zoom
       document.addEventListener('touchmove', function(e) {
         if (e.scale !== 1) {
           e.preventDefault();
         }
       }, { passive: false });
       
-      // Handle orientation changes
       window.addEventListener('orientationchange', function() {
         setTimeout(() => {
           window.scrollTo(0, 0);
@@ -816,7 +746,7 @@
     }
     
     function showStartScreen() {
-      sentenceText.innerHTML = "Welcome to Medical Terminology Game!<br><br>Tap the highlighted medical terms, cut them into pieces, and drag to the correct boxes.<br><br>Complete 10 terms to finish the game.";
+      sentenceText.innerHTML = "Welcome to Medical Terminology Game!<br><br>Tap the highlighted medical terms, cut them into pieces, and drag to the correct boxes.<br><br>Complete 10 random terms to finish the game.";
       hintText.textContent = "Tap Start to begin";
       piecesContainer.innerHTML = "";
       dropZones.style.display = "none";
@@ -828,8 +758,14 @@
     }
     
     function startGame() {
+      // Select 10 random questions from the pool of 26
+      gameState.selectedQuestions = [...allQuestions]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 10);
+      
       gameState.currentQuestion = 0;
       gameState.score = 0;
+      gameState.coins = 150;
       gameState.streak = 0;
       gameState.correctAnswers = 0;
       gameState.gameActive = true;
@@ -838,14 +774,17 @@
     }
     
     function loadQuestion(questionIndex) {
-      if (questionIndex >= gameState.totalQuestions) {
+      if (questionIndex >= gameState.selectedQuestions.length) {
         endGame();
         return;
       }
       
       gameState.currentQuestion = questionIndex;
-      const question = gameQuestions[questionIndex];
+      const question = gameState.selectedQuestions[questionIndex];
       gameState.currentQuestionData = question;
+      
+      // Reset the piece-to-meaning mapping
+      gameState.pieceToMeaningMap = {};
       
       sentenceText.innerHTML = question.sentence;
       hintText.textContent = "Tap the highlighted term to expand it";
@@ -865,7 +804,6 @@
       updateUI();
       setupTermInteraction();
       
-      // Scroll to top
       scrollContainer.scrollTop = 0;
     }
     
@@ -901,7 +839,6 @@
     function showScissorTool() {
       scissorTool.style.display = 'flex';
       
-      // Position scissor near the term
       const termRect = document.querySelector('.term').getBoundingClientRect();
       const containerRect = document.querySelector('.container').getBoundingClientRect();
       
@@ -960,7 +897,6 @@
         handleCut(clientX);
       }
       
-      // Add event listeners
       scissorTool.addEventListener('mousedown', startDrag);
       scissorTool.addEventListener('touchstart', startDrag, { passive: false });
       document.addEventListener('mousemove', drag);
@@ -968,7 +904,6 @@
       document.addEventListener('mouseup', stopDrag);
       document.addEventListener('touchend', stopDrag);
       
-      // Store references for cleanup
       scissorTool._dragHandlers = { startDrag, drag, stopDrag };
     }
     
@@ -1004,7 +939,6 @@
       termElement.classList.remove('expanded');
       scissorTool.style.display = 'none';
       
-      // Remove event listeners
       if (scissorTool._dragHandlers) {
         scissorTool.removeEventListener('mousedown', scissorTool._dragHandlers.startDrag);
         scissorTool.removeEventListener('touchstart', scissorTool._dragHandlers.startDrag);
@@ -1030,13 +964,29 @@
     function createPieces() {
       piecesContainer.innerHTML = '';
       const question = gameState.currentQuestionData;
+      const parts = question.answerBreak.split('/');
       
-      question.breakdown.forEach((piece, index) => {
+      // Determine type for each piece based on common medical terminology patterns
+      const types = parts.map(part => {
+        if (part === 'hypo' || part === 'hyper' || part === 'inter' || part === 'ante' || part === 'intra' || 
+            part === 'poly' || part === 'tachy' || part === 'dys' || part === 'iso') {
+          return 'prefix';
+        } else if (part === 'ic' || part === 'al' || part === 'y' || part === 'ia' || part === 'itis' || 
+                   part === 'pathy' || part === 'osis' || part === 'ectomy' || part === 'tomy' || 
+                   part === 'stomy' || part === 'graphy' || part === 'logy' || part === 'ist' || 
+                   part === 'algia' || part === 'megaly' || part === 'emia' || part === 'uria') {
+          return 'suffix';
+        } else {
+          return 'root';
+        }
+      });
+      
+      parts.forEach((piece, index) => {
         const pieceElement = document.createElement('div');
         pieceElement.className = 'piece';
         pieceElement.textContent = piece;
         pieceElement.dataset.part = piece;
-        pieceElement.dataset.type = question.correctOrder[index];
+        pieceElement.dataset.type = types[index];
         pieceElement.dataset.index = index;
         
         setupDraggableElement(pieceElement, 'piece');
@@ -1140,7 +1090,6 @@
         document.removeEventListener('touchmove', dragTouch);
         document.removeEventListener('touchend', stopDragTouch);
         
-        // Remove active class from all drop zones
         const zones = document.querySelectorAll('.dropzone');
         zones.forEach(zone => zone.classList.remove('active'));
       }
@@ -1184,7 +1133,6 @@
       }
       
       if (!dropped) {
-        // Return to original position
         gameState.draggedElement.style.position = 'static';
         gameState.draggedElement.style.zIndex = '';
         
@@ -1200,7 +1148,6 @@
       const correctType = piece.dataset.type;
       
       if (correctType === zoneType) {
-        // Correct drop
         zone.appendChild(piece);
         piece.classList.add('correct');
         piece.style.position = 'static';
@@ -1208,19 +1155,19 @@
         gameState.coins += 10;
         gameState.streak++;
         
-        // Check if all pieces are placed
+        // Map this piece index to its zone for meaning matching
+        const pieceIndex = parseInt(piece.dataset.index);
+        gameState.pieceToMeaningMap[pieceIndex] = zone.id;
+        
         checkPiecesComplete();
       } else {
-        // Wrong drop
         piece.classList.add('wrong');
         showFeedback('wrong');
         gameState.streak = 0;
         
-        // Return piece after delay
         setTimeout(() => {
           piece.classList.remove('wrong');
           piece.style.position = 'static';
-          piece.style.zIndex = '';
           piecesContainer.appendChild(piece);
         }, 800);
       }
@@ -1229,46 +1176,51 @@
     }
     
     function handleMeaningDrop(meaning, zone, zoneType) {
-  // Check if this is the correct zone for this meaning
-  const pieceInZone = zone.querySelector('.piece.correct');
-  if (pieceInZone && pieceInZone.dataset.index !== undefined) {
-    const pieceIndex = parseInt(pieceInZone.dataset.index);
-    const question = gameState.currentQuestionData;
-    
-    // Get the correct meaning for this zone based on the piece index
-    const correctMeaning = question.meanings[pieceIndex];
-    
-    if (meaning.textContent === correctMeaning) {
-      // Correct meaning in correct zone
-      zone.appendChild(meaning);
-      meaning.classList.add('matched');
-      meaning.style.position = 'static';
-      showFeedback('correct');
-      gameState.coins += 10;
-      gameState.streak++;
-    } else {
-      // Wrong meaning for this zone
-      meaning.classList.add('wrong');
-      showFeedback('wrong');
-      gameState.streak = 0;
+      const question = gameState.currentQuestionData;
+      const pieceIndex = Object.keys(gameState.pieceToMeaningMap).find(
+        key => gameState.pieceToMeaningMap[key] === zone.id
+      );
       
-      setTimeout(() => {
-        meaning.classList.remove('wrong');
+      if (pieceIndex !== undefined) {
+        const expectedMeaning = question.meanings[parseInt(pieceIndex)];
+        
+        if (meaning.textContent === expectedMeaning) {
+          // Correct meaning in correct zone
+          zone.appendChild(meaning);
+          meaning.classList.add('matched');
+          meaning.style.position = 'static';
+          showFeedback('correct');
+          gameState.coins += 10;
+          gameState.streak++;
+          
+          checkMeaningsComplete();
+        } else {
+          // Wrong meaning for this zone
+          meaning.classList.add('wrong');
+          showFeedback('wrong');
+          gameState.streak = 0;
+          
+          setTimeout(() => {
+            meaning.classList.remove('wrong');
+            meaning.style.position = 'static';
+            meaningsContainer.appendChild(meaning);
+          }, 800);
+        }
+      } else {
+        // No piece in this zone yet
         meaning.style.position = 'static';
         meaningsContainer.appendChild(meaning);
-      }, 800);
+      }
+      
+      updateUI();
     }
-  } else {
-    // No piece in this zone yet or can't determine correct meaning
-    meaning.style.position = 'static';
-    meaningsContainer.appendChild(meaning);
-  }
     
     function checkPiecesComplete() {
       const correctPieces = document.querySelectorAll('.piece.correct');
       const question = gameState.currentQuestionData;
+      const parts = question.answerBreak.split('/');
       
-      if (correctPieces.length === question.breakdown.length) {
+      if (correctPieces.length === parts.length) {
         gameState.correctAnswers++;
         gameState.score++;
         hintText.textContent = "Excellent! All pieces placed correctly! Now match the meanings.";
@@ -1278,16 +1230,17 @@
     
     function showMeanings() {
       meaningsContainer.style.display = 'flex';
-      meaningsContainer.innerHTML = '<div style="width: 100%; text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 1.1rem;">Drag Meanings to Any Box:</div>';
+      meaningsContainer.innerHTML = '<div style="width: 100%; text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 1.1rem;">Drag Meanings to Correct Boxes:</div>';
       
       const question = gameState.currentQuestionData;
       const shuffledMeanings = [...question.meanings].sort(() => Math.random() - 0.5);
       
-      shuffledMeanings.forEach(meaning => {
+      shuffledMeanings.forEach((meaning, index) => {
         const meaningElement = document.createElement('div');
         meaningElement.className = 'meaning-item';
         meaningElement.textContent = meaning;
         meaningElement.dataset.meaning = meaning;
+        meaningElement.dataset.index = index;
         
         setupDraggableElement(meaningElement, 'meaning');
         
@@ -1296,7 +1249,6 @@
       
       nextBtn.style.display = 'inline-block';
       
-      // Scroll to show meanings
       setTimeout(() => {
         meaningsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 300);
@@ -1335,7 +1287,6 @@
     }
     
     function setupTouchEvents() {
-      // Prevent unwanted behaviors
       document.addEventListener('touchmove', (e) => {
         if (e.scale !== 1) {
           e.preventDefault();
@@ -1346,7 +1297,6 @@
       document.addEventListener('gesturechange', (e) => e.preventDefault());
       document.addEventListener('gestureend', (e) => e.preventDefault());
       
-      // Prevent double-tap zoom
       let lastTap = 0;
       document.addEventListener('touchend', (e) => {
         const currentTime = new Date().getTime();
@@ -1359,12 +1309,12 @@
     }
     
     function updateUI() {
-      const progress = ((gameState.currentQuestion) / gameState.totalQuestions) * 100;
+      const progress = ((gameState.currentQuestion) / gameState.selectedQuestions.length) * 100;
       progressBar.style.width = `${progress}%`;
       
       coinCount.textContent = gameState.coins;
       streakCount.textContent = gameState.streak;
-      scoreCount.textContent = `${gameState.score}/${gameState.totalQuestions}`;
+      scoreCount.textContent = `${gameState.score}/${gameState.selectedQuestions.length}`;
     }
     
     function endGame() {
@@ -1375,31 +1325,25 @@
       meaningsContainer.style.display = 'none';
       nextBtn.style.display = 'none';
       
-      const accuracy = gameState.totalQuestions > 0 
-        ? Math.round((gameState.correctAnswers / gameState.totalQuestions) * 100) 
+      const accuracy = gameState.selectedQuestions.length > 0 
+        ? Math.round((gameState.correctAnswers / gameState.selectedQuestions.length) * 100) 
         : 0;
       
       document.getElementById('finalScore').textContent = gameState.score;
-      document.getElementById('totalQuestions').textContent = gameState.totalQuestions;
+      document.getElementById('totalQuestions').textContent = gameState.selectedQuestions.length;
       document.getElementById('finalCoins').textContent = gameState.coins;
       document.getElementById('finalStreak').textContent = gameState.streak;
       document.getElementById('accuracy').textContent = `${accuracy}%`;
       
       endScreen.style.display = 'flex';
       
-      // Scroll to end screen
       setTimeout(() => {
         endScreen.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
     }
     
-    // Initialize when page loads
     window.addEventListener('DOMContentLoaded', initGame);
-    
-    // Handle window resize
     window.addEventListener('resize', adjustForMobile);
-    
-    // Handle page visibility (for mobile browsers)
     document.addEventListener('visibilitychange', function() {
       if (!document.hidden) {
         adjustForMobile();
