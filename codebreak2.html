@@ -1,548 +1,1152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>Medical Terminology Master</title>
-
-  <!-- PWA support -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#07C160">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Medical Terminology Break the Code</title>
   <style>
-    :root {
-      --primary: #07C160;
-      --secondary: #FFC300;
-      --accent: #0080FF;
-      --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      --glass-bg: rgba(255, 255, 255, 0.1);
-      --glass-border: rgba(255, 255, 255, 0.2);
-      --text: #ffffff;
-      --correct: #07C160;
-      --wrong: #FA5151;
-    }
-
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      touch-action: manipulation;
       -webkit-user-select: none;
       user-select: none;
     }
-
+    
     html, body {
       height: 100%;
+      width: 100%;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg-gradient);
-      color: var(--text);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
       overflow: hidden;
-      touch-action: manipulation;
     }
-
-    .header {
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(10px);
-      padding: 12px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 1000;
-    }
-
-    .game-container {
-      padding-top: 70px;
+    
+    .container {
+      width: 100%;
       height: 100vh;
       display: flex;
       flex-direction: column;
       max-width: 800px;
       margin: 0 auto;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+      padding: 10px;
     }
-
-    .progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary), var(--accent));
-      border-radius: 10px;
-      transition: width 0.5s ease;
-      width: 0;
-    }
-
-    .streak-counter {
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      background: rgba(255,195,0,0.2);
-      border: 2px solid var(--secondary);
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.3);
       border-radius: 15px;
-      padding: 8px 15px;
+      margin-bottom: 10px;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #00d4ff;
+    }
+    
+    .stats {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .stat {
       display: flex;
       align-items: center;
-      gap: 8px;
-      z-index: 100;
-      font-weight: bold;
-    }
-
-    .term {
-      font-size: 2rem;
-      font-weight: bold;
-      color: var(--primary);
-      padding: 15px 25px;
-      background: rgba(7,193,96,0.1);
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px 12px;
       border-radius: 20px;
-      border: 2px solid var(--primary);
-      transition: all 0.3s;
-      text-align: center;
-      max-width: 90%;
-      touch-action: none;
+      font-size: 0.9rem;
     }
-
-    .term.expanded {
-      transform: scale(1.15);
-      box-shadow: 0 0 30px rgba(7,193,96,0.3);
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      margin: 10px 0;
+      overflow: hidden;
     }
-
-    .scissor-tool {
-      position: fixed;
-      width: 60px;
-      height: 60px;
-      background: var(--secondary);
-      border-radius: 50%;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      box-shadow: 0 4px 20px rgba(255,195,0,0.5);
-      z-index: 1000;
-      transition: transform 0.2s;
-      touch-action: none;
+    
+    .progress {
+      height: 100%;
+      background: linear-gradient(90deg, #00d4ff, #0095ff);
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.5s;
     }
-
-    .piece, .meaning-card {
-      background: rgba(255,255,255,0.15);
-      border-radius: 15px;
-      padding: 12px 20px;
-      font-size: 1.2rem;
-      border: 2px solid transparent;
-      transition: all 0.3s;
-      touch-action: none;
-      user-select: none;
-    }
-
-    .piece.dragging, .meaning-card.dragging {
-      opacity: 0.7;
-      position: fixed;
-      z-index: 9999;
-      pointer-events: none;
-    }
-
-    .dropzone {
-      background: rgba(255,255,255,0.08);
-      border-radius: 15px;
-      padding: 20px 10px;
-      min-height: 100px;
-      border: 2px dashed rgba(255,255,255,0.3);
-      transition: all 0.3s;
+    
+    .game-area {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    
+    .question-box {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 20px;
+      width: 100%;
+      margin-bottom: 20px;
       text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-
-    .dropzone.active { border-color: var(--primary); background: rgba(7,193,96,0.1); }
-
-    .dropzone.correct { border-color: var(--correct); background: rgba(7,193,96,0.2); }
-
-    .meaning-card.matched {
-      background: rgba(7,193,96,0.3);
-      border: 2px solid var(--correct);
+    
+    .sentence {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      margin-bottom: 20px;
     }
-
-    .game-button {
-      background: linear-gradient(45deg, var(--primary), var(--accent));
-      border: none;
-      color: white;
-      font-size: 1.1rem;
-      padding: 14px 32px;
-      border-radius: 50px;
-      margin: 16px;
+    
+    .term {
+      color: #00d4ff;
+      font-weight: bold;
+      font-size: 1.5rem;
       cursor: pointer;
-      box-shadow: 0 4px 20px rgba(0,212,255,0.4);
+      padding: 10px;
+      border-radius: 10px;
+      transition: all 0.3s;
+      display: inline-block;
+      margin: 10px 0;
+    }
+    
+    .term.expanded {
+      transform: scale(1.2);
+      background: rgba(0, 212, 255, 0.2);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+      padding: 15px 20px;
+      font-size: 1.8rem;
+    }
+    
+    .hint {
+      font-size: 0.9rem;
+      color: #aaa;
+      margin-top: 10px;
+    }
+    
+    .scissor-tool {
+      position: fixed;
+      width: 60px;
+      height: 60px;
+      background: #FFC300;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      cursor: grab;
+      z-index: 1000;
+      box-shadow: 0 4px 20px rgba(255, 195, 0, 0.5);
+      display: none;
+      user-select: none;
+    }
+    
+    .scissor-tool:active {
+      transform: scale(0.9);
+    }
+    
+    .cut-guide {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 3px;
+      background: linear-gradient(to bottom, transparent, #FFC300, transparent);
+      display: none;
+      pointer-events: none;
+      animation: pulse 1s infinite;
+    }
+    
+    .cut-hint {
+      position: absolute;
+      top: -30px;
+      background: #FFC300;
+      color: black;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      display: none;
+      pointer-events: none;
       font-weight: bold;
     }
-
-    .hidden { display: none !important; }
-
+    
+    .pieces-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+      min-height: 60px;
+      width: 100%;
+      padding: 10px;
+    }
+    
+    .piece {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      cursor: grab;
+      border: 2px solid transparent;
+      transition: all 0.3s;
+      user-select: none;
+    }
+    
+    .piece.correct {
+      border-color: #00ff9d;
+      background: rgba(0, 255, 157, 0.2);
+    }
+    
+    .piece.wrong {
+      border-color: #ff4d6d;
+      background: rgba(255, 77, 109, 0.2);
+      animation: shake 0.5s;
+    }
+    
+    .drop-zones {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      margin: 20px 0;
+    }
+    
+    .dropzone {
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      padding: 15px;
+      min-height: 100px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    
+    .dropzone.active {
+      border-color: #00d4ff;
+      background: rgba(0, 212, 255, 0.1);
+      transform: scale(1.05);
+    }
+    
+    .zone-label {
+      font-size: 0.9rem;
+      color: #aaa;
+      margin-top: 5px;
+    }
+    
+    .meanings-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      width: 100%;
+      margin: 20px 0;
+      padding: 10px;
+      display: none;
+    }
+    
+    .meaning-card {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      user-select: none;
+    }
+    
+    .meaning-card.matched {
+      background: rgba(0, 255, 157, 0.3);
+      border: 2px solid #00ff9d;
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .btn {
+      background: linear-gradient(45deg, #00d4ff, #0095ff);
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+      min-width: 150px;
+    }
+    
+    .btn:active {
+      transform: scale(0.95);
+    }
+    
+    .btn-next {
+      display: none;
+    }
+    
+    .feedback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      pointer-events: none;
+      z-index: 10000;
+      opacity: 0;
+      display: none;
+    }
+    
+    .feedback.correct {
+      color: #00ff9d;
+    }
+    
+    .feedback.wrong {
+      color: #ff4d6d;
+    }
+    
+    .end-screen {
+      text-align: center;
+      padding: 30px;
+      display: none;
+    }
+    
+    .end-screen h2 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      color: #00d4ff;
+    }
+    
+    .end-stats {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: left;
+    }
+    
+    .end-stat {
+      font-size: 1.2rem;
+      margin: 10px 0;
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    @keyframes pop {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+      70% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    }
+    
     @media (max-width: 768px) {
-      .term { font-size: 1.7rem; padding: 12px 20px; }
-      .piece, .meaning-card { padding: 10px 15px; font-size: 1rem; }
+      .header {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .stats {
+        width: 100%;
+        justify-content: space-around;
+      }
+      
+      .drop-zones {
+        grid-template-columns: 1fr;
+      }
+      
+      .term.expanded {
+        font-size: 1.5rem;
+        padding: 12px 15px;
+      }
+      
+      .piece {
+        padding: 10px 15px;
+        font-size: 1rem;
+      }
+      
+      .scissor-tool {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .sentence {
+        font-size: 1rem;
+      }
+      
+      .term {
+        font-size: 1.3rem;
+      }
+      
+      .btn {
+        padding: 10px 20px;
+        min-width: 120px;
+        font-size: 0.9rem;
+      }
     }
   </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="user-info" style="display:flex; align-items:center; gap:10px;">
-    <div class="avatar" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(45deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.2rem;">MD</div>
-    <div>
-      <div style="font-weight:bold;">Term Master</div>
-      <div style="font-size:0.8rem;opacity:0.8;">Level 3</div>
-    </div>
-  </div>
-  <div class="coins" style="background:rgba(255,195,0,0.2);border:1px solid var(--secondary);border-radius:20px;padding:4px 12px;display:flex;align-items:center;gap:6px;font-weight:bold;">
-    <span>⭐</span><span id="coinCount">150</span>
-  </div>
-</div>
-
-<div class="streak-counter">
-  <span class="streak-flame">🔥</span>
-  <span id="streakCount">7 Streak</span>
-</div>
-
-<div class="game-container">
-  <div class="progress-section" style="padding:15px 20px;">
-    <div class="progress-container" style="width:100%;background:rgba(255,255,255,0.1);border-radius:10px;height:10px;overflow:hidden;margin-bottom:10px;">
-      <div class="progress-bar" id="progressBar"></div>
-    </div>
-    <div style="text-align:center;font-size:0.9rem;opacity:0.8;">
-      Question <span id="currentQuestion">1</span> of <span id="totalQuestions">10</span>
-    </div>
-  </div>
-
-  <div class="question-area" id="questionArea"></div>
-</div>
-
-<div class="scissor-tool" id="scissorTool">✂️</div>
-
-<div class="achievement-popup hidden" id="achievementPopup" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#667eea,#764ba2);border-radius:20px;padding:25px;z-index:10000;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);width:85%;max-width:400px;">
-  <div class="achievement-icon" style="font-size:3.5rem;margin-bottom:15px;animation:bounce 1s infinite alternate;">🏆</div>
-  <h3>Achievement Unlocked!</h3>
-  <p id="achievementText">5 Correct Answers in a Row</p>
-  <p style="color:var(--secondary);margin-top:10px;font-weight:bold;">+50 Coins</p>
-</div>
-
-<script>
-const gameData = {
-  questions: [
-    {
-      id: 1,
-      sentence: "The patient was <span class='term'>hypoglycaemic</span>",
-      term: "hypoglycaemic",
-      breakdown: ["hypo", "glyc", "aem", "ic"],
-      meanings: ["low", "sugar", "blood", "pertaining to"],
-      correctOrder: ["prefix", "root", "root", "suffix"],
-      explanation: "low blood sugar"
-    },
-    {
-      id: 2,
-      sentence: "There was swelling in the <span class='term'>interphalangeal</span> joints",
-      term: "interphalangeal",
-      breakdown: ["inter", "phalange", "al"],
-      meanings: ["between", "finger or toe bones", "pertaining to"],
-      correctOrder: ["prefix", "root", "suffix"],
-      explanation: "pertaining to between the finger or toe bones"
-    },
-    // ... add more
-  ],
-  state: {
-    score: 0,
-    coins: 150,
-    streak: 0,
-    currentQuestionIndex: 0,
-    totalQuestions: 3,
-    achievements: [],
-    userData: JSON.parse(localStorage.getItem('medTermMaster')) || { coins: 150, totalCorrect: 0 }
-  },
-  draggedElement: null,
-  dragType: null, // "piece" or "meaning"
-  touchOffset: { x: 0, y: 0 }
-};
-
-function initGame() {
-  loadUserData();
-  updateUI();
-  loadQuestion(0);
-  setupGlobalDragListeners();
-}
-
-function loadUserData() {
-  if (gameData.state.userData) {
-    gameData.state.coins = gameData.state.userData.coins || 150;
-  }
-}
-
-function saveUserData() {
-  gameData.state.userData.coins = gameData.state.coins;
-  gameData.state.userData.totalCorrect = gameData.state.score;
-  localStorage.setItem('medTermMaster', JSON.stringify(gameData.state.userData));
-}
-
-function updateUI() {
-  document.getElementById('coinCount').textContent = gameData.state.coins;
-  document.getElementById('streakCount').textContent = `${gameData.state.streak} Streak`;
-  document.getElementById('currentQuestion').textContent = gameData.state.currentQuestionIndex + 1;
-  document.getElementById('totalQuestions').textContent = gameData.state.totalQuestions;
-
-  const progress = (gameData.state.currentQuestionIndex / gameData.state.totalQuestions) * 100;
-  document.getElementById('progressBar').style.width = `${progress}%`;
-}
-
-function loadQuestion(index) {
-  if (index >= gameData.questions.length) return endGame();
-
-  const q = gameData.questions[index];
-  const area = document.getElementById('questionArea');
-
-  area.innerHTML = `
-    <div class="sentence" style="font-size:1.2rem;text-align:center;margin:20px;padding:0 10px;line-height:1.5;">${q.sentence}</div>
-
-    <div class="term-display" style="position:relative;margin:20px 0 40px;width:100%;display:flex;justify-content:center;">
-      <div class="term" id="mainTerm">${q.term}</div>
-      <div class="tap-hint" style="position:absolute;bottom:-25px;left:50%;transform:translateX(-50%);font-size:0.8rem;color:rgba(255,255,255,0.6);">Tap to expand ▼</div>
-    </div>
-
-    <div class="pieces-container" id="piecesContainer" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:30px 0;min-height:70px;padding:10px;"></div>
-
-    <div class="drop-zones" id="dropZones" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:15px;margin:20px 10px;width:100%;">
-      <div class="dropzone" data-type="prefix"><div style="font-size:2rem;">🔰</div><div class="zone-label">Prefix</div></div>
-      <div class="dropzone" data-type="root"><div style="font-size:2rem;">🎯</div><div class="zone-label">Root Word</div></div>
-      <div class="dropzone" data-type="suffix"><div style="font-size:2rem;">🏷️</div><div class="zone-label">Suffix</div></div>
-    </div>
-
-    <div class="meanings-container" id="meaningsContainer" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:20px 0;padding:10px;width:100%;">
-      <h3 style="grid-column:1/-1;text-align:center;margin-bottom:15px;">Match the Meanings</h3>
-    </div>
-
-    <button class="game-button hidden" id="nextButton">Next Question</button>
-  `;
-
-  document.getElementById('nextButton').onclick = nextQuestion;
-
-  setupTermInteraction(q);
-  updateUI();
-}
-
-function setupTermInteraction(question) {
-  const term = document.getElementById('mainTerm');
-
-  term.addEventListener('click', () => {
-    term.classList.toggle('expanded');
-    term.classList.contains('expanded') ? showScissorTool() : hideScissorTool();
-  });
-
-  // Long press hint (optional)
-  let timer;
-  term.addEventListener('touchstart', e => {
-    timer = setTimeout(() => alert(`Hint: ${question.term} has ${question.breakdown.length} parts`), 700);
-  }, {passive: true});
-  term.addEventListener('touchend', () => clearTimeout(timer));
-}
-
-function showScissorTool() {
-  const sc = document.getElementById('scissorTool');
-  sc.style.display = 'flex';
-  sc.style.left = 'calc(50% - 30px)';
-  sc.style.top = '250px';
-  setupDrag(sc, null, onScissorMove, onScissorEnd);
-}
-
-function hideScissorTool() {
-  document.getElementById('scissorTool').style.display = 'none';
-}
-
-function setupDrag(el, type, onMove, onEnd) {
-  function start(e) {
-    e.preventDefault();
-    const touch = e.touches ? e.touches[0] : e;
-    gameData.touchOffset.x = touch.clientX - el.getBoundingClientRect().left;
-    gameData.touchOffset.y = touch.clientY - el.getBoundingClientRect().top;
-    gameData.draggedElement = el;
-    gameData.dragType = type;
-    el.classList.add('dragging');
-    document.addEventListener('mousemove', move);
-    document.addEventListener('touchmove', move, {passive: false});
-    document.addEventListener('mouseup', end);
-    document.addEventListener('touchend', end);
-  }
-
-  function move(e) {
-    if (!gameData.draggedElement) return;
-    e.preventDefault();
-    const touch = e.touches ? e.touches[0] : e;
-    el.style.left = (touch.clientX - gameData.touchOffset.x) + 'px';
-    el.style.top  = (touch.clientY - gameData.touchOffset.y) + 'px';
-    onMove?.(touch.clientX, touch.clientY);
-  }
-
-  function end(e) {
-    if (!gameData.draggedElement) return;
-    e.preventDefault();
-    const touch = e.changedTouches ? e.changedTouches[0] : e;
-    onEnd?.(touch.clientX, touch.clientY);
-    el.classList.remove('dragging');
-    el.style.left = ''; el.style.top = '';
-    gameData.draggedElement = null;
-    gameData.dragType = null;
-    document.removeEventListener('mousemove', move);
-    document.removeEventListener('touchmove', move);
-    document.removeEventListener('mouseup', end);
-    document.removeEventListener('touchend', end);
-  }
-
-  el.addEventListener('mousedown', start);
-  el.addEventListener('touchstart', start, {passive: false});
-}
-
-function onScissorMove(x, y) {
-  // You can add visual cut line preview here if desired
-}
-
-function onScissorEnd(x, y) {
-  const termEl = document.getElementById('mainTerm');
-  const rect = termEl.getBoundingClientRect();
-  if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-    const cutPos = x - rect.left;
-    handleCut(cutPos, rect.width);
-  }
-  hideScissorTool();
-}
-
-function handleCut(cutPosition, termWidth) {
-  const q = gameData.questions[gameData.state.currentQuestionIndex];
-  const ratio = cutPosition / termWidth;
-
-  let bestIdx = 0, minDiff = 1;
-  let len = 0;
-  for (let i = 0; i < q.breakdown.length - 1; i++) {
-    len += q.breakdown[i].length;
-    const pos = len / q.term.length;
-    const diff = Math.abs(pos - ratio);
-    if (diff < minDiff) { minDiff = diff; bestIdx = i; }
-  }
-
-  if (minDiff < 0.18) {
-    splitTerm(q);
-    gameData.state.streak++;
-    showFeedback(true);
-  } else {
-    gameData.state.streak = 0;
-    showFeedback(false);
-  }
-}
-
-function splitTerm(question) {
-  const cont = document.getElementById('piecesContainer');
-  cont.innerHTML = '';
-
-  question.breakdown.forEach((part, i) => {
-    const p = document.createElement('div');
-    p.className = 'piece';
-    p.textContent = part;
-    p.dataset.type = question.correctOrder[i];
-    cont.appendChild(p);
-    setupDrag(p, 'piece', null, (x,y) => handlePieceDrop(x,y,p));
-  });
-
-  setupMeanings(question);
-  document.getElementById('mainTerm').classList.remove('expanded');
-}
-
-function handlePieceDrop(x, y, piece) {
-  let dropped = false;
-  document.querySelectorAll('.dropzone').forEach(zone => {
-    const r = zone.getBoundingClientRect();
-    if (x > r.left && x < r.right && y > r.top && y < r.bottom) {
-      if (piece.dataset.type === zone.dataset.type) {
-        zone.appendChild(piece);
-        piece.classList.add('correct');
-        piece.style.position = 'static';
-        checkAllPiecesCorrect();
-        gameData.state.coins += 10;
-        showFeedback(true);
-      } else {
-        showFeedback(false);
-        gameData.state.streak = 0;
-      }
-      dropped = true;
-    }
-  });
-  if (!dropped) {
-    document.getElementById('piecesContainer').appendChild(piece);
-  }
-  updateUI();
-}
-
-function checkAllPiecesCorrect() {
-  const correct = document.querySelectorAll('.piece.correct').length;
-  if (correct === gameData.questions[gameData.state.currentQuestionIndex].breakdown.length) {
-    gameData.state.score++;
-    // You can trigger achievement check here
-  }
-}
-
-function setupMeanings(question) {
-  const cont = document.getElementById('meaningsContainer');
-  const shuffled = [...question.meanings].sort(()=>Math.random()-0.5);
-
-  shuffled.forEach(m => {
-    const c = document.createElement('div');
-    c.className = 'meaning-card';
-    c.textContent = m;
-    cont.appendChild(c);
-    setupDrag(c, 'meaning', null, (x,y) => {
-      // For simplicity — just mark matched on drop anywhere (improve later)
-      c.classList.add('matched');
-      gameData.state.coins += 5;
-      showFeedback(true);
-      updateUI();
-    });
-  });
-}
-
-function showFeedback(correct) {
-  const emoji = correct ? '✅' : '❌';
-  const div = document.createElement('div');
-  div.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:5rem;opacity:0;z-index:1000;pointer-events:none;`;
-  div.textContent = emoji;
-  document.body.appendChild(div);
-  setTimeout(() => { div.style.transition = 'opacity 0.6s'; div.style.opacity = '1'; }, 10);
-  setTimeout(() => { div.style.opacity = '0'; setTimeout(()=>div.remove(),600); }, 800);
-
-  if (navigator.vibrate) navigator.vibrate(correct ? 80 : 180);
-}
-
-function nextQuestion() {
-  gameData.state.currentQuestionIndex++;
-  loadQuestion(gameData.state.currentQuestionIndex);
-}
-
-function endGame() {
-  const area = document.getElementById('questionArea');
-  area.innerHTML = `
-    <div style="text-align:center;padding:60px 20px;">
-      <h2>Session Complete! 🎉</h2>
-      <div style="background:rgba(255,255,255,0.1);border-radius:20px;padding:25px;margin:25px 0;">
-        <p style="font-size:1.3rem;margin:12px 0;">Score: ${gameData.state.score}/${gameData.state.totalQuestions}</p>
-        <p style="font-size:1.3rem;margin:12px 0;">Coins: ${gameData.state.coins}</p>
+  <div class="container">
+    <div class="header">
+      <div class="logo">🏥 Med Term Game</div>
+      <div class="stats">
+        <div class="stat">
+          <span>⭐</span>
+          <span id="coinCount">150</span>
+        </div>
+        <div class="stat">
+          <span>🔥</span>
+          <span id="streakCount">0</span>
+        </div>
+        <div class="stat">
+          <span>🎯</span>
+          <span id="scoreCount">0/10</span>
+        </div>
       </div>
-      <button class="game-button" onclick="location.reload()">Play Again</button>
     </div>
-  `;
-  saveUserData();
-}
-
-function setupGlobalDragListeners() {
-  // Global touchmove prevention when dragging
-  document.addEventListener('touchmove', e => {
-    if (gameData.draggedElement) e.preventDefault();
-  }, {passive: false});
-}
-
-window.addEventListener('DOMContentLoaded', initGame);
-</script>
+    
+    <div class="progress-bar">
+      <div class="progress" id="progressBar"></div>
+    </div>
+    
+    <div class="game-area" id="gameArea">
+      <div class="question-box" id="questionBox">
+        <div class="sentence" id="sentenceText">Loading game...</div>
+        <div class="hint" id="hintText">Tap the highlighted term to expand</div>
+      </div>
+      
+      <div class="pieces-container" id="piecesContainer"></div>
+      
+      <div class="drop-zones" id="dropZones" style="display: none;">
+        <div class="dropzone" data-type="prefix" id="prefixZone">
+          <div style="font-size: 2rem;">🔰</div>
+          <div class="zone-label">Prefix</div>
+        </div>
+        <div class="dropzone" data-type="root" id="rootZone">
+          <div style="font-size: 2rem;">🎯</div>
+          <div class="zone-label">Root Word</div>
+        </div>
+        <div class="dropzone" data-type="suffix" id="suffixZone">
+          <div style="font-size: 2rem;">🏷️</div>
+          <div class="zone-label">Suffix</div>
+        </div>
+      </div>
+      
+      <div class="meanings-container" id="meaningsContainer"></div>
+      
+      <div class="buttons">
+        <button class="btn" id="startBtn" onclick="startGame()">Start Game</button>
+        <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()" style="display: none;">Next Question</button>
+      </div>
+      
+      <div class="end-screen" id="endScreen">
+        <h2>🎉 Game Complete!</h2>
+        <div class="end-stats">
+          <div class="end-stat">Final Score: <span id="finalScore">0</span>/<span id="totalQuestions">10</span></div>
+          <div class="end-stat">Coins Earned: <span id="finalCoins">150</span></div>
+          <div class="end-stat">Best Streak: <span id="finalStreak">0</span></div>
+          <div class="end-stat">Accuracy: <span id="accuracy">0%</span></div>
+        </div>
+        <button class="btn" onclick="location.reload()">Play Again</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="scissor-tool" id="scissorTool">✂️</div>
+  
+  <div class="feedback correct" id="feedbackCorrect">✓</div>
+  <div class="feedback wrong" id="feedbackWrong">✗</div>
+  
+  <script>
+    // Game Data - Complete questions
+    const gameQuestions = [
+      {
+        id: 1,
+        sentence: "The patient was <span class='term'>hypoglycaemic</span>",
+        term: "hypoglycaemic",
+        breakdown: ["hypo", "glyc", "aem", "ic"],
+        meanings: ["low", "sugar", "blood", "pertaining to"],
+        correctOrder: ["prefix", "root", "root", "suffix"],
+        explanation: "low blood sugar",
+        category: "Endocrinology"
+      },
+      {
+        id: 2,
+        sentence: "There was swelling in the <span class='term'>interphalangeal</span> joints",
+        term: "interphalangeal",
+        breakdown: ["inter", "phalange", "al"],
+        meanings: ["between", "finger or toe bones", "pertaining to"],
+        correctOrder: ["prefix", "root", "suffix"],
+        explanation: "pertaining to between the finger or toe bones",
+        category: "Anatomy"
+      },
+      {
+        id: 3,
+        sentence: "The patient experienced <span class='term'>tachycardia</span>",
+        term: "tachycardia",
+        breakdown: ["tachy", "cardia"],
+        meanings: ["fast", "heart"],
+        correctOrder: ["prefix", "root"],
+        explanation: "rapid heart rate",
+        category: "Cardiology"
+      },
+      {
+        id: 4,
+        sentence: "The patient underwent a <span class='term'>cholecystectomy</span>",
+        term: "cholecystectomy",
+        breakdown: ["chole", "cyst", "ectomy"],
+        meanings: ["bile", "bladder", "surgical removal"],
+        correctOrder: ["root", "root", "suffix"],
+        explanation: "surgical removal of the gallbladder",
+        category: "Surgery"
+      },
+      {
+        id: 5,
+        sentence: "The results showed <span class='term'>glycosuria</span>",
+        term: "glycosuria",
+        breakdown: ["glycos", "uria"],
+        meanings: ["sugar", "urine"],
+        correctOrder: ["root", "suffix"],
+        explanation: "sugar in the urine",
+        category: "Urology"
+      },
+      {
+        id: 6,
+        sentence: "The patient had <span class='term'>hepatosplenomegaly</span>",
+        term: "hepatosplenomegaly",
+        breakdown: ["hepato", "spleno", "megaly"],
+        meanings: ["liver", "spleen", "enlargement"],
+        correctOrder: ["root", "root", "suffix"],
+        explanation: "enlargement of the liver and spleen",
+        category: "Gastroenterology"
+      },
+      {
+        id: 7,
+        sentence: "The patient reported <span class='term'>polyarthralgia</span>",
+        term: "polyarthralgia",
+        breakdown: ["poly", "arthr", "algia"],
+        meanings: ["many", "joint", "pain"],
+        correctOrder: ["prefix", "root", "suffix"],
+        explanation: "pain in multiple joints",
+        category: "Rheumatology"
+      },
+      {
+        id: 8,
+        sentence: "Referral was made to a <span class='term'>neurologist</span>",
+        term: "neurologist",
+        breakdown: ["neuro", "logist"],
+        meanings: ["nerve", "specialist"],
+        correctOrder: ["root", "suffix"],
+        explanation: "specialist in nervous system disorders",
+        category: "Neurology"
+      },
+      {
+        id: 9,
+        sentence: "The doctor ordered an <span class='term'>electrocardiograph</span>",
+        term: "electrocardiograph",
+        breakdown: ["electro", "cardio", "graph"],
+        meanings: ["electric", "heart", "recording instrument"],
+        correctOrder: ["root", "root", "suffix"],
+        explanation: "instrument for recording heart's electrical activity",
+        category: "Cardiology"
+      },
+      {
+        id: 10,
+        sentence: "A <span class='term'>tympanostomy</span> was performed",
+        term: "tympanostomy",
+        breakdown: ["tympano", "stomy"],
+        meanings: ["eardrum", "surgical opening"],
+        correctOrder: ["root", "suffix"],
+        explanation: "surgical opening in the eardrum",
+        category: "Otolaryngology"
+      }
+    ];
+    
+    // Game State
+    let gameState = {
+      currentQuestion: 0,
+      score: 0,
+      coins: 150,
+      streak: 0,
+      totalQuestions: 10,
+      correctAnswers: 0,
+      gameActive: false,
+      draggedPiece: null,
+      currentQuestionData: null
+    };
+    
+    // DOM Elements
+    const gameArea = document.getElementById('gameArea');
+    const questionBox = document.getElementById('questionBox');
+    const sentenceText = document.getElementById('sentenceText');
+    const hintText = document.getElementById('hintText');
+    const piecesContainer = document.getElementById('piecesContainer');
+    const dropZones = document.getElementById('dropZones');
+    const meaningsContainer = document.getElementById('meaningsContainer');
+    const startBtn = document.getElementById('startBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const endScreen = document.getElementById('endScreen');
+    const scissorTool = document.getElementById('scissorTool');
+    const feedbackCorrect = document.getElementById('feedbackCorrect');
+    const feedbackWrong = document.getElementById('feedbackWrong');
+    const progressBar = document.getElementById('progressBar');
+    const coinCount = document.getElementById('coinCount');
+    const streakCount = document.getElementById('streakCount');
+    const scoreCount = document.getElementById('scoreCount');
+    
+    // Initialize Game
+    function initGame() {
+      showStartScreen();
+      setupTouchEvents();
+      updateUI();
+    }
+    
+    function showStartScreen() {
+      sentenceText.innerHTML = "Welcome to Medical Terminology Game!<br><br>Tap the highlighted medical terms, cut them into pieces, and drag to the correct boxes.<br><br>Complete 10 terms to finish the game.";
+      hintText.textContent = "Tap Start to begin";
+      piecesContainer.innerHTML = "";
+      dropZones.style.display = "none";
+      meaningsContainer.style.display = "none";
+      nextBtn.style.display = "none";
+      endScreen.style.display = "none";
+      startBtn.style.display = "inline-block";
+      gameState.gameActive = false;
+    }
+    
+    function startGame() {
+      gameState.currentQuestion = 0;
+      gameState.score = 0;
+      gameState.streak = 0;
+      gameState.correctAnswers = 0;
+      gameState.gameActive = true;
+      startBtn.style.display = "none";
+      loadQuestion(0);
+    }
+    
+    function loadQuestion(questionIndex) {
+      if (questionIndex >= gameState.totalQuestions) {
+        endGame();
+        return;
+      }
+      
+      gameState.currentQuestion = questionIndex;
+      const question = gameQuestions[questionIndex];
+      gameState.currentQuestionData = question;
+      
+      sentenceText.innerHTML = question.sentence;
+      hintText.textContent = "Tap the highlighted term to expand it";
+      piecesContainer.innerHTML = "";
+      dropZones.style.display = "none";
+      meaningsContainer.style.display = "none";
+      nextBtn.style.display = "none";
+      
+      updateUI();
+      setupTermInteraction();
+    }
+    
+    function setupTermInteraction() {
+      const termElement = questionBox.querySelector('.term');
+      if (!termElement) return;
+      
+      termElement.addEventListener('click', handleTermClick);
+      termElement.addEventListener('touchstart', handleTermTouch, { passive: false });
+    }
+    
+    function handleTermClick() {
+      this.classList.toggle('expanded');
+      if (this.classList.contains('expanded')) {
+        hintText.textContent = "Drag the scissor over the term and release to cut";
+        showScissorTool();
+      } else {
+        hideScissorTool();
+      }
+    }
+    
+    function handleTermTouch(e) {
+      e.preventDefault();
+      this.classList.toggle('expanded');
+      if (this.classList.contains('expanded')) {
+        hintText.textContent = "Drag the scissor over the term and release to cut";
+        showScissorTool();
+      } else {
+        hideScissorTool();
+      }
+    }
+    
+    function showScissorTool() {
+      scissorTool.style.display = 'flex';
+      scissorTool.style.left = '50%';
+      scissorTool.style.top = '50%';
+      
+      let isDragging = false;
+      let startX, startY;
+      
+      scissorTool.addEventListener('mousedown', startDrag);
+      scissorTool.addEventListener('touchstart', startDragTouch, { passive: false });
+      
+      function startDrag(e) {
+        e.preventDefault();
+        isDragging = true;
+        startX = e.clientX - scissorTool.offsetLeft;
+        startY = e.clientY - scissorTool.offsetTop;
+        scissorTool.style.cursor = 'grabbing';
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDrag);
+      }
+      
+      function startDragTouch(e) {
+        e.preventDefault();
+        isDragging = true;
+        const touch = e.touches[0];
+        startX = touch.clientX - scissorTool.offsetLeft;
+        startY = touch.clientY - scissorTool.offsetTop;
+        scissorTool.style.cursor = 'grabbing';
+        document.addEventListener('touchmove', dragTouch, { passive: false });
+        document.addEventListener('touchend', stopDragTouch);
+      }
+      
+      function drag(e) {
+        if (!isDragging) return;
+        scissorTool.style.left = (e.clientX - startX) + 'px';
+        scissorTool.style.top = (e.clientY - startY) + 'px';
+        showCutGuide(e.clientX);
+      }
+      
+      function dragTouch(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        scissorTool.style.left = (touch.clientX - startX) + 'px';
+        scissorTool.style.top = (touch.clientY - startY) + 'px';
+        showCutGuide(touch.clientX);
+      }
+      
+      function stopDrag() {
+        if (!isDragging) return;
+        isDragging = false;
+        scissorTool.style.cursor = 'grab';
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', stopDrag);
+        handleCut(scissorTool.offsetLeft);
+      }
+      
+      function stopDragTouch() {
+        if (!isDragging) return;
+        isDragging = false;
+        scissorTool.style.cursor = 'grab';
+        document.removeEventListener('touchmove', dragTouch);
+        document.removeEventListener('touchend', stopDragTouch);
+        handleCut(scissorTool.offsetLeft);
+      }
+      
+      function showCutGuide(xPos) {
+        const existingGuides = document.querySelectorAll('.cut-guide, .cut-hint');
+        existingGuides.forEach(guide => guide.remove());
+        
+        const termRect = document.querySelector('.term').getBoundingClientRect();
+        if (xPos < termRect.left || xPos > termRect.right) return;
+        
+        const guide = document.createElement('div');
+        guide.className = 'cut-guide';
+        guide.style.left = (xPos - 1.5) + 'px';
+        guide.style.display = 'block';
+        
+        const hint = document.createElement('div');
+        hint.className = 'cut-hint';
+        hint.textContent = 'Release to cut';
+        hint.style.left = xPos + 'px';
+        hint.style.display = 'block';
+        
+        document.body.appendChild(guide);
+        document.body.appendChild(hint);
+      }
+      
+      function handleCut(cutPosition) {
+        const termElement = document.querySelector('.term');
+        termElement.classList.remove('expanded');
+        scissorTool.style.display = 'none';
+        
+        const guides = document.querySelectorAll('.cut-guide, .cut-hint');
+        guides.forEach(guide => guide.remove());
+        
+        createPieces();
+        showDropZones();
+      }
+    }
+    
+    function hideScissorTool() {
+      scissorTool.style.display = 'none';
+      const guides = document.querySelectorAll('.cut-guide, .cut-hint');
+      guides.forEach(guide => guide.remove());
+    }
+    
+    function createPieces() {
+      piecesContainer.innerHTML = '';
+      const question = gameState.currentQuestionData;
+      
+      question.breakdown.forEach((piece, index) => {
+        const pieceElement = document.createElement('div');
+        pieceElement.className = 'piece';
+        pieceElement.textContent = piece;
+        pieceElement.dataset.part = piece;
+        pieceElement.dataset.type = question.correctOrder[index];
+        pieceElement.dataset.index = index;
+        
+        pieceElement.addEventListener('mousedown', startPieceDrag);
+        pieceElement.addEventListener('touchstart', startPieceDragTouch, { passive: false });
+        
+        piecesContainer.appendChild(pieceElement);
+      });
+      
+      hintText.textContent = "Drag pieces to the correct boxes below";
+    }
+    
+    function showDropZones() {
+      dropZones.style.display = 'grid';
+      setupDropZoneEvents();
+    }
+    
+    function setupDropZoneEvents() {
+      const zones = document.querySelectorAll('.dropzone');
+      zones.forEach(zone => {
+        zone.addEventListener('dragover', e => e.preventDefault());
+        zone.addEventListener('drop', handleDrop);
+      });
+    }
+    
+    function startPieceDrag(e) {
+      e.preventDefault();
+      gameState.draggedPiece = this;
+      this.style.opacity = '0.7';
+      this.style.position = 'fixed';
+      this.style.zIndex = '1000';
+      
+      const rect = this.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
+      
+      document.addEventListener('mousemove', dragPiece);
+      document.addEventListener('mouseup', stopPieceDrag);
+      
+      function dragPiece(e) {
+        if (!gameState.draggedPiece) return;
+        gameState.draggedPiece.style.left = (e.clientX - offsetX) + 'px';
+        gameState.draggedPiece.style.top = (e.clientY - offsetY) + 'px';
+        
+        const zones = document.querySelectorAll('.dropzone');
+        zones.forEach(zone => {
+          const zoneRect = zone.getBoundingClientRect();
+          if (e.clientX > zoneRect.left && e.clientX < zoneRect.right &&
+              e.clientY > zoneRect.top && e.clientY < zoneRect.bottom) {
+            zone.classList.add('active');
+          } else {
+            zone.classList.remove('active');
+          }
+        });
+      }
+      
+      function stopPieceDrag(e) {
+        if (!gameState.draggedPiece) return;
+        
+        const zones = document.querySelectorAll('.dropzone');
+        let dropped = false;
+        
+        zones.forEach(zone => {
+          const zoneRect = zone.getBoundingClientRect();
+          if (e.clientX > zoneRect.left && e.clientX < zoneRect.right &&
+              e.clientY > zoneRect.top && e.clientY < zoneRect.bottom) {
+            
+            const pieceType = gameState.draggedPiece.dataset.type;
+            const zoneType = zone.dataset.type;
+            
+            if (pieceType === zoneType) {
+              zone.appendChild(gameState.draggedPiece);
+              gameState.draggedPiece.classList.add('correct');
+              gameState.draggedPiece.style.position = 'static';
+              gameState.draggedPiece.style.opacity = '1';
+              showFeedback('correct');
+              gameState.coins += 10;
+              gameState.streak++;
+              
+              checkPiecesComplete();
+            } else {
+              gameState.draggedPiece.classList.add('wrong');
+              showFeedback('wrong');
+              gameState.streak = 0;
+              
+              setTimeout(() => {
+                if (gameState.draggedPiece) {
+                  gameState.draggedPiece.classList.remove('wrong');
+                  gameState.draggedPiece.style.position = 'static';
+                  gameState.draggedPiece.style.opacity = '1';
+                  piecesContainer.appendChild(gameState.draggedPiece);
+                }
+              }, 800);
+            }
+            
+            dropped = true;
+            zone.classList.remove('active');
+          }
+        });
+        
+        if (!dropped && gameState.draggedPiece) {
+          gameState.draggedPiece.style.position = 'static';
+          gameState.draggedPiece.style.opacity = '1';
+          piecesContainer.appendChild(gameState.draggedPiece);
+        }
+        
+        gameState.draggedPiece = null;
+        document.removeEventListener('mousemove', dragPiece);
+        document.removeEventListener('mouseup', stopPieceDrag);
+      }
+    }
+    
+    function startPieceDragTouch(e) {
+      e.preventDefault();
+      gameState.draggedPiece = this;
+      this.style.opacity = '0.7';
+      this.style.position = 'fixed';
+      this.style.zIndex = '1000';
+      
+      const touch = e.touches[0];
+      const rect = this.getBoundingClientRect();
+      const offsetX = touch.clientX - rect.left;
+      const offsetY = touch.clientY - rect.top;
+      
+      document.addEventListener('touchmove', dragPieceTouch, { passive: false });
+      document.addEventListener('touchend', stopPieceDragTouch);
+      
+      function dragPieceTouch(e) {
+        if (!gameState.draggedPiece) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        gameState.draggedPiece.style.left = (touch.clientX - offsetX) + 'px';
+        gameState.draggedPiece.style.top = (touch.clientY - offsetY) + 'px';
+        
+        const zones = document.querySelectorAll('.dropzone');
+        zones.forEach(zone => {
+          const zoneRect = zone.getBoundingClientRect();
+          if (touch.clientX > zoneRect.left && touch.clientX < zoneRect.right &&
+              touch.clientY > zoneRect.top && touch.clientY < zoneRect.bottom) {
+            zone.classList.add('active');
+          } else {
+            zone.classList.remove('active');
+          }
+        });
+      }
+      
+      function stopPieceDragTouch(e) {
+        if (!gameState.draggedPiece) return;
+        
+        const touch = e.changedTouches[0];
+        const zones = document.querySelectorAll('.dropzone');
+        let dropped = false;
+        
+        zones.forEach(zone => {
+          const zoneRect = zone.getBoundingClientRect();
+          if (touch.clientX > zoneRect.left && touch.clientX < zoneRect.right &&
+              touch.clientY > zoneRect.top && touch.clientY < zoneRect.bottom) {
+            
+            const pieceType = gameState.draggedPiece.dataset.type;
+            const zoneType = zone.dataset.type;
+            
+            if (pieceType === zoneType) {
+              zone.appendChild(gameState.draggedPiece);
+              gameState.draggedPiece.classList.add('correct');
+              gameState.draggedPiece.style.position = 'static';
+              gameState.draggedPiece.style.opacity = '1';
+              showFeedback('correct');
+              gameState.coins += 10;
+              gameState.streak++;
+              
+              checkPiecesComplete();
+            } else {
+              gameState.draggedPiece.classList.add('wrong');
+              showFeedback('wrong');
+              gameState.streak = 0;
+              
+              setTimeout(() => {
+                if (gameState.draggedPiece) {
+                  gameState.draggedPiece.classList.remove('wrong');
+                  gameState.draggedPiece.style.position = 'static';
+                  gameState.draggedPiece.style.opacity = '1';
+                  piecesContainer.appendChild(gameState.draggedPiece);
+                }
+              }, 800);
+            }
+            
+            dropped = true;
+            zone.classList.remove('active');
+          }
+        });
+        
+        if (!dropped && gameState.draggedPiece) {
+          gameState.draggedPiece.style.position = 'static';
+          gameState.draggedPiece.style.opacity = '1';
+          piecesContainer.appendChild(gameState.draggedPiece);
+        }
+        
+        gameState.draggedPiece = null;
+        document.removeEventListener('touchmove', dragPieceTouch);
+        document.removeEventListener('touchend', stopPieceDragTouch);
+      }
+    }
+    
+    function checkPiecesComplete() {
+      const correctPieces = document.querySelectorAll('.piece.correct');
+      const question = gameState.currentQuestionData;
+      
+      if (correctPieces.length === question.breakdown.length) {
+        gameState.correctAnswers++;
+        gameState.score++;
+        hintText.textContent = "Excellent! All pieces placed correctly!";
+        showMeaningsMatching();
+      }
+      
+      updateUI();
+    }
+    
+    function showMeaningsMatching() {
+      meaningsContainer.style.display = 'grid';
+      meaningsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; margin-bottom: 10px; font-weight: bold;">Match the Meanings:</div>';
+      
+      const question = gameState.currentQuestionData;
+      const shuffledMeanings = [...question.meanings].sort(() => Math.random() - 0.5);
+      
+      shuffledMeanings.forEach(meaning => {
+        const card = document.createElement('div');
+        card.className = 'meaning-card';
+        card.textContent = meaning;
+        card.dataset.meaning = meaning;
+        
+        card.addEventListener('click', () => {
+          card.classList.add('matched');
+          checkAllMeaningsMatched();
+        });
+        
+        card.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          card.classList.add('matched');
+          checkAllMeaningsMatched();
+        }, { passive: false });
+        
+        meaningsContainer.appendChild(card);
+      });
+      
+      nextBtn.style.display = 'inline-block';
+    }
+    
+    function checkAllMeaningsMatched() {
+      const matchedCards = document.querySelectorAll('.meaning-card.matched');
+      const question = gameState.currentQuestionData;
+      
+      if (matchedCards.length === question.meanings.length) {
+        hintText.textContent = `Correct! ${question.explanation}`;
+        gameState.coins += 20;
+        updateUI();
+      }
+    }
+    
+    function nextQuestion() {
+      gameState.currentQuestion++;
+      loadQuestion(gameState.currentQuestion);
+    }
+    
+    function showFeedback(type) {
+      const feedback = type === 'correct' ? feedbackCorrect : feedbackWrong;
+      feedback.style.display = 'block';
+      feedback.style.opacity = '1';
+      feedback.style.animation = 'pop 0.5s forwards';
+      
+      if (navigator.vibrate) {
+        navigator.vibrate(type === 'correct' ? 100 : 200);
+      }
+      
+      setTimeout(() => {
+        feedback.style.opacity = '0';
+        feedback.style.display = 'none';
+      }, 500);
+    }
+    
+    function setupTouchEvents() {
+      document.addEventListener('touchmove', (e) => {
+        if (e.scale !== 1) e.preventDefault();
+      }, { passive: false });
+      
+      document.addEventListener('gesturestart', (e) => e.preventDefault());
+      document.addEventListener('gesturechange', (e) => e.preventDefault());
+      document.addEventListener('gestureend', (e) => e.preventDefault());
+      
+      let lastTap = 0;
+      document.addEventListener('touchend', (e) => {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+          e.preventDefault();
+        }
+        lastTap = currentTime;
+      }, { passive: false });
+    }
+    
+    function updateUI() {
+      const progress = ((gameState.currentQuestion) / gameState.totalQuestions) * 100;
+      progressBar.style.width = `${progress}%`;
+      
+      coinCount.textContent = gameState.coins;
+      streakCount.textContent = gameState.streak;
+      scoreCount.textContent = `${gameState.score}/${gameState.totalQuestions}`;
+    }
+    
+    function endGame() {
+      gameState.gameActive = false;
+      questionBox.style.display = 'none';
+      piecesContainer.style.display = 'none';
+      dropZones.style.display = 'none';
+      meaningsContainer.style.display = 'none';
+      nextBtn.style.display = 'none';
+      
+      const accuracy = gameState.totalQuestions > 0 
+        ? Math.round((gameState.correctAnswers / gameState.totalQuestions) * 100) 
+        : 0;
+      
+      document.getElementById('finalScore').textContent = gameState.score;
+      document.getElementById('totalQuestions').textContent = gameState.totalQuestions;
+      document.getElementById('finalCoins').textContent = gameState.coins;
+      document.getElementById('finalStreak').textContent = gameState.streak;
+      document.getElementById('accuracy').textContent = `${accuracy}%`;
+      
+      endScreen.style.display = 'block';
+    }
+    
+    window.addEventListener('DOMContentLoaded', initGame);
+  </script>
 </body>
 </html>
