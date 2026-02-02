@@ -1229,17 +1229,40 @@
     }
     
     function handleMeaningDrop(meaning, zone, zoneType) {
-      // For meanings, we allow dropping in any zone
+  // Check if this is the correct zone for this meaning
+  const pieceInZone = zone.querySelector('.piece.correct');
+  if (pieceInZone && pieceInZone.dataset.index !== undefined) {
+    const pieceIndex = parseInt(pieceInZone.dataset.index);
+    const question = gameState.currentQuestionData;
+    
+    // Get the correct meaning for this zone based on the piece index
+    const correctMeaning = question.meanings[pieceIndex];
+    
+    if (meaning.textContent === correctMeaning) {
+      // Correct meaning in correct zone
       zone.appendChild(meaning);
       meaning.classList.add('matched');
       meaning.style.position = 'static';
       showFeedback('correct');
-      gameState.coins += 5;
+      gameState.coins += 10;
+      gameState.streak++;
+    } else {
+      // Wrong meaning for this zone
+      meaning.classList.add('wrong');
+      showFeedback('wrong');
+      gameState.streak = 0;
       
-      // Check if all meanings are placed
-      checkMeaningsComplete();
-      updateUI();
+      setTimeout(() => {
+        meaning.classList.remove('wrong');
+        meaning.style.position = 'static';
+        meaningsContainer.appendChild(meaning);
+      }, 800);
     }
+  } else {
+    // No piece in this zone yet or can't determine correct meaning
+    meaning.style.position = 'static';
+    meaningsContainer.appendChild(meaning);
+  }
     
     function checkPiecesComplete() {
       const correctPieces = document.querySelectorAll('.piece.correct');
