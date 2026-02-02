@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Medical Terminology Break the Code</title>
   <style>
+    /* Mobile-first responsive design */
     * {
       margin: 0;
       padding: 0;
@@ -12,6 +13,7 @@
       touch-action: manipulation;
       -webkit-user-select: none;
       user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
     
     html, body {
@@ -21,37 +23,51 @@
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
       color: white;
       overflow: hidden;
+      position: fixed;
+    }
+    
+    /* Prevent scrolling */
+    body {
+      overflow: hidden;
+      -webkit-overflow-scrolling: touch;
     }
     
     .container {
       width: 100%;
       height: 100vh;
+      height: -webkit-fill-available;
       display: flex;
       flex-direction: column;
-      max-width: 800px;
-      margin: 0 auto;
       padding: 10px;
+      max-width: 500px;
+      margin: 0 auto;
+      overflow: hidden;
     }
     
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px;
+      padding: 12px 15px;
       background: rgba(0, 0, 0, 0.3);
       border-radius: 15px;
       margin-bottom: 10px;
+      flex-shrink: 0;
     }
     
     .logo {
-      font-size: 1.5rem;
+      font-size: 1.3rem;
       font-weight: bold;
       color: #00d4ff;
+      white-space: nowrap;
     }
     
     .stats {
       display: flex;
-      gap: 15px;
+      gap: 10px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 5px;
     }
     
     .stat {
@@ -59,24 +75,27 @@
       align-items: center;
       gap: 5px;
       background: rgba(255, 255, 255, 0.1);
-      padding: 8px 12px;
+      padding: 6px 10px;
       border-radius: 20px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     
     .progress-bar {
       width: 100%;
-      height: 8px;
+      height: 6px;
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-      margin: 10px 0;
+      border-radius: 3px;
+      margin: 8px 0;
       overflow: hidden;
+      flex-shrink: 0;
     }
     
     .progress {
       height: 100%;
       background: linear-gradient(90deg, #00d4ff, #0095ff);
-      border-radius: 4px;
+      border-radius: 3px;
       width: 0%;
       transition: width 0.5s;
     }
@@ -85,10 +104,18 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 10px;
+      overflow: hidden;
+      padding: 5px;
+    }
+    
+    .scroll-container {
+      flex: 1;
       overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
     }
     
     .question-box {
@@ -96,58 +123,64 @@
       border-radius: 20px;
       padding: 20px;
       width: 100%;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       text-align: center;
       border: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
     }
     
     .sentence {
-      font-size: 1.2rem;
-      line-height: 1.5;
-      margin-bottom: 20px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      margin-bottom: 15px;
+      word-break: break-word;
     }
     
     .term {
       color: #00d4ff;
       font-weight: bold;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       cursor: pointer;
-      padding: 10px;
-      border-radius: 10px;
+      padding: 12px;
+      border-radius: 12px;
       transition: all 0.3s;
       display: inline-block;
       margin: 10px 0;
+      min-width: 60px;
+      text-align: center;
     }
     
     .term.expanded {
-      transform: scale(1.2);
+      transform: scale(1.15);
       background: rgba(0, 212, 255, 0.2);
       box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-      padding: 15px 20px;
-      font-size: 1.8rem;
+      padding: 15px;
+      font-size: 1.6rem;
     }
     
     .hint {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #aaa;
-      margin-top: 10px;
+      margin-top: 8px;
+      min-height: 20px;
     }
     
     .scissor-tool {
       position: fixed;
-      width: 60px;
-      height: 60px;
+      width: 55px;
+      height: 55px;
       background: #FFC300;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
+      font-size: 1.8rem;
       cursor: grab;
       z-index: 1000;
       box-shadow: 0 4px 20px rgba(255, 195, 0, 0.5);
       display: none;
       user-select: none;
+      touch-action: none;
     }
     
     .scissor-tool:active {
@@ -177,28 +210,38 @@
       display: none;
       pointer-events: none;
       font-weight: bold;
+      z-index: 1001;
     }
     
     .pieces-container {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       justify-content: center;
-      margin: 20px 0;
+      margin: 15px 0;
       min-height: 60px;
       width: 100%;
       padding: 10px;
+      flex-shrink: 0;
     }
     
     .piece {
       background: rgba(255, 255, 255, 0.15);
-      padding: 12px 20px;
-      border-radius: 12px;
-      font-size: 1.2rem;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 1.1rem;
       cursor: grab;
       border: 2px solid transparent;
       transition: all 0.3s;
       user-select: none;
+      min-width: 60px;
+      text-align: center;
+    }
+    
+    .piece.dragging {
+      opacity: 0.7;
+      transform: scale(1.1);
+      z-index: 1000;
     }
     
     .piece.correct {
@@ -215,68 +258,85 @@
     .drop-zones {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      gap: 8px;
       width: 100%;
-      margin: 20px 0;
+      margin: 15px 0;
+      flex-shrink: 0;
     }
     
     .dropzone {
       background: rgba(255, 255, 255, 0.08);
       border: 2px dashed rgba(255, 255, 255, 0.3);
-      border-radius: 15px;
-      padding: 15px;
-      min-height: 100px;
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 90px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
     }
     
     .dropzone.active {
       border-color: #00d4ff;
       background: rgba(0, 212, 255, 0.1);
-      transform: scale(1.05);
+      transform: scale(1.03);
     }
     
     .zone-label {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #aaa;
       margin-top: 5px;
     }
     
-    .meanings-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 10px;
-      width: 100%;
-      margin: 20px 0;
-      padding: 10px;
-      display: none;
-    }
-    
-    .meaning-card {
+    .meaning-item {
       background: rgba(255, 255, 255, 0.1);
-      padding: 15px;
-      border-radius: 12px;
-      text-align: center;
-      cursor: pointer;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      cursor: grab;
+      border: 2px solid transparent;
       transition: all 0.3s;
       user-select: none;
+      text-align: center;
+      margin: 3px;
+      min-width: 80px;
     }
     
-    .meaning-card.matched {
+    .meaning-item.dragging {
+      opacity: 0.7;
+      transform: scale(1.05);
+      z-index: 1000;
+    }
+    
+    .meaning-item.matched {
       background: rgba(0, 255, 157, 0.3);
       border: 2px solid #00ff9d;
+    }
+    
+    .meanings-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      width: 100%;
+      margin: 15px 0;
+      padding: 10px;
+      display: none;
+      flex-shrink: 0;
     }
     
     .buttons {
       display: flex;
       gap: 10px;
-      margin-top: 20px;
+      margin-top: 15px;
       width: 100%;
       justify-content: center;
+      flex-shrink: 0;
+      padding-bottom: 20px;
     }
     
     .btn {
@@ -289,7 +349,8 @@
       font-weight: bold;
       cursor: pointer;
       transition: transform 0.2s;
-      min-width: 150px;
+      min-width: 140px;
+      touch-action: manipulation;
     }
     
     .btn:active {
@@ -322,13 +383,17 @@
     
     .end-screen {
       text-align: center;
-      padding: 30px;
+      padding: 20px;
       display: none;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      overflow-y: auto;
     }
     
     .end-screen h2 {
-      font-size: 2rem;
-      margin-bottom: 20px;
+      font-size: 1.8rem;
+      margin-bottom: 15px;
       color: #00d4ff;
     }
     
@@ -336,14 +401,14 @@
       background: rgba(255, 255, 255, 0.1);
       border-radius: 20px;
       padding: 20px;
-      margin: 20px 0;
+      margin: 15px 0;
       text-align: left;
     }
     
     .end-stat {
-      font-size: 1.2rem;
-      margin: 10px 0;
-      padding: 10px;
+      font-size: 1.1rem;
+      margin: 8px 0;
+      padding: 8px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
     
@@ -364,45 +429,63 @@
       100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
     }
     
-    @media (max-width: 768px) {
-      .header {
-        flex-direction: column;
-        gap: 10px;
-      }
-      
-      .stats {
-        width: 100%;
-        justify-content: space-around;
-      }
-      
-      .drop-zones {
-        grid-template-columns: 1fr;
-      }
-      
-      .term.expanded {
-        font-size: 1.5rem;
-        padding: 12px 15px;
-      }
-      
-      .piece {
-        padding: 10px 15px;
-        font-size: 1rem;
-      }
-      
-      .scissor-tool {
-        width: 50px;
-        height: 50px;
-        font-size: 1.5rem;
-      }
-    }
-    
+    /* Mobile-specific optimizations */
     @media (max-width: 480px) {
+      .container {
+        padding: 8px;
+      }
+      
+      .header {
+        padding: 10px 12px;
+      }
+      
+      .logo {
+        font-size: 1.1rem;
+      }
+      
+      .stat {
+        padding: 5px 8px;
+        font-size: 0.8rem;
+      }
+      
       .sentence {
         font-size: 1rem;
       }
       
       .term {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
+        padding: 10px;
+      }
+      
+      .term.expanded {
+        font-size: 1.4rem;
+        padding: 12px;
+      }
+      
+      .drop-zones {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      
+      .dropzone {
+        min-height: 80px;
+        padding: 10px;
+      }
+      
+      .piece {
+        padding: 8px 12px;
+        font-size: 1rem;
+      }
+      
+      .meaning-item {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+      }
+      
+      .scissor-tool {
+        width: 50px;
+        height: 50px;
+        font-size: 1.6rem;
       }
       
       .btn {
@@ -410,6 +493,82 @@
         min-width: 120px;
         font-size: 0.9rem;
       }
+    }
+    
+    @media (max-width: 360px) {
+      .stats {
+        gap: 6px;
+      }
+      
+      .stat {
+        padding: 4px 6px;
+        font-size: 0.75rem;
+      }
+      
+      .term {
+        font-size: 1.1rem;
+      }
+      
+      .term.expanded {
+        font-size: 1.3rem;
+      }
+    }
+    
+    /* Landscape mode adjustments */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .container {
+        padding: 5px;
+      }
+      
+      .header {
+        padding: 8px 10px;
+        margin-bottom: 5px;
+      }
+      
+      .question-box {
+        padding: 12px;
+        margin-bottom: 8px;
+      }
+      
+      .drop-zones {
+        grid-template-columns: repeat(3, 1fr);
+        margin: 8px 0;
+      }
+      
+      .dropzone {
+        min-height: 70px;
+        padding: 8px;
+      }
+      
+      .piece {
+        padding: 6px 10px;
+        font-size: 0.9rem;
+      }
+      
+      .meaning-item {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+      }
+    }
+    
+    /* iPhone notch and safe area support */
+    @supports (padding: max(0px)) {
+      .container {
+        padding-left: max(10px, env(safe-area-inset-left));
+        padding-right: max(10px, env(safe-area-inset-right));
+        padding-top: max(10px, env(safe-area-inset-top));
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+      }
+    }
+    
+    /* Hide scrollbar but keep functionality */
+    .scroll-container::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .scroll-container {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
   </style>
 </head>
@@ -438,44 +597,46 @@
     </div>
     
     <div class="game-area" id="gameArea">
-      <div class="question-box" id="questionBox">
-        <div class="sentence" id="sentenceText">Loading game...</div>
-        <div class="hint" id="hintText">Tap the highlighted term to expand</div>
-      </div>
-      
-      <div class="pieces-container" id="piecesContainer"></div>
-      
-      <div class="drop-zones" id="dropZones" style="display: none;">
-        <div class="dropzone" data-type="prefix" id="prefixZone">
-          <div style="font-size: 2rem;">🔰</div>
-          <div class="zone-label">Prefix</div>
+      <div class="scroll-container" id="scrollContainer">
+        <div class="question-box" id="questionBox">
+          <div class="sentence" id="sentenceText">Loading game...</div>
+          <div class="hint" id="hintText">Tap the highlighted term to expand</div>
         </div>
-        <div class="dropzone" data-type="root" id="rootZone">
-          <div style="font-size: 2rem;">🎯</div>
-          <div class="zone-label">Root Word</div>
+        
+        <div class="pieces-container" id="piecesContainer"></div>
+        
+        <div class="drop-zones" id="dropZones" style="display: none;">
+          <div class="dropzone" data-type="prefix" id="prefixZone">
+            <div style="font-size: 1.8rem;">🔰</div>
+            <div class="zone-label">Prefix</div>
+          </div>
+          <div class="dropzone" data-type="root" id="rootZone">
+            <div style="font-size: 1.8rem;">🎯</div>
+            <div class="zone-label">Root Word</div>
+          </div>
+          <div class="dropzone" data-type="suffix" id="suffixZone">
+            <div style="font-size: 1.8rem;">🏷️</div>
+            <div class="zone-label">Suffix</div>
+          </div>
         </div>
-        <div class="dropzone" data-type="suffix" id="suffixZone">
-          <div style="font-size: 2rem;">🏷️</div>
-          <div class="zone-label">Suffix</div>
+        
+        <div class="meanings-container" id="meaningsContainer"></div>
+        
+        <div class="buttons">
+          <button class="btn" id="startBtn" onclick="startGame()">Start Game</button>
+          <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()" style="display: none;">Next Question</button>
         </div>
-      </div>
-      
-      <div class="meanings-container" id="meaningsContainer"></div>
-      
-      <div class="buttons">
-        <button class="btn" id="startBtn" onclick="startGame()">Start Game</button>
-        <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()" style="display: none;">Next Question</button>
-      </div>
-      
-      <div class="end-screen" id="endScreen">
-        <h2>🎉 Game Complete!</h2>
-        <div class="end-stats">
-          <div class="end-stat">Final Score: <span id="finalScore">0</span>/<span id="totalQuestions">10</span></div>
-          <div class="end-stat">Coins Earned: <span id="finalCoins">150</span></div>
-          <div class="end-stat">Best Streak: <span id="finalStreak">0</span></div>
-          <div class="end-stat">Accuracy: <span id="accuracy">0%</span></div>
+        
+        <div class="end-screen" id="endScreen">
+          <h2>🎉 Game Complete!</h2>
+          <div class="end-stats">
+            <div class="end-stat">Final Score: <span id="finalScore">0</span>/<span id="totalQuestions">10</span></div>
+            <div class="end-stat">Coins Earned: <span id="finalCoins">150</span></div>
+            <div class="end-stat">Best Streak: <span id="finalStreak">0</span></div>
+            <div class="end-stat">Accuracy: <span id="accuracy">0%</span></div>
+          </div>
+          <button class="btn" onclick="location.reload()">Play Again</button>
         </div>
-        <button class="btn" onclick="location.reload()">Play Again</button>
       </div>
     </div>
   </div>
@@ -599,12 +760,16 @@
       totalQuestions: 10,
       correctAnswers: 0,
       gameActive: false,
-      draggedPiece: null,
-      currentQuestionData: null
+      draggedElement: null,
+      draggedElementType: null, // 'piece' or 'meaning'
+      currentQuestionData: null,
+      touchStartX: 0,
+      touchStartY: 0
     };
     
     // DOM Elements
     const gameArea = document.getElementById('gameArea');
+    const scrollContainer = document.getElementById('scrollContainer');
     const questionBox = document.getElementById('questionBox');
     const sentenceText = document.getElementById('sentenceText');
     const hintText = document.getElementById('hintText');
@@ -627,6 +792,27 @@
       showStartScreen();
       setupTouchEvents();
       updateUI();
+      adjustForMobile();
+    }
+    
+    function adjustForMobile() {
+      // Set proper height for mobile browsers
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+      
+      // Prevent zoom
+      document.addEventListener('touchmove', function(e) {
+        if (e.scale !== 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      // Handle orientation changes
+      window.addEventListener('orientationchange', function() {
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+        }, 100);
+      });
     }
     
     function showStartScreen() {
@@ -666,10 +852,21 @@
       piecesContainer.innerHTML = "";
       dropZones.style.display = "none";
       meaningsContainer.style.display = "none";
+      meaningsContainer.innerHTML = "";
       nextBtn.style.display = "none";
+      
+      // Reset drop zones
+      const zones = document.querySelectorAll('.dropzone');
+      zones.forEach(zone => {
+        zone.innerHTML = `<div style="font-size: 1.8rem;">${zone.dataset.type === 'prefix' ? '🔰' : zone.dataset.type === 'root' ? '🎯' : '🏷️'}</div>
+                         <div class="zone-label">${zone.dataset.type === 'prefix' ? 'Prefix' : zone.dataset.type === 'root' ? 'Root Word' : 'Suffix'}</div>`;
+      });
       
       updateUI();
       setupTermInteraction();
+      
+      // Scroll to top
+      scrollContainer.scrollTop = 0;
     }
     
     function setupTermInteraction() {
@@ -703,103 +900,125 @@
     
     function showScissorTool() {
       scissorTool.style.display = 'flex';
-      scissorTool.style.left = '50%';
-      scissorTool.style.top = '50%';
+      
+      // Position scissor near the term
+      const termRect = document.querySelector('.term').getBoundingClientRect();
+      const containerRect = document.querySelector('.container').getBoundingClientRect();
+      
+      scissorTool.style.left = (termRect.left + termRect.width/2 - 25 - containerRect.left) + 'px';
+      scissorTool.style.top = (termRect.bottom + 20 - containerRect.top) + 'px';
       
       let isDragging = false;
       let startX, startY;
       
-      scissorTool.addEventListener('mousedown', startDrag);
-      scissorTool.addEventListener('touchstart', startDragTouch, { passive: false });
-      
       function startDrag(e) {
         e.preventDefault();
         isDragging = true;
-        startX = e.clientX - scissorTool.offsetLeft;
-        startY = e.clientY - scissorTool.offsetTop;
+        if (e.type === 'mousedown') {
+          startX = e.clientX - scissorTool.offsetLeft;
+          startY = e.clientY - scissorTool.offsetTop;
+        } else {
+          const touch = e.touches[0];
+          startX = touch.clientX - scissorTool.offsetLeft;
+          startY = touch.clientY - scissorTool.offsetTop;
+        }
         scissorTool.style.cursor = 'grabbing';
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', stopDrag);
-      }
-      
-      function startDragTouch(e) {
-        e.preventDefault();
-        isDragging = true;
-        const touch = e.touches[0];
-        startX = touch.clientX - scissorTool.offsetLeft;
-        startY = touch.clientY - scissorTool.offsetTop;
-        scissorTool.style.cursor = 'grabbing';
-        document.addEventListener('touchmove', dragTouch, { passive: false });
-        document.addEventListener('touchend', stopDragTouch);
       }
       
       function drag(e) {
         if (!isDragging) return;
-        scissorTool.style.left = (e.clientX - startX) + 'px';
-        scissorTool.style.top = (e.clientY - startY) + 'px';
-        showCutGuide(e.clientX);
+        let clientX, clientY;
+        
+        if (e.type === 'mousemove') {
+          clientX = e.clientX;
+          clientY = e.clientY;
+        } else {
+          e.preventDefault();
+          const touch = e.touches[0];
+          clientX = touch.clientX;
+          clientY = touch.clientY;
+        }
+        
+        scissorTool.style.left = (clientX - startX) + 'px';
+        scissorTool.style.top = (clientY - startY) + 'px';
+        showCutGuide(clientX);
       }
       
-      function dragTouch(e) {
-        if (!isDragging) return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        scissorTool.style.left = (touch.clientX - startX) + 'px';
-        scissorTool.style.top = (touch.clientY - startY) + 'px';
-        showCutGuide(touch.clientX);
-      }
-      
-      function stopDrag() {
-        if (!isDragging) return;
-        isDragging = false;
-        scissorTool.style.cursor = 'grab';
-        document.removeEventListener('mousemove', drag);
-        document.removeEventListener('mouseup', stopDrag);
-        handleCut(scissorTool.offsetLeft);
-      }
-      
-      function stopDragTouch() {
+      function stopDrag(e) {
         if (!isDragging) return;
         isDragging = false;
         scissorTool.style.cursor = 'grab';
-        document.removeEventListener('touchmove', dragTouch);
-        document.removeEventListener('touchend', stopDragTouch);
-        handleCut(scissorTool.offsetLeft);
+        
+        let clientX;
+        if (e.type === 'mouseup') {
+          clientX = e.clientX;
+        } else {
+          const touch = e.changedTouches[0];
+          clientX = touch.clientX;
+        }
+        
+        handleCut(clientX);
       }
       
-      function showCutGuide(xPos) {
-        const existingGuides = document.querySelectorAll('.cut-guide, .cut-hint');
-        existingGuides.forEach(guide => guide.remove());
-        
-        const termRect = document.querySelector('.term').getBoundingClientRect();
-        if (xPos < termRect.left || xPos > termRect.right) return;
-        
-        const guide = document.createElement('div');
-        guide.className = 'cut-guide';
-        guide.style.left = (xPos - 1.5) + 'px';
-        guide.style.display = 'block';
-        
-        const hint = document.createElement('div');
-        hint.className = 'cut-hint';
-        hint.textContent = 'Release to cut';
-        hint.style.left = xPos + 'px';
-        hint.style.display = 'block';
-        
-        document.body.appendChild(guide);
-        document.body.appendChild(hint);
+      // Add event listeners
+      scissorTool.addEventListener('mousedown', startDrag);
+      scissorTool.addEventListener('touchstart', startDrag, { passive: false });
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('touchmove', drag, { passive: false });
+      document.addEventListener('mouseup', stopDrag);
+      document.addEventListener('touchend', stopDrag);
+      
+      // Store references for cleanup
+      scissorTool._dragHandlers = { startDrag, drag, stopDrag };
+    }
+    
+    function showCutGuide(xPos) {
+      const existingGuides = document.querySelectorAll('.cut-guide, .cut-hint');
+      existingGuides.forEach(guide => guide.remove());
+      
+      const term = document.querySelector('.term');
+      if (!term) return;
+      
+      const termRect = term.getBoundingClientRect();
+      if (xPos < termRect.left || xPos > termRect.right) return;
+      
+      const guide = document.createElement('div');
+      guide.className = 'cut-guide';
+      guide.style.left = xPos + 'px';
+      guide.style.display = 'block';
+      
+      const hint = document.createElement('div');
+      hint.className = 'cut-hint';
+      hint.textContent = 'Release to cut';
+      hint.style.left = xPos + 'px';
+      hint.style.display = 'block';
+      
+      document.body.appendChild(guide);
+      document.body.appendChild(hint);
+    }
+    
+    function handleCut(cutPosition) {
+      const termElement = document.querySelector('.term');
+      if (!termElement) return;
+      
+      termElement.classList.remove('expanded');
+      scissorTool.style.display = 'none';
+      
+      // Remove event listeners
+      if (scissorTool._dragHandlers) {
+        scissorTool.removeEventListener('mousedown', scissorTool._dragHandlers.startDrag);
+        scissorTool.removeEventListener('touchstart', scissorTool._dragHandlers.startDrag);
+        document.removeEventListener('mousemove', scissorTool._dragHandlers.drag);
+        document.removeEventListener('touchmove', scissorTool._dragHandlers.drag);
+        document.removeEventListener('mouseup', scissorTool._dragHandlers.stopDrag);
+        document.removeEventListener('touchend', scissorTool._dragHandlers.stopDrag);
       }
       
-      function handleCut(cutPosition) {
-        const termElement = document.querySelector('.term');
-        termElement.classList.remove('expanded');
-        scissorTool.style.display = 'none';
-        
-        const guides = document.querySelectorAll('.cut-guide, .cut-hint');
-        guides.forEach(guide => guide.remove());
-        
-        createPieces();
-        showDropZones();
-      }
+      const guides = document.querySelectorAll('.cut-guide, .cut-hint');
+      guides.forEach(guide => guide.remove());
+      
+      createPieces();
+      showDropZones();
     }
     
     function hideScissorTool() {
@@ -820,8 +1039,7 @@
         pieceElement.dataset.type = question.correctOrder[index];
         pieceElement.dataset.index = index;
         
-        pieceElement.addEventListener('mousedown', startPieceDrag);
-        pieceElement.addEventListener('touchstart', startPieceDragTouch, { passive: false });
+        setupDraggableElement(pieceElement, 'piece');
         
         piecesContainer.appendChild(pieceElement);
       });
@@ -831,193 +1049,196 @@
     
     function showDropZones() {
       dropZones.style.display = 'grid';
-      setupDropZoneEvents();
     }
     
-    function setupDropZoneEvents() {
+    function setupDraggableElement(element, type) {
+      element.addEventListener('mousedown', startDrag);
+      element.addEventListener('touchstart', startDragTouch, { passive: false });
+      
+      function startDrag(e) {
+        if (gameState.draggedElement) return;
+        
+        gameState.draggedElement = element;
+        gameState.draggedElementType = type;
+        
+        element.classList.add('dragging');
+        element.style.position = 'fixed';
+        element.style.zIndex = '1000';
+        
+        const rect = element.getBoundingClientRect();
+        gameState.touchStartX = e.clientX - rect.left;
+        gameState.touchStartY = e.clientY - rect.top;
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDrag);
+      }
+      
+      function startDragTouch(e) {
+        if (gameState.draggedElement) return;
+        e.preventDefault();
+        
+        gameState.draggedElement = element;
+        gameState.draggedElementType = type;
+        
+        element.classList.add('dragging');
+        element.style.position = 'fixed';
+        element.style.zIndex = '1000';
+        
+        const touch = e.touches[0];
+        const rect = element.getBoundingClientRect();
+        gameState.touchStartX = touch.clientX - rect.left;
+        gameState.touchStartY = touch.clientY - rect.top;
+        
+        document.addEventListener('touchmove', dragTouch, { passive: false });
+        document.addEventListener('touchend', stopDragTouch);
+      }
+      
+      function drag(e) {
+        if (!gameState.draggedElement) return;
+        
+        gameState.draggedElement.style.left = (e.clientX - gameState.touchStartX) + 'px';
+        gameState.draggedElement.style.top = (e.clientY - gameState.touchStartY) + 'px';
+        
+        highlightDropZones(e.clientX, e.clientY);
+      }
+      
+      function dragTouch(e) {
+        if (!gameState.draggedElement) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        gameState.draggedElement.style.left = (touch.clientX - gameState.touchStartX) + 'px';
+        gameState.draggedElement.style.top = (touch.clientY - gameState.touchStartY) + 'px';
+        
+        highlightDropZones(touch.clientX, touch.clientY);
+      }
+      
+      function stopDrag(e) {
+        if (!gameState.draggedElement) return;
+        
+        handleDrop(e.clientX, e.clientY);
+        cleanupDrag();
+      }
+      
+      function stopDragTouch(e) {
+        if (!gameState.draggedElement) return;
+        
+        const touch = e.changedTouches[0];
+        handleDrop(touch.clientX, touch.clientY);
+        cleanupDrag();
+      }
+      
+      function cleanupDrag() {
+        if (!gameState.draggedElement) return;
+        
+        gameState.draggedElement.classList.remove('dragging');
+        gameState.draggedElement = null;
+        gameState.draggedElementType = null;
+        
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchmove', dragTouch);
+        document.removeEventListener('touchend', stopDragTouch);
+        
+        // Remove active class from all drop zones
+        const zones = document.querySelectorAll('.dropzone');
+        zones.forEach(zone => zone.classList.remove('active'));
+      }
+    }
+    
+    function highlightDropZones(x, y) {
       const zones = document.querySelectorAll('.dropzone');
       zones.forEach(zone => {
-        zone.addEventListener('dragover', e => e.preventDefault());
-        zone.addEventListener('drop', handleDrop);
+        const rect = zone.getBoundingClientRect();
+        if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+          zone.classList.add('active');
+        } else {
+          zone.classList.remove('active');
+        }
       });
     }
     
-    function startPieceDrag(e) {
-      e.preventDefault();
-      gameState.draggedPiece = this;
-      this.style.opacity = '0.7';
-      this.style.position = 'fixed';
-      this.style.zIndex = '1000';
+    function handleDrop(x, y) {
+      if (!gameState.draggedElement) return;
       
-      const rect = this.getBoundingClientRect();
-      const offsetX = e.clientX - rect.left;
-      const offsetY = e.clientY - rect.top;
+      const zones = document.querySelectorAll('.dropzone');
+      let dropped = false;
       
-      document.addEventListener('mousemove', dragPiece);
-      document.addEventListener('mouseup', stopPieceDrag);
-      
-      function dragPiece(e) {
-        if (!gameState.draggedPiece) return;
-        gameState.draggedPiece.style.left = (e.clientX - offsetX) + 'px';
-        gameState.draggedPiece.style.top = (e.clientY - offsetY) + 'px';
-        
-        const zones = document.querySelectorAll('.dropzone');
-        zones.forEach(zone => {
-          const zoneRect = zone.getBoundingClientRect();
-          if (e.clientX > zoneRect.left && e.clientX < zoneRect.right &&
-              e.clientY > zoneRect.top && e.clientY < zoneRect.bottom) {
-            zone.classList.add('active');
-          } else {
-            zone.classList.remove('active');
+      for (const zone of zones) {
+        const rect = zone.getBoundingClientRect();
+        if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+          
+          const elementType = gameState.draggedElementType;
+          const element = gameState.draggedElement;
+          const zoneType = zone.dataset.type;
+          
+          if (elementType === 'piece') {
+            handlePieceDrop(element, zone, zoneType);
+          } else if (elementType === 'meaning') {
+            handleMeaningDrop(element, zone, zoneType);
           }
-        });
+          
+          dropped = true;
+          break;
+        }
       }
       
-      function stopPieceDrag(e) {
-        if (!gameState.draggedPiece) return;
+      if (!dropped) {
+        // Return to original position
+        gameState.draggedElement.style.position = 'static';
+        gameState.draggedElement.style.zIndex = '';
         
-        const zones = document.querySelectorAll('.dropzone');
-        let dropped = false;
-        
-        zones.forEach(zone => {
-          const zoneRect = zone.getBoundingClientRect();
-          if (e.clientX > zoneRect.left && e.clientX < zoneRect.right &&
-              e.clientY > zoneRect.top && e.clientY < zoneRect.bottom) {
-            
-            const pieceType = gameState.draggedPiece.dataset.type;
-            const zoneType = zone.dataset.type;
-            
-            if (pieceType === zoneType) {
-              zone.appendChild(gameState.draggedPiece);
-              gameState.draggedPiece.classList.add('correct');
-              gameState.draggedPiece.style.position = 'static';
-              gameState.draggedPiece.style.opacity = '1';
-              showFeedback('correct');
-              gameState.coins += 10;
-              gameState.streak++;
-              
-              checkPiecesComplete();
-            } else {
-              gameState.draggedPiece.classList.add('wrong');
-              showFeedback('wrong');
-              gameState.streak = 0;
-              
-              setTimeout(() => {
-                if (gameState.draggedPiece) {
-                  gameState.draggedPiece.classList.remove('wrong');
-                  gameState.draggedPiece.style.position = 'static';
-                  gameState.draggedPiece.style.opacity = '1';
-                  piecesContainer.appendChild(gameState.draggedPiece);
-                }
-              }, 800);
-            }
-            
-            dropped = true;
-            zone.classList.remove('active');
-          }
-        });
-        
-        if (!dropped && gameState.draggedPiece) {
-          gameState.draggedPiece.style.position = 'static';
-          gameState.draggedPiece.style.opacity = '1';
-          piecesContainer.appendChild(gameState.draggedPiece);
+        if (gameState.draggedElementType === 'piece') {
+          piecesContainer.appendChild(gameState.draggedElement);
+        } else if (gameState.draggedElementType === 'meaning') {
+          meaningsContainer.appendChild(gameState.draggedElement);
         }
-        
-        gameState.draggedPiece = null;
-        document.removeEventListener('mousemove', dragPiece);
-        document.removeEventListener('mouseup', stopPieceDrag);
       }
     }
     
-    function startPieceDragTouch(e) {
-      e.preventDefault();
-      gameState.draggedPiece = this;
-      this.style.opacity = '0.7';
-      this.style.position = 'fixed';
-      this.style.zIndex = '1000';
+    function handlePieceDrop(piece, zone, zoneType) {
+      const correctType = piece.dataset.type;
       
-      const touch = e.touches[0];
-      const rect = this.getBoundingClientRect();
-      const offsetX = touch.clientX - rect.left;
-      const offsetY = touch.clientY - rect.top;
-      
-      document.addEventListener('touchmove', dragPieceTouch, { passive: false });
-      document.addEventListener('touchend', stopPieceDragTouch);
-      
-      function dragPieceTouch(e) {
-        if (!gameState.draggedPiece) return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        gameState.draggedPiece.style.left = (touch.clientX - offsetX) + 'px';
-        gameState.draggedPiece.style.top = (touch.clientY - offsetY) + 'px';
+      if (correctType === zoneType) {
+        // Correct drop
+        zone.appendChild(piece);
+        piece.classList.add('correct');
+        piece.style.position = 'static';
+        showFeedback('correct');
+        gameState.coins += 10;
+        gameState.streak++;
         
-        const zones = document.querySelectorAll('.dropzone');
-        zones.forEach(zone => {
-          const zoneRect = zone.getBoundingClientRect();
-          if (touch.clientX > zoneRect.left && touch.clientX < zoneRect.right &&
-              touch.clientY > zoneRect.top && touch.clientY < zoneRect.bottom) {
-            zone.classList.add('active');
-          } else {
-            zone.classList.remove('active');
-          }
-        });
+        // Check if all pieces are placed
+        checkPiecesComplete();
+      } else {
+        // Wrong drop
+        piece.classList.add('wrong');
+        showFeedback('wrong');
+        gameState.streak = 0;
+        
+        // Return piece after delay
+        setTimeout(() => {
+          piece.classList.remove('wrong');
+          piece.style.position = 'static';
+          piece.style.zIndex = '';
+          piecesContainer.appendChild(piece);
+        }, 800);
       }
       
-      function stopPieceDragTouch(e) {
-        if (!gameState.draggedPiece) return;
-        
-        const touch = e.changedTouches[0];
-        const zones = document.querySelectorAll('.dropzone');
-        let dropped = false;
-        
-        zones.forEach(zone => {
-          const zoneRect = zone.getBoundingClientRect();
-          if (touch.clientX > zoneRect.left && touch.clientX < zoneRect.right &&
-              touch.clientY > zoneRect.top && touch.clientY < zoneRect.bottom) {
-            
-            const pieceType = gameState.draggedPiece.dataset.type;
-            const zoneType = zone.dataset.type;
-            
-            if (pieceType === zoneType) {
-              zone.appendChild(gameState.draggedPiece);
-              gameState.draggedPiece.classList.add('correct');
-              gameState.draggedPiece.style.position = 'static';
-              gameState.draggedPiece.style.opacity = '1';
-              showFeedback('correct');
-              gameState.coins += 10;
-              gameState.streak++;
-              
-              checkPiecesComplete();
-            } else {
-              gameState.draggedPiece.classList.add('wrong');
-              showFeedback('wrong');
-              gameState.streak = 0;
-              
-              setTimeout(() => {
-                if (gameState.draggedPiece) {
-                  gameState.draggedPiece.classList.remove('wrong');
-                  gameState.draggedPiece.style.position = 'static';
-                  gameState.draggedPiece.style.opacity = '1';
-                  piecesContainer.appendChild(gameState.draggedPiece);
-                }
-              }, 800);
-            }
-            
-            dropped = true;
-            zone.classList.remove('active');
-          }
-        });
-        
-        if (!dropped && gameState.draggedPiece) {
-          gameState.draggedPiece.style.position = 'static';
-          gameState.draggedPiece.style.opacity = '1';
-          piecesContainer.appendChild(gameState.draggedPiece);
-        }
-        
-        gameState.draggedPiece = null;
-        document.removeEventListener('touchmove', dragPieceTouch);
-        document.removeEventListener('touchend', stopPieceDragTouch);
-      }
+      updateUI();
+    }
+    
+    function handleMeaningDrop(meaning, zone, zoneType) {
+      // For meanings, we allow dropping in any zone
+      zone.appendChild(meaning);
+      meaning.classList.add('matched');
+      meaning.style.position = 'static';
+      showFeedback('correct');
+      gameState.coins += 5;
+      
+      // Check if all meanings are placed
+      checkMeaningsComplete();
+      updateUI();
     }
     
     function checkPiecesComplete() {
@@ -1027,49 +1248,43 @@
       if (correctPieces.length === question.breakdown.length) {
         gameState.correctAnswers++;
         gameState.score++;
-        hintText.textContent = "Excellent! All pieces placed correctly!";
-        showMeaningsMatching();
+        hintText.textContent = "Excellent! All pieces placed correctly! Now match the meanings.";
+        showMeanings();
       }
-      
-      updateUI();
     }
     
-    function showMeaningsMatching() {
-      meaningsContainer.style.display = 'grid';
-      meaningsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; margin-bottom: 10px; font-weight: bold;">Match the Meanings:</div>';
+    function showMeanings() {
+      meaningsContainer.style.display = 'flex';
+      meaningsContainer.innerHTML = '<div style="width: 100%; text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 1.1rem;">Drag Meanings to Any Box:</div>';
       
       const question = gameState.currentQuestionData;
       const shuffledMeanings = [...question.meanings].sort(() => Math.random() - 0.5);
       
       shuffledMeanings.forEach(meaning => {
-        const card = document.createElement('div');
-        card.className = 'meaning-card';
-        card.textContent = meaning;
-        card.dataset.meaning = meaning;
+        const meaningElement = document.createElement('div');
+        meaningElement.className = 'meaning-item';
+        meaningElement.textContent = meaning;
+        meaningElement.dataset.meaning = meaning;
         
-        card.addEventListener('click', () => {
-          card.classList.add('matched');
-          checkAllMeaningsMatched();
-        });
+        setupDraggableElement(meaningElement, 'meaning');
         
-        card.addEventListener('touchstart', (e) => {
-          e.preventDefault();
-          card.classList.add('matched');
-          checkAllMeaningsMatched();
-        }, { passive: false });
-        
-        meaningsContainer.appendChild(card);
+        meaningsContainer.appendChild(meaningElement);
       });
       
       nextBtn.style.display = 'inline-block';
+      
+      // Scroll to show meanings
+      setTimeout(() => {
+        meaningsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 300);
     }
     
-    function checkAllMeaningsMatched() {
-      const matchedCards = document.querySelectorAll('.meaning-card.matched');
+    function checkMeaningsComplete() {
+      const matchedMeanings = document.querySelectorAll('.meaning-item.matched');
       const question = gameState.currentQuestionData;
       
-      if (matchedCards.length === question.meanings.length) {
-        hintText.textContent = `Correct! ${question.explanation}`;
+      if (matchedMeanings.length === question.meanings.length) {
+        hintText.textContent = `Perfect! ${question.explanation}`;
         gameState.coins += 20;
         updateUI();
       }
@@ -1097,14 +1312,18 @@
     }
     
     function setupTouchEvents() {
+      // Prevent unwanted behaviors
       document.addEventListener('touchmove', (e) => {
-        if (e.scale !== 1) e.preventDefault();
+        if (e.scale !== 1) {
+          e.preventDefault();
+        }
       }, { passive: false });
       
       document.addEventListener('gesturestart', (e) => e.preventDefault());
       document.addEventListener('gesturechange', (e) => e.preventDefault());
       document.addEventListener('gestureend', (e) => e.preventDefault());
       
+      // Prevent double-tap zoom
       let lastTap = 0;
       document.addEventListener('touchend', (e) => {
         const currentTime = new Date().getTime();
@@ -1143,10 +1362,26 @@
       document.getElementById('finalStreak').textContent = gameState.streak;
       document.getElementById('accuracy').textContent = `${accuracy}%`;
       
-      endScreen.style.display = 'block';
+      endScreen.style.display = 'flex';
+      
+      // Scroll to end screen
+      setTimeout(() => {
+        endScreen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
     }
     
+    // Initialize when page loads
     window.addEventListener('DOMContentLoaded', initGame);
+    
+    // Handle window resize
+    window.addEventListener('resize', adjustForMobile);
+    
+    // Handle page visibility (for mobile browsers)
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        adjustForMobile();
+      }
+    });
   </script>
 </body>
 </html>
