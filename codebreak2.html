@@ -967,19 +967,19 @@
       const parts = question.answerBreak.split('/');
       
       // Determine type for each piece based on common medical terminology patterns
-      const types = parts.map(part => {
-        if (part === 'hypo' || part === 'hyper' || part === 'inter' || part === 'ante' || part === 'intra' || 
-            part === 'poly' || part === 'tachy' || part === 'dys' || part === 'iso') {
-          return 'prefix';
-        } else if (part === 'ic' || part === 'al' || part === 'y' || part === 'ia' || part === 'itis' || 
-                   part === 'pathy' || part === 'osis' || part === 'ectomy' || part === 'tomy' || 
-                   part === 'stomy' || part === 'graphy' || part === 'logy' || part === 'ist' || 
-                   part === 'algia' || part === 'megaly' || part === 'emia' || part === 'uria') {
-          return 'suffix';
-        } else {
-          return 'root';
-        }
-      });
+    const types = parts.map(part => {
+      if (part === 'hypo' || part === 'hyper' || part === 'inter' || part === 'ante' || part === 'intra' || 
+          part === 'poly' || part === 'tachy' || part === 'dys' || part === 'iso') {
+        return 'prefix';
+      } else if (part === 'ic' || part === 'al' || part === 'y' || part === 'ia' || part === 'itis' || 
+                 part === 'pathy' || part === 'osis' || part === 'ectomy' || part === 'tomy' || 
+                 part === 'stomy' || part === 'graphy' || part === 'logy' || part === 'ist' || 
+                 part === 'algia' || part === 'megaly' || part === 'emia' || part === 'uria') {
+        return 'suffix';
+      } else {
+        return 'root';
+      }
+    });
       
       parts.forEach((piece, index) => {
         const pieceElement = document.createElement('div');
