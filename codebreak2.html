@@ -1176,13 +1176,44 @@
     }
     
     function handleMeaningDrop(meaning, zone, zoneType) {
-      const question = gameState.currentQuestionData;
-      const pieceIndex = Object.keys(gameState.pieceToMeaningMap).find(
-        key => gameState.pieceToMeaningMap[key] === zone.id
-      );
-      
-      if (pieceIndex !== undefined) {
-        const expectedMeaning = question.meanings[parseInt(pieceIndex)];
+  const question = gameState.currentQuestionData;
+  
+  // Get all pieces in this zone
+  const piecesInZone = zone.querySelectorAll('.piece.correct');
+  let isCorrect = false;
+  
+  // Check if this meaning matches ANY piece in the zone
+  for (const piece of piecesInZone) {
+    const pieceIndex = parseInt(piece.dataset.index);
+    if (pieceIndex < question.meanings.length && meaning.textContent === question.meanings[pieceIndex]) {
+      isCorrect = true;
+      break;
+    }
+  }
+  
+  if (isCorrect) {
+    zone.appendChild(meaning);
+    meaning.classList.add('matched');
+    meaning.style.position = 'static';
+    showFeedback('correct');
+    gameState.coins += 10;
+    gameState.streak++;
+    
+    checkMeaningsComplete();
+  } else {
+    meaning.classList.add('wrong');
+    showFeedback('wrong');
+    gameState.streak = 0;
+    
+    setTimeout(() => {
+      meaning.classList.remove('wrong');
+      meaning.style.position = 'static';
+      meaningsContainer.appendChild(meaning);
+    }, 800);
+  }
+  
+  updateUI();
+}
         
         if (meaning.textContent === expectedMeaning) {
           // Correct meaning in correct zone
