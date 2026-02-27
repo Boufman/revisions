@@ -2,45 +2,149 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>AR Anatomy Planes & Directional Terms Coach</title>
+
+  <!-- TensorFlow.js libraries needed for pose detection -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-cpu@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@latest"></script>
+
   <style>
-    body { margin: 20px; font-family: Arial, sans-serif; text-align: center; overflow: hidden; background: #f8f9fa; }
-    #container { position: relative; display: inline-block; width: 100%; max-width: 640px; margin: 0 auto; aspect-ratio: 9/16; } /* Adjust for iPhone-like portrait (e.g., 9:16 or 9:19.5; tweak as needed) */
-    #video { transform: scaleX(-1); width: 100%; height: 100%; object-fit: cover; border: 3px solid #ccc; display: block; border-radius: 8px; }
-    #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; transform: scaleX(-1); }
-    #feedback { font-size: 1.4em; font-weight: bold; margin: 15px; padding: 10px; border-radius: 8px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    #instructions { background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 15px; line-height: 1.5; }
-    #termSelect, #startBtn, #toggleCameraBtn { padding: 12px 24px; font-size: 1.1em; margin: 8px; border: none; border-radius: 6px; cursor: pointer; }
-    #termSelect { background: #007bff; color: white; }
-    #startBtn { background: #28a745; color: white; }
-    #toggleCameraBtn { background: #ffc107; color: black; }
-    @media (orientation: landscape) {
-      #container { aspect-ratio: 16/9; max-height: 480px; } /* Adjust for landscape */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      overflow: hidden;
+    }
+
+    #header {
+      padding: 10px 15px;
+      background: #e9ecef;
+      text-align: center;
+      transition: all 0.4s ease;
+    }
+
+    #header.collapsed {
+      padding: 5px;
+      font-size: 0.9em;
+      max-height: 60px;
+      overflow: hidden;
+    }
+
+    #container {
+      position: relative;
+      width: 100%;
+      height: calc(100vh - 180px);
+      transition: height 0.4s ease;
+    }
+
+    #container.full-feed {
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 10;
+    }
+
+    #video {
+      transform: scaleX(-1);
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: black;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      transform: scaleX(-1);
+    }
+
+    #feedback {
+      font-size: 1.3em;
+      font-weight: bold;
+      margin: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    #controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px;
+    }
+
+    button, select {
+      padding: 10px 18px;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #termSelect {
+      background: #007bff;
+      color: white;
+    }
+
+    #startBtn {
+      background: #28a745;
+      color: white;
+    }
+
+    #toggleCameraBtn, #backBtn {
+      background: #ffc107;
+      color: black;
+    }
+
+    #backBtn {
+      display: none;
+    }
+
+    @media (orientation: portrait) and (max-width: 768px) {
+      #container {
+        height: 60vh;
+      }
+      #container.full-feed {
+        height: 100vh;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="instructions">
-    <h2>AR Anatomy Planes & Directional Terms Coach</h2>
-    <p id="instructionText">Select a mode below.<br>Tap "Start Camera" (selfie best).<br>Point or touch a body part with your hand.<br>Hold steady ~2 seconds for feedback!</p>
+
+  <div id="header">
+    <h2>AR Anatomy Coach</h2>
+    <p id="instructionText">Select mode → Start Camera (selfie best) → Point & hold!</p>
   </div>
 
-  <select id="termSelect">
-    <option value="medial_lateral">Medial vs Lateral</option>
-    <option value="superior_inferior">Superior vs Inferior</option>
-    <option value="proximal_distal">Proximal vs Distal</option>
-    <option value="anterior_posterior">Anterior vs Posterior (approx)</option>
-    <option value="planes">Body Planes (gesture)</option>
-  </select><br>
-
-  <button id="startBtn">Start Camera</button>
-  <button id="toggleCameraBtn" style="display: none;">Toggle Camera</button><br>
+  <div id="controls">
+    <select id="termSelect">
+      <option value="medial_lateral">Medial vs Lateral</option>
+      <option value="superior_inferior">Superior vs Inferior</option>
+      <option value="proximal_distal">Proximal vs Distal</option>
+      <option value="anterior_posterior">Anterior vs Posterior (approx)</option>
+      <option value="planes">Body Planes (gesture)</option>
+    </select>
+    <button id="startBtn">Start Camera</button>
+    <button id="toggleCameraBtn" style="display: none;">Toggle Camera</button>
+    <button id="backBtn">Back to Controls</button>
+  </div>
 
   <div id="container">
     <video id="video" autoplay muted playsinline></video>
@@ -50,32 +154,29 @@
   <div id="feedback">Select a mode and press "Start Camera"</div>
 
   <script>
+    // === Get all important elements from the page ===
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const feedback = document.getElementById('feedback');
     const termSelect = document.getElementById('termSelect');
     const instructionText = document.getElementById('instructionText');
-    let detector;
-    let isPoseHeld = false;
-    let holdStartTime = 0;
-    const HOLD_TIME = 1800; // ms
-    let currentFacingMode = 'user'; // Start with selfie
-    let midlineX = null;
+    const header = document.getElementById('header');
+    const container = document.getElementById('container');
+    const controls = document.getElementById('controls');
+    const startBtn = document.getElementById('startBtn');
+    const toggleBtn = document.getElementById('toggleCameraBtn');
+    const backBtn = document.getElementById('backBtn');
 
-    const KEYPOINTS = {
-      nose: 0,
-      left_eye: 2, right_eye: 5,
-      left_ear: 7, right_ear: 8,
-      left_shoulder: 11, right_shoulder: 12,
-      left_elbow: 13, right_elbow: 14,
-      left_wrist: 15, right_wrist: 16,
-      left_hip: 23, right_hip: 24, // Adjust if MoveNet; note: MoveNet hips are 11/12
-      left_knee: 25, right_knee: 26,
-      left_ankle: 27, right_ankle: 28
-    };
+    // Variables we will use while the app is running
+    let detector;                  // The pose detection model
+    let isPoseHeld = false;        // Are we currently holding a good pose?
+    let holdStartTime = 0;         // When did we start holding?
+    const HOLD_TIME = 1800;        // How many milliseconds to hold (1.8 seconds)
+    let currentFacingMode = 'user'; // 'user' = front camera, 'environment' = back
+    let midlineX = null;           // Approximate center line of the body
 
-    // For MoveNet (17 keypoints)
+    // List of body parts we can recognize and point at (MoveNet uses these numbers)
     const POINTABLE_PARTS = [
       {name: 'nose', idx: 0, midline: true},
       {name: 'left eye', idx: 2}, {name: 'right eye', idx: 5},
@@ -88,17 +189,23 @@
       {name: 'left ankle', idx: 15}, {name: 'right ankle', idx: 16}
     ];
 
+    // Start the camera (front or back)
     async function startCamera(facingMode = 'user') {
       try {
-        if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+        if (video.srcObject) {
+          video.srcObject.getTracks().forEach(track => track.stop());
+        }
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode, width: {ideal: 640}, height: {ideal: 480} }
+          video: { facingMode, width: {ideal: 720}, height: {ideal: 1280} }
         });
         video.srcObject = stream;
         currentFacingMode = facingMode;
+
         video.onloadedmetadata = () => {
           video.play();
-          updateCanvasSize();
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          enterFullFeedMode();           // Make camera fill screen
           if (!detector) initDetector();
           else detectPose();
         };
@@ -108,41 +215,74 @@
       }
     }
 
-    function updateCanvasSize() {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+    // Make the camera take up the whole screen
+    function enterFullFeedMode() {
+      header.classList.add('collapsed');
+      container.classList.add('full-feed');
+      controls.style.display = 'none';
+      backBtn.style.display = 'inline-block';
+      feedback.style.position = 'absolute';
+      feedback.style.bottom = '20px';
+      feedback.style.left = '50%';
+      feedback.style.transform = 'translateX(-50%)';
+      feedback.style.width = '90%';
+      feedback.style.maxWidth = '500px';
+      feedback.style.zIndex = '20';
+      document.body.style.overflow = 'hidden';
     }
 
-    window.addEventListener('resize', updateCanvasSize);
+    // Go back to normal view (small camera + controls)
+    function exitFullFeedMode() {
+      header.classList.remove('collapsed');
+      container.classList.remove('full-feed');
+      controls.style.display = 'flex';
+      backBtn.style.display = 'none';
+      feedback.style.position = 'static';
+      feedback.style.transform = 'none';
+      document.body.style.overflow = '';
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+      }
+    }
 
+    // Load the pose detection model
     async function initDetector() {
       try {
         await tf.setBackend('webgl');
-        detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
-          modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER
-        });
+        detector = await poseDetection.createDetector(
+          poseDetection.SupportedModels.MoveNet,
+          { modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER }
+        );
         detectPose();
       } catch (err) {
-        feedback.textContent = "Detector load failed.";
+        feedback.textContent = "Failed to load pose detector.";
         feedback.style.background = "#f8d7da";
       }
     }
 
+    // Mirror x-coordinate when using front camera
     function getMirroredX(x) {
       return currentFacingMode === 'user' ? canvas.width - x : x;
     }
 
+    // Main loop: detect pose many times per second
     async function detectPose() {
-      if (!detector) return requestAnimationFrame(detectPose);
+      if (!detector) {
+        requestAnimationFrame(detectPose);
+        return;
+      }
       try {
         const poses = await detector.estimatePoses(video);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         if (poses.length > 0) {
           const kp = poses[0].keypoints;
           drawSkeleton(kp);
           checkIndication(kp);
-          // Update midline
-          const ls = kp[5], rs = kp[6]; // MoveNet shoulders
+
+          // Calculate body center line (using shoulders)
+          const ls = kp[5], rs = kp[6];
           if (ls?.score > 0.4 && rs?.score > 0.4) {
             midlineX = (getMirroredX(ls.x) + getMirroredX(rs.x)) / 2;
             ctx.beginPath();
@@ -158,50 +298,71 @@
           feedback.textContent = "No body detected — face camera";
           feedback.style.background = "#fff3cd";
         }
-      } catch (err) {}
+      } catch (err) {
+        // silent error - keep trying
+      }
       requestAnimationFrame(detectPose);
     }
 
+    // Draw stick figure skeleton
     function drawSkeleton(kp) {
-      const pairs = [[5,7],[7,9], [6,8],[8,10], [11,13],[13,15], [12,14],[14,16], [11,12],[5,6]];
+      const pairs = [
+        [5,7], [7,9],     // left arm
+        [6,8], [8,10],    // right arm
+        [11,13], [13,15], // left leg
+        [12,14], [14,16], // right leg
+        [11,12], [5,6]    // hips & shoulders
+      ];
       pairs.forEach(([a,b]) => {
         if (kp[a]?.score > 0.3 && kp[b]?.score > 0.3) {
           ctx.beginPath();
           ctx.moveTo(getMirroredX(kp[a].x), kp[a].y);
           ctx.lineTo(getMirroredX(kp[b].x), kp[b].y);
-          ctx.strokeStyle = 'cyan'; ctx.lineWidth = 4; ctx.stroke();
+          ctx.strokeStyle = 'cyan';
+          ctx.lineWidth = 4;
+          ctx.stroke();
         }
       });
       kp.forEach(p => {
         if (p?.score > 0.3) {
           ctx.beginPath();
           ctx.arc(getMirroredX(p.x), p.y, 6, 0, 2*Math.PI);
-          ctx.fillStyle = 'lime'; ctx.fill();
+          ctx.fillStyle = 'lime';
+          ctx.fill();
         }
       });
     }
 
+    // Find which body part is closest to the pointing hand
     function findClosestPart(wrist, kp) {
-      let closest = null, minDist = Infinity;
+      let closest = null;
+      let minDist = Infinity;
       POINTABLE_PARTS.forEach(part => {
         const p = kp[part.idx];
         if (p?.score > 0.35) {
-          const d = Math.hypot(getMirroredX(wrist.x) - getMirroredX(p.x), wrist.y - p.y);
+          const d = Math.hypot(
+            getMirroredX(wrist.x) - getMirroredX(p.x),
+            wrist.y - p.y
+          );
           if (d < minDist && d < 120) {
-            minDist = d; closest = {part, kp: p, dist: d};
+            minDist = d;
+            closest = {part, kp: p, dist: d};
           }
         }
       });
       return closest;
     }
 
+    // Decide what the user is pointing at and give feedback
     function checkIndication(kp) {
       const mode = termSelect.value;
       const wrists = [kp[9], kp[10]].filter(w => w?.score > 0.4);
       if (wrists.length === 0) return;
 
       let pointingWrist = wrists[0];
-      if (wrists.length > 1) pointingWrist = wrists.reduce((a,b) => (a.y < b.y ? a : b));
+      if (wrists.length > 1) {
+        pointingWrist = wrists.reduce((a,b) => (a.y < b.y ? a : b));
+      }
 
       const closest = findClosestPart(pointingWrist, kp);
       if (!closest || !midlineX) return;
@@ -211,34 +372,46 @@
       const isLeftSide = tx < midlineX;
       const distToMid = Math.abs(tx - midlineX);
 
-      let result = '', color = 'orange', bg = '#fff';
+      let result = '';
+      let color = 'orange';
 
       if (mode === 'medial_lateral') {
         const isMedial = distToMid < 60;
-        result = isMedial ? `${part.name} is near midline → **medial**` : `${part.name} is on ${isLeftSide ? 'left' : 'right'} side → **lateral**`;
+        result = isMedial
+          ? `${part.name} is near midline → **medial**`
+          : `${part.name} is on ${isLeftSide ? 'left' : 'right'} side → **lateral**`;
         color = isMedial ? 'green' : 'blue';
       } else if (mode === 'superior_inferior') {
         const headY = kp[0]?.y || 0;
         const isSuperior = targetKp.y < headY + 100;
-        result = isSuperior ? `${part.name} is **superior** (higher)` : `${part.name} is **inferior** (lower)`;
+        result = isSuperior
+          ? `${part.name} is **superior** (higher)`
+          : `${part.name} is **inferior** (lower)`;
         color = isSuperior ? 'purple' : 'teal';
       } else if (mode === 'proximal_distal') {
         const isProximal = ['shoulder','hip'].some(s => part.name.includes(s));
-        result = isProximal ? `${part.name} is **proximal** (closer to torso)` : `${part.name} is **distal** (farther from torso)`;
+        result = isProximal
+          ? `${part.name} is **proximal** (closer to torso)`
+          : `${part.name} is **distal** (farther from torso)`;
         color = isProximal ? 'indigo' : 'brown';
       } else if (mode === 'anterior_posterior') {
-        result = "Anterior/posterior hard in 2D — try palm forward (anterior).";
+        result = "Anterior/posterior is hard to detect in 2D — try showing palm forward = anterior.";
         color = 'gray';
       } else if (mode === 'planes') {
         result = "Try gestures: vertical slice down center = sagittal; horizontal = transverse; side-to-side = frontal.";
         color = 'darkgreen';
       }
 
+      // Draw circle around the pointed part
       ctx.beginPath();
       ctx.arc(getMirroredX(targetKp.x), targetKp.y, 20, 0, 2*Math.PI);
-      ctx.strokeStyle = color; ctx.lineWidth = 5; ctx.stroke();
-      ctx.fillStyle = color + '33'; ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      ctx.fillStyle = color + '33';
+      ctx.fill();
 
+      // Show message and check if held long enough
       if (result) {
         if (!isPoseHeld) {
           isPoseHeld = true;
@@ -260,32 +433,42 @@
       }
     }
 
+    // When user changes the dropdown
     termSelect.addEventListener('change', () => {
       const mode = termSelect.value;
       let instr = "";
-      if (mode === 'medial_lateral') instr = "Point at a part — is it medial (close to center) or lateral (off to side)? Hold 2s.";
-      else if (mode === 'superior_inferior') instr = "Point up/down body — superior = toward head, inferior = toward feet.";
-      else if (mode === 'proximal_distal') instr = "Point limb parts — proximal = closer to body, distal = farther (hand/foot).";
-      else if (mode === 'anterior_posterior') instr = "Show front/back — limited in 2D; palm forward = anterior.";
-      else if (mode === 'planes') instr = "Gesture planes: vertical midline = sagittal; horizontal cut = transverse; side-to-side = frontal/coronal.";
+      if (mode === 'medial_lateral') {
+        instr = "Point at a part — is it medial (close to center) or lateral (off to side)? Hold 2s.";
+      } else if (mode === 'superior_inferior') {
+        instr = "Point up/down body — superior = toward head, inferior = toward feet.";
+      } else if (mode === 'proximal_distal') {
+        instr = "Point limb parts — proximal = closer to body, distal = farther (hand/foot).";
+      } else if (mode === 'anterior_posterior') {
+        instr = "Show front/back — limited in 2D; palm forward = anterior.";
+      } else if (mode === 'planes') {
+        instr = "Gesture planes: vertical midline = sagittal; horizontal cut = transverse; side-to-side = frontal/coronal.";
+      }
       instructionText.innerHTML = `1. Select mode.<br>2. Start Camera (selfie best).<br>3. ${instr}<br>4. Hold pose for feedback!`;
       feedback.textContent = "Ready — point and hold!";
       feedback.style.background = "#fff";
       isPoseHeld = false;
     });
 
-    document.getElementById('startBtn').addEventListener('click', () => {
+    // Button clicks
+    startBtn.addEventListener('click', () => {
       startCamera(currentFacingMode);
-      document.getElementById('startBtn').style.display = 'none';
-      document.getElementById('toggleCameraBtn').style.display = 'inline-block';
+      startBtn.style.display = 'none';
+      toggleBtn.style.display = 'inline-block';
     });
 
-    document.getElementById('toggleCameraBtn').addEventListener('click', () => {
+    toggleBtn.addEventListener('click', () => {
       const newMode = currentFacingMode === 'user' ? 'environment' : 'user';
       startCamera(newMode);
     });
 
-    // Kick off
+    backBtn.addEventListener('click', exitFullFeedMode);
+
+    // Set initial instructions
     termSelect.dispatchEvent(new Event('change'));
   </script>
 </body>
