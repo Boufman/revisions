@@ -11,8 +11,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@latest"></script>
   <style>
     body { margin: 20px; font-family: Arial, sans-serif; text-align: center; overflow: hidden; background: #f8f9fa; }
-    #container { position: relative; display: inline-block; width: 100%; max-width: 640px; margin: 0 auto; }
-    #video { transform: scaleX(-1); width: 100%; height: auto; border: 3px solid #ccc; display: block; border-radius: 8px; }
+    #container { position: relative; display: inline-block; width: 100%; max-width: 640px; margin: 0 auto; aspect-ratio: 9/16; } /* Adjust for iPhone-like portrait (e.g., 9:16 or 9:19.5; tweak as needed) */
+    #video { transform: scaleX(-1); width: 100%; height: 100%; object-fit: cover; border: 3px solid #ccc; display: block; border-radius: 8px; }
     #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; transform: scaleX(-1); }
     #feedback { font-size: 1.4em; font-weight: bold; margin: 15px; padding: 10px; border-radius: 8px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     #instructions { background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 15px; line-height: 1.5; }
@@ -20,6 +20,9 @@
     #termSelect { background: #007bff; color: white; }
     #startBtn { background: #28a745; color: white; }
     #toggleCameraBtn { background: #ffc107; color: black; }
+    @media (orientation: landscape) {
+      #container { aspect-ratio: 16/9; max-height: 480px; } /* Adjust for landscape */
+    }
   </style>
 </head>
 <body>
@@ -67,12 +70,12 @@
       left_shoulder: 11, right_shoulder: 12,
       left_elbow: 13, right_elbow: 14,
       left_wrist: 15, right_wrist: 16,
-      left_hip: 23, right_hip: 24, // BlazePose/MediaPipe indices if switching; MoveNet uses 11/12 hip
+      left_hip: 23, right_hip: 24, // Adjust if MoveNet; note: MoveNet hips are 11/12
       left_knee: 25, right_knee: 26,
       left_ankle: 27, right_ankle: 28
     };
 
-    // For MoveNet (17 keypoints) - adjust if switching to BlazePose
+    // For MoveNet (17 keypoints)
     const POINTABLE_PARTS = [
       {name: 'nose', idx: 0, midline: true},
       {name: 'left eye', idx: 2}, {name: 'right eye', idx: 5},
@@ -95,8 +98,7 @@
         currentFacingMode = facingMode;
         video.onloadedmetadata = () => {
           video.play();
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
+          updateCanvasSize();
           if (!detector) initDetector();
           else detectPose();
         };
@@ -105,6 +107,13 @@
         feedback.style.background = "#f8d7da";
       }
     }
+
+    function updateCanvasSize() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+    }
+
+    window.addEventListener('resize', updateCanvasSize);
 
     async function initDetector() {
       try {
@@ -132,8 +141,8 @@
           const kp = poses[0].keypoints;
           drawSkeleton(kp);
           checkIndication(kp);
-          // Update midline approx
-          const ls = kp[KEYPOINTS.left_shoulder], rs = kp[KEYPOINTS.right_shoulder];
+          // Update midline
+          const ls = kp[5], rs = kp[6]; // MoveNet shoulders
           if (ls?.score > 0.4 && rs?.score > 0.4) {
             midlineX = (getMirroredX(ls.x) + getMirroredX(rs.x)) / 2;
             ctx.beginPath();
@@ -178,7 +187,7 @@
         const p = kp[part.idx];
         if (p?.score > 0.35) {
           const d = Math.hypot(getMirroredX(wrist.x) - getMirroredX(p.x), wrist.y - p.y);
-          if (d < minDist && d < 120) { // reasonable reach
+          if (d < minDist && d < 120) {
             minDist = d; closest = {part, kp: p, dist: d};
           }
         }
@@ -188,14 +197,11 @@
 
     function checkIndication(kp) {
       const mode = termSelect.value;
-      const wrists = [kp[9], kp[10]].filter(w => w?.score > 0.4); // left/right wrist MoveNet
+      const wrists = [kp[9], kp[10]].filter(w => w?.score > 0.4);
       if (wrists.length === 0) return;
 
-      // Pick "pointing" wrist — higher or more central
       let pointingWrist = wrists[0];
-      if (wrists.length > 1) {
-        pointingWrist = wrists.reduce((a,b) => (a.y < b.y ? a : b)); // prefer raised hand
-      }
+      if (wrists.length > 1) pointingWrist = wrists.reduce((a,b) => (a.y < b.y ? a : b));
 
       const closest = findClosestPart(pointingWrist, kp);
       if (!closest || !midlineX) return;
@@ -208,27 +214,19 @@
       let result = '', color = 'orange', bg = '#fff';
 
       if (mode === 'medial_lateral') {
-        const isMedial = distToMid < 60; // tunable threshold
-        result = isMedial
-          ? `${part.name} is near midline → **medial**`
-          : `${part.name} is on ${isLeftSide ? 'left' : 'right'} side → **lateral**`;
+        const isMedial = distToMid < 60;
+        result = isMedial ? `${part.name} is near midline → **medial**` : `${part.name} is on ${isLeftSide ? 'left' : 'right'} side → **lateral**`;
         color = isMedial ? 'green' : 'blue';
       } else if (mode === 'superior_inferior') {
-        const headY = kp[0]?.y || 0; // nose approx
-        const isSuperior = targetKp.y < headY + 100; // higher on screen = superior (in selfie inverted?)
-        result = isSuperior
-          ? `${part.name} is **superior** (higher)`
-          : `${part.name} is **inferior** (lower)`;
+        const headY = kp[0]?.y || 0;
+        const isSuperior = targetKp.y < headY + 100;
+        result = isSuperior ? `${part.name} is **superior** (higher)` : `${part.name} is **inferior** (lower)`;
         color = isSuperior ? 'purple' : 'teal';
       } else if (mode === 'proximal_distal') {
-        // Simple: shoulder/hip proximal, wrist/ankle distal
         const isProximal = ['shoulder','hip'].some(s => part.name.includes(s));
-        result = isProximal
-          ? `${part.name} is **proximal** (closer to torso)`
-          : `${part.name} is **distal** (farther from torso)`;
+        result = isProximal ? `${part.name} is **proximal** (closer to torso)` : `${part.name} is **distal** (farther from torso)`;
         color = isProximal ? 'indigo' : 'brown';
       } else if (mode === 'anterior_posterior') {
-        // Very approx — if wrist forward of torso (y diff small, but hard in 2D)
         result = "Anterior/posterior hard in 2D — try palm forward (anterior).";
         color = 'gray';
       } else if (mode === 'planes') {
@@ -236,13 +234,11 @@
         color = 'darkgreen';
       }
 
-      // Draw highlight on target
       ctx.beginPath();
       ctx.arc(getMirroredX(targetKp.x), targetKp.y, 20, 0, 2*Math.PI);
       ctx.strokeStyle = color; ctx.lineWidth = 5; ctx.stroke();
       ctx.fillStyle = color + '33'; ctx.fill();
 
-      // Hold logic
       if (result) {
         if (!isPoseHeld) {
           isPoseHeld = true;
