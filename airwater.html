@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topic 1.2 Revision — Air, Water & Movement</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --accent: #4fffb0;
+    --accent2: #ff6b6b;
+    --accent3: #ffd166;
+    --accent4: #74b9ff;
+    --text: #e8eaf6;
+    --muted: #7c82a0;
+    --border: #2e3352;
+    --correct: #4fffb0;
+    --wrong: #ff6b6b;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 30px rgba(79,255,176,0.1);
+  }
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.4rem;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  header p { color: var(--muted); font-size: 0.85rem; }
+  .score-badge {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    color: var(--accent);
+  }
+  main { max-width: 900px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  /* Section cards */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 32px;
+    margin-bottom: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .section-a::before { background: linear-gradient(90deg, var(--accent), var(--accent4)); }
+  .section-b::before { background: linear-gradient(90deg, var(--accent3), var(--accent2)); }
+  .section-c::before { background: linear-gradient(90deg, var(--accent4), var(--accent)); }
+
+  .section-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .section-instructions {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Word Bank */
+  .word-bank {
+    background: var(--surface2);
+    border: 1px dashed var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .word-bank-title {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    font-family: 'Syne', sans-serif;
+  }
+  .word-bank-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 5px 14px;
+    font-size: 0.82rem;
+    cursor: grab;
+    user-select: none;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+  .chip.used { opacity: 0.3; cursor: not-allowed; }
+  .chip.dragging { opacity: 0.5; }
+
+  /* Questions */
+  .question {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+  }
+  .question.correct { border-color: var(--correct); background: rgba(79,255,176,0.04); }
+  .question.wrong { border-color: var(--wrong); background: rgba(255,107,107,0.04); }
+  .q-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    color: var(--muted);
+    min-width: 22px;
+    padding-top: 2px;
+  }
+  .q-text { flex: 1; line-height: 1.7; font-size: 0.95rem; }
+  .drop-zone {
+    display: inline-block;
+    min-width: 120px;
+    border-bottom: 2px solid var(--accent);
+    padding: 0 8px 2px;
+    margin: 0 4px;
+    text-align: center;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s;
+    vertical-align: middle;
+  }
+  .drop-zone:empty::after { content: 'drop here'; font-size: 0.75rem; color: var(--muted); font-weight: 400; }
+  .drop-zone.drag-over { background: rgba(79,255,176,0.1); border-radius: 4px 4px 0 0; }
+  .feedback-icon { margin-left: 8px; font-size: 1rem; }
+
+  /* Part B scenarios */
+  .scenario {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .scenario-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    color: var(--accent3);
+    margin-bottom: 8px;
+  }
+  .scenario-desc {
+    font-style: italic;
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent3);
+  }
+  .scenario-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .field-label { font-size: 0.82rem; color: var(--muted); min-width: 90px; }
+
+  select, input[type="text"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  select:focus, input[type="text"]:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+
+  /* Part C table */
+  .table-wrap { overflow-x: auto; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr.correct td { background: rgba(79,255,176,0.04); }
+  tr.wrong td { background: rgba(255,107,107,0.04); }
+  td select { width: 140px; }
+
+  .app-question {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 20px;
+  }
+  .app-question p { font-size: 0.9rem; margin-bottom: 12px; color: var(--muted); }
+  .app-question strong { color: var(--text); }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+  .btn {
+    padding: 12px 28px;
+    border-radius: 50px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,255,176,0.3); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+
+  /* Results banner */
+  .results-banner {
+    display: none;
+    background: linear-gradient(135deg, var(--surface2), var(--surface));
+    border: 2px solid var(--accent);
+    border-radius: 18px;
+    padding: 32px;
+    text-align: center;
+    margin-top: 40px;
+    animation: fadeIn 0.4s ease;
+  }
+  .results-banner.show { display: block; }
+  .results-score {
+    font-family: 'Syne', sans-serif;
+    font-size: 4rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .results-label { color: var(--muted); margin-top: 8px; font-size: 0.9rem; }
+  .results-msg { font-size: 1.1rem; margin-top: 16px; color: var(--text); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .subsection-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    color: var(--accent4);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 20px 0 12px;
+  }
+
+  .inline-input {
+    display: inline-block;
+    width: 130px;
+    border: none;
+    border-bottom: 2px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0 6px 2px;
+    outline: none;
+    vertical-align: middle;
+    text-align: center;
+  }
+  .inline-select {
+    display: inline-block;
+    border: none;
+    border-bottom: 2px solid var(--accent);
+    background: var(--bg);
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    padding: 0 6px 2px;
+    outline: none;
+    vertical-align: middle;
+    border-radius: 0;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <p class="section-label">Biology Revision</p>
+    <h1>Topic 1.2 — Air, Water & Movement</h1>
+  </div>
+  <div class="score-badge">Score: <span id="live-score">0</span> / <span id="live-total">0</span></div>
+</header>
+
+<main>
+
+<!-- PART A -->
+<div class="section section-a">
+  <p class="section-label">Part A</p>
+  <h2 class="section-title">Mix & Match — The Importance of Air & Water</h2>
+  <p class="section-instructions">Drag a term from the word bank and drop it onto the blank spaces to complete each sentence.</p>
+
+  <div class="word-bank">
+    <div class="word-bank-title">Word Bank</div>
+    <div class="word-bank-chips" id="word-bank">
+      <div class="chip" draggable="true" data-word="Sound Waves">Sound Waves</div>
+      <div class="chip" draggable="true" data-word="ATP (Energy)">ATP (Energy)</div>
+      <div class="chip" draggable="true" data-word="78%">78%</div>
+      <div class="chip" draggable="true" data-word="2/3">2/3</div>
+      <div class="chip" draggable="true" data-word="Lubrication">Lubrication</div>
+      <div class="chip" draggable="true" data-word="Electrolyte">Electrolyte</div>
+      <div class="chip" draggable="true" data-word="21%">21%</div>
+      <div class="chip" draggable="true" data-word="Temperature Regulation">Temperature Regulation</div>
+      <div class="chip" draggable="true" data-word="Carbon Dioxide (CO2)">Carbon Dioxide (CO₂)</div>
+      <div class="chip" draggable="true" data-word="Solvent">Solvent</div>
+    </div>
+  </div>
+
+  <p class="subsection-title">Section 1: The Air We Breathe</p>
+
+  <div class="question" id="q1">
+    <span class="q-num">1.</span>
+    <span class="q-text">The composition of air is primarily Nitrogen at <span class="drop-zone" data-answer="78%"></span> and Oxygen at <span class="drop-zone" data-answer="21%"></span>.</span>
+    <span class="feedback-icon" id="q1-icon"></span>
+  </div>
+  <div class="question" id="q2">
+    <span class="q-num">2.</span>
+    <span class="q-text">Oxygen is crucial for cellular respiration, where it helps convert glucose into <span class="drop-zone" data-answer="ATP (Energy)"></span>.</span>
+    <span class="feedback-icon" id="q2-icon"></span>
+  </div>
+  <div class="question" id="q3">
+    <span class="q-num">3.</span>
+    <span class="q-text">Air acts as a medium for transmitting <span class="drop-zone" data-answer="Sound Waves"></span>, which is essential for hearing.</span>
+    <span class="feedback-icon" id="q3-icon"></span>
+  </div>
+  <div class="question" id="q4">
+    <span class="q-num">4.</span>
+    <span class="q-text">By helping to diffuse <span class="drop-zone" data-answer="Carbon Dioxide (CO2)"></span> away from the blood, air helps maintain the body's pH balance.</span>
+    <span class="feedback-icon" id="q4-icon"></span>
+  </div>
+
+  <p class="subsection-title">Section 2: The Water Within Us</p>
+
+  <div class="question" id="q5">
+    <span class="q-num">5.</span>
+    <span class="q-text">Water makes up approximately <span class="drop-zone" data-answer="2/3"></span> of our total body weight.</span>
+    <span class="feedback-icon" id="q5-icon"></span>
+  </div>
+  <div class="question" id="q6">
+    <span class="q-num">6.</span>
+    <span class="q-text">As the "universal <span class="drop-zone" data-answer="Solvent"></span>," water is excellent at dissolving and transporting substances.</span>
+    <span class="feedback-icon" id="q6-icon"></span>
+  </div>
+  <div class="question" id="q7">
+    <span class="q-num">7.</span>
+    <span class="q-text">Synovial fluid in joint cavities uses water for <span class="drop-zone" data-answer="Lubrication"></span> to prevent bone friction.</span>
+    <span class="feedback-icon" id="q7-icon"></span>
+  </div>
+  <div class="question" id="q8">
+    <span class="q-num">8.</span>
+    <span class="q-text">When sweat evaporates from the skin, it extracts heat from blood vessels — a process known as <span class="drop-zone" data-answer="Temperature Regulation"></span>.</span>
+    <span class="feedback-icon" id="q8-icon"></span>
+  </div>
+  <div class="question" id="q9">
+    <span class="q-num">9.</span>
+    <span class="q-text">Salts like sodium help regulate fluid balance; these are also known as <span class="drop-zone" data-answer="Electrolyte"></span>s.</span>
+    <span class="feedback-icon" id="q9-icon"></span>
+  </div>
+</div>
+
+<!-- PART B -->
+<div class="section section-b">
+  <p class="section-label">Part B</p>
+  <h2 class="section-title">Visual Scenarios — Diffusion vs. Osmosis</h2>
+  <p class="section-instructions">Identify the process and fill in the blanks for each scenario.</p>
+
+  <!-- Scenario 1 -->
+  <div class="scenario" id="sc1">
+    <div class="scenario-title">Scenario 1: The Perfume Bottle 🌸</div>
+    <div class="scenario-desc">A bottle of perfume is opened in the corner of a quiet room. Soon, a person on the other side of the room can smell it.</div>
+    <div class="scenario-field">
+      <span class="field-label">Process:</span>
+      <select id="sc1-process" onchange="checkScenario(1)">
+        <option value="">— select —</option>
+        <option value="Diffusion">Diffusion</option>
+        <option value="Osmosis">Osmosis</option>
+      </select>
+      <span id="sc1-process-fb"></span>
+    </div>
+    <div class="scenario-field" style="flex-wrap: wrap;">
+      <span class="field-label">Explanation:</span>
+      <span style="font-size:0.9rem;">The perfume particles move from an area of 
+        <select id="sc1-a" onchange="checkScenario(1)">
+          <option value="">—</option>
+          <option value="high">high</option>
+          <option value="low">low</option>
+        </select> concentration to 
+        <select id="sc1-b" onchange="checkScenario(1)">
+          <option value="">—</option>
+          <option value="high">high</option>
+          <option value="low">low</option>
+        </select> concentration until evenly distributed.</span>
+      <span id="sc1-exp-fb"></span>
+    </div>
+  </div>
+
+  <!-- Scenario 2 -->
+  <div class="scenario" id="sc2">
+    <div class="scenario-title">Scenario 2: The Thirsty Raisin 🍇</div>
+    <div class="scenario-desc">A shriveled raisin is placed in a bowl of pure water. After a few hours, the raisin is plump and smooth.</div>
+    <div class="scenario-field">
+      <span class="field-label">Process:</span>
+      <select id="sc2-process" onchange="checkScenario(2)">
+        <option value="">— select —</option>
+        <option value="Diffusion">Diffusion</option>
+        <option value="Osmosis">Osmosis</option>
+      </select>
+      <span id="sc2-process-fb"></span>
+    </div>
+    <div class="scenario-field" style="flex-wrap: wrap;">
+      <span class="field-label">Explanation:</span>
+      <span style="font-size:0.9rem;">Water moved from an area of 
+        <select id="sc2-a" onchange="checkScenario(2)">
+          <option value="">—</option>
+          <option value="lower">lower</option>
+          <option value="higher">higher</option>
+        </select> solute concentration to 
+        <select id="sc2-b" onchange="checkScenario(2)">
+          <option value="">—</option>
+          <option value="lower">lower</option>
+          <option value="higher">higher</option>
+        </select> solute concentration through the raisin's skin.</span>
+      <span id="sc2-exp-fb"></span>
+    </div>
+  </div>
+
+  <!-- Scenario 3 -->
+  <div class="scenario" id="sc3">
+    <div class="scenario-title">Scenario 3: Gas Exchange in the Lungs 🫁</div>
+    <div class="scenario-desc">In the alveoli, oxygen moves into the bloodstream, while carbon dioxide moves from the blood into the alveoli to be breathed out.</div>
+    <div class="scenario-field">
+      <span class="field-label">Process:</span>
+      <select id="sc3-process" onchange="checkScenario(3)">
+        <option value="">— select —</option>
+        <option value="Diffusion">Diffusion</option>
+        <option value="Osmosis">Osmosis</option>
+      </select>
+      <span id="sc3-process-fb"></span>
+    </div>
+    <div class="scenario-field" style="flex-wrap: wrap;">
+      <span class="field-label">Explanation:</span>
+      <span style="font-size:0.9rem;">This is a 
+        <select id="sc3-a" onchange="checkScenario(3)">
+          <option value="">—</option>
+          <option value="active">active</option>
+          <option value="passive">passive</option>
+        </select> process requiring no ATP. It is essential for 
+        <select id="sc3-b" onchange="checkScenario(3)">
+          <option value="">—</option>
+          <option value="internal">internal</option>
+          <option value="external">external</option>
+        </select> respiration.</span>
+      <span id="sc3-exp-fb"></span>
+    </div>
+  </div>
+</div>
+
+<!-- PART C -->
+<div class="section section-c">
+  <p class="section-label">Part C</p>
+  <h2 class="section-title">Tonicity Trouble — The Red Blood Cell Challenge</h2>
+  <p class="section-instructions">For each beaker, identify the tonicity, net water movement, and cell appearance.</p>
+
+  <div class="table-wrap">
+    <table id="tonicity-table">
+      <thead>
+        <tr>
+          <th>Beaker</th>
+          <th>Solution Description</th>
+          <th>Tonicity</th>
+          <th>Net Water Movement</th>
+          <th>Cell Appearance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr id="row-a">
+          <td><strong>A</strong></td>
+          <td>Solution outside has a <strong>LOWER</strong> concentration of solutes than inside the cell.</td>
+          <td>
+            <select onchange="checkTable()">
+              <option value="">— select —</option>
+              <option value="Hypotonic">Hypotonic</option>
+              <option value="Isotonic">Isotonic</option>
+              <option value="Hypertonic">Hypertonic</option>
+            </select>
+          </td>
+          <td>
+            <select onchange="checkTable()">
+              <option value="">— select —</option>
+              <option value="Into cell">Into cell</option>
+              <option value="Out of cell">Out of cell</option>
+              <option value="Equal in/out">Equal in/out</option>
+            </select>
+          </td>
+          <td>
+            <select onchange="checkTable()">
+              <option value="">— select —</option>
+              <option value="Normal">Normal</option>
+              <option value="Shriveled">Shriveled</option>
+              <option value="Swollen/Burst">Swollen/Burst</option>
+            </select>
+          </td>
+        </tr>
+        <tr id="row-b">
+          <td><strong>B</strong></td>
+          <td>Solution outside has the <strong>SAME</strong> concentration of solutes as inside the cell.</td>
+          <td>
+            <select onchange="checkTable()">
+              <option value="">— select —</option>
+              <option value="Hypotonic">Hypotonic</option>
+              <option value="Isotonic">Isotonic</option>
+              <option value="Hypertonic">Hypertonic</option>
+            </select>
+          </td>
+          <td>
+            <select onchange="checkTable()">
+              <option value="">— select —</option>
+              <option value="Into cell">Into cell</option>
+              <option value="Out of cell">Out of cell</option>
+              <option value="Equal in/out">Equal in/out</option>
+            </select>
+          </td>
+          <td>
+            <select onchange="checkTable()">
+              <option value="">— select —</option>
+              <option value="Normal">Normal</option>
+              <option value="Shriveled">Shriveled</option>
+              <option value="Swollen/Burst">Swollen/Burst</option>
+            </select>
+          </td>
+        </tr>
+        <tr id="row-c">
+          <td><strong>C</strong></td>
+          <td>Solution outside has a <strong>HIGHER</strong> concentration of solutes than inside the cell.</td>
+          <td>
+            <select onchange="checkTable()">
+              <option value="">— select —</option>
+              <option value="Hypotonic">Hypotonic</option>
+              <option value="Isotonic">Isotonic</option>
+              <option value="Hypertonic">Hypertonic</option>
+            </select>
+          </td>
+          <td>
+            <select onchange="checkTable()">
+              <option value="">— select —</option>
+              <option value="Into cell">Into cell</option>
+              <option value="Out of cell">Out of cell</option>
+              <option value="Equal in/out">Equal in/out</option>
+            </select>
+          </td>
+          <td>
+            <select onchange="checkTable()">
+              <option value="">— select —</option>
+              <option value="Normal">Normal</option>
+              <option value="Shriveled">Shriveled</option>
+              <option value="Swollen/Burst">Swollen/Burst</option>
+            </select>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="app-question">
+    <p><strong>Application Question:</strong> A red blood cell is placed into distilled water (pure H₂O with no solutes).</p>
+    <div class="scenario-field" style="margin-bottom:10px;">
+      <span class="field-label" style="min-width:240px;">Tonicity of distilled water relative to cell:</span>
+      <select id="app-tonicity" onchange="checkApp()">
+        <option value="">— select —</option>
+        <option value="Hypotonic">Hypotonic</option>
+        <option value="Isotonic">Isotonic</option>
+        <option value="Hypertonic">Hypertonic</option>
+      </select>
+      <span id="app-t-fb"></span>
+    </div>
+    <div class="scenario-field">
+      <span class="field-label" style="min-width:240px;">What will happen to the cell?</span>
+      <select id="app-result" onchange="checkApp()">
+        <option value="">— select —</option>
+        <option value="burst">It will swell and likely burst (lyse)</option>
+        <option value="shrivel">It will shrivel and crenate</option>
+        <option value="nothing">Nothing will happen</option>
+      </select>
+      <span id="app-r-fb"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Submit -->
+<div class="btn-row">
+  <button class="btn btn-primary" onclick="submitAll()">✓ Check All Answers</button>
+  <button class="btn btn-secondary" onclick="resetAll()">↺ Reset</button>
+</div>
+
+<div class="results-banner" id="results-banner">
+  <div class="results-score" id="results-score">0</div>
+  <div class="results-label">out of <span id="results-total">0</span> questions correct</div>
+  <div class="results-msg" id="results-msg"></div>
+</div>
+
+</main>
+
+<script>
+// ── Drag & Drop ──────────────────────────────────────────────────────────────
+let draggedWord = null;
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('dragstart', e => {
+    draggedWord = chip.dataset.word;
+    chip.classList.add('dragging');
+  });
+  chip.addEventListener('dragend', e => {
+    chip.classList.remove('dragging');
+  });
+});
+
+document.querySelectorAll('.drop-zone').forEach(zone => {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if (draggedWord) {
+      // Return previous word to bank if any
+      const prev = zone.textContent.trim();
+      if (prev) returnToBank(prev);
+      zone.textContent = draggedWord;
+      markChipUsed(draggedWord, true);
+      draggedWord = null;
+      updateLiveScore();
+    }
+  });
+  // Click to remove
+  zone.addEventListener('click', () => {
+    const word = zone.textContent.trim();
+    if (word) {
+      returnToBank(word);
+      zone.textContent = '';
+      updateLiveScore();
+    }
+  });
+});
+
+function markChipUsed(word, used) {
+  document.querySelectorAll('.chip').forEach(c => {
+    if (c.dataset.word === word) c.classList.toggle('used', used);
+  });
+}
+function returnToBank(word) {
+  markChipUsed(word, false);
+}
+
+// ── Scenario checks ──────────────────────────────────────────────────────────
+const scenarioAnswers = {
+  1: { process: 'Diffusion', a: 'high', b: 'low' },
+  2: { process: 'Osmosis', a: 'lower', b: 'higher' },
+  3: { process: 'Diffusion', a: 'passive', b: 'external' },
+};
+
+function checkScenario(n) { updateLiveScore(); }
+function checkTable() { updateLiveScore(); }
+function checkApp() { updateLiveScore(); }
+
+// ── Live score ────────────────────────────────────────────────────────────────
+function countCorrect() {
+  let correct = 0, total = 0;
+
+  // Part A: 10 drop zones (q1 has 2)
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    total++;
+    if (zone.textContent.trim() === zone.dataset.answer) correct++;
+  });
+
+  // Part B: 3 scenarios × 3 fields = 9
+  [1,2,3].forEach(n => {
+    const ans = scenarioAnswers[n];
+    ['process','a','b'].forEach(field => {
+      total++;
+      const el = document.getElementById(`sc${n}-${field}`);
+      if (el && el.value === ans[field]) correct++;
+    });
+  });
+
+  // Part C table: 3 rows × 3 selects = 9
+  const tableAnswers = {
+    a: ['Hypotonic','Into cell','Swollen/Burst'],
+    b: ['Isotonic','Equal in/out','Normal'],
+    c: ['Hypertonic','Out of cell','Shriveled'],
+  };
+  ['a','b','c'].forEach(row => {
+    const selects = document.querySelectorAll(`#row-${row} select`);
+    selects.forEach((sel, i) => {
+      total++;
+      if (sel.value === tableAnswers[row][i]) correct++;
+    });
+  });
+
+  // Application: 2
+  total += 2;
+  if (document.getElementById('app-tonicity').value === 'Hypotonic') correct++;
+  if (document.getElementById('app-result').value === 'burst') correct++;
+
+  return { correct, total };
+}
+
+function updateLiveScore() {
+  const { correct, total } = countCorrect();
+  document.getElementById('live-score').textContent = correct;
+  document.getElementById('live-total').textContent = total;
+}
+
+// ── Submit All ────────────────────────────────────────────────────────────────
+function submitAll() {
+  // Part A
+  document.querySelectorAll('.question').forEach(q => {
+    const zones = q.querySelectorAll('.drop-zone');
+    let allCorrect = zones.length > 0;
+    zones.forEach(z => { if (z.textContent.trim() !== z.dataset.answer) allCorrect = false; });
+    q.classList.remove('correct','wrong');
+    q.classList.add(allCorrect ? 'correct' : 'wrong');
+    const icon = q.querySelector('.feedback-icon');
+    if (icon) icon.textContent = allCorrect ? '✅' : '❌';
+  });
+
+  // Part B
+  [1,2,3].forEach(n => {
+    const ans = scenarioAnswers[n];
+    const pOk = document.getElementById(`sc${n}-process`).value === ans.process;
+    const aOk = document.getElementById(`sc${n}-a`).value === ans.a;
+    const bOk = document.getElementById(`sc${n}-b`).value === ans.b;
+    document.getElementById(`sc${n}-process-fb`).textContent = pOk ? '✅' : `❌ (${ans.process})`;
+    document.getElementById(`sc${n}-exp-fb`).textContent = (aOk && bOk) ? '✅' : `❌ (${ans.a} / ${ans.b})`;
+    document.getElementById(`sc${n}-process-fb`).style.color = pOk ? 'var(--correct)' : 'var(--wrong)';
+    document.getElementById(`sc${n}-exp-fb`).style.color = (aOk && bOk) ? 'var(--correct)' : 'var(--wrong)';
+  });
+
+  // Part C table
+  const tableAnswers = {
+    a: ['Hypotonic','Into cell','Swollen/Burst'],
+    b: ['Isotonic','Equal in/out','Normal'],
+    c: ['Hypertonic','Out of cell','Shriveled'],
+  };
+  ['a','b','c'].forEach(row => {
+    const tr = document.getElementById(`row-${row}`);
+    const selects = tr.querySelectorAll('select');
+    let allOk = true;
+    selects.forEach((sel, i) => { if (sel.value !== tableAnswers[row][i]) allOk = false; });
+    tr.classList.remove('correct','wrong');
+    tr.classList.add(allOk ? 'correct' : 'wrong');
+  });
+
+  // Application
+  const tOk = document.getElementById('app-tonicity').value === 'Hypotonic';
+  const rOk = document.getElementById('app-result').value === 'burst';
+  document.getElementById('app-t-fb').textContent = tOk ? '✅' : '❌ (Hypotonic)';
+  document.getElementById('app-r-fb').textContent = rOk ? '✅' : '❌ (Swell and burst)';
+  document.getElementById('app-t-fb').style.color = tOk ? 'var(--correct)' : 'var(--wrong)';
+  document.getElementById('app-r-fb').style.color = rOk ? 'var(--correct)' : 'var(--wrong)';
+
+  // Results
+  const { correct, total } = countCorrect();
+  const pct = Math.round(correct / total * 100);
+  const banner = document.getElementById('results-banner');
+  document.getElementById('results-score').textContent = correct;
+  document.getElementById('results-total').textContent = total;
+  let msg = pct >= 90 ? '🎉 Outstanding! Full marks almost there!' :
+            pct >= 70 ? '👏 Great work! Review the highlighted answers.' :
+            pct >= 50 ? '📚 Good effort — revisit the red sections.' :
+                        '💪 Keep going! Check each section carefully.';
+  document.getElementById('results-msg').textContent = msg;
+  banner.classList.add('show');
+  banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  updateLiveScore();
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+function resetAll() {
+  document.querySelectorAll('.drop-zone').forEach(z => { z.textContent = ''; });
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('used'));
+  document.querySelectorAll('.question').forEach(q => q.classList.remove('correct','wrong'));
+  document.querySelectorAll('.feedback-icon').forEach(i => i.textContent = '');
+  document.querySelectorAll('select').forEach(s => s.value = '');
+  [1,2,3].forEach(n => {
+    ['process-fb','exp-fb'].forEach(id => { const el = document.getElementById(`sc${n}-${id}`); if(el) el.textContent=''; });
+  });
+  ['app-t-fb','app-r-fb'].forEach(id => { document.getElementById(id).textContent = ''; });
+  ['row-a','row-b','row-c'].forEach(id => {
+    const tr = document.getElementById(id);
+    tr.classList.remove('correct','wrong');
+  });
+  document.getElementById('results-banner').classList.remove('show');
+  updateLiveScore();
+}
+
+updateLiveScore();
+</script>
+</body>
+</html>
