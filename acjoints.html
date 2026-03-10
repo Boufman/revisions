@@ -25,7 +25,6 @@
       margin: 0 auto;
     }
     #video {
-      transform: scaleX(-1);
       width: 100%;
       height: auto;
       border: 2px solid #aaa;
@@ -37,7 +36,6 @@
       top: 0; left: 0;
       width: 100%; height: 100%;
       pointer-events: none;
-      transform: scaleX(-1);
     }
     #feedback {
       font-size: 1.4em;
@@ -86,7 +84,6 @@
     <option value="FootInversion">Inversion (foot inward)</option>
     <option value="FootEversion">Eversion (foot outward)</option>
     <option value="HeadRotation">Rotation (head "no")</option>
-    <!-- Circumduction is hard to measure precisely; approximated with shoulder -->
     <option value="ShoulderCircumduction">Circumduction (arm circles - hold end position)</option>
   </select><br>
 
@@ -123,75 +120,25 @@
     };
 
     const MOVEMENTS = {
-      ElbowFlexion: {
-        instructions: 'Bend your elbow (flexion) to ~70°–110° (like curling). Hold.',
-        check: checkElbowFlexion,
-        angleRange: [70, 110],
-        joint: 'elbow'
-      },
-      ElbowExtension: {
-        instructions: 'Straighten your elbow (extension) close to 170°–180°.',
-        check: checkElbowExtension,
-        angleRange: [160, 180],
-        joint: 'elbow'
-      },
-      ShoulderAbduction: {
-        instructions: 'Raise your arm out to the side (abduction) ~80°–110° from body.',
-        check: checkShoulderAbduction,
-        angleRange: [80, 110],
-        joint: 'shoulder'
-      },
-      ShoulderAdduction: {
-        instructions: 'Bring your arm toward midline (adduction) from raised position.',
-        check: checkShoulderAdduction,
-        angleRange: [0, 40],
-        joint: 'shoulder'
-      },
-      ForearmSupination: {
-        instructions: 'Turn palm up/forward (supination) – arm straight or bent.',
-        check: checkSupination,
-        joint: 'forearm'
-      },
-      ForearmPronation: {
-        instructions: 'Turn palm down/backward (pronation) – arm straight or bent.',
-        check: checkPronation,
-        joint: 'forearm'
-      },
-      AnkleDorsiflexion: {
-        instructions: 'Pull foot/toes upward (dorsiflexion) ~15°–30° from floor.',
-        check: checkDorsiflexion,
-        angleRange: [80, 110], // approx 90° neutral → higher = dorsiflexed
-        joint: 'ankle'
-      },
-      AnklePlantarflexion: {
-        instructions: 'Point toes downward (plantar flexion) ~110°–140° from shin.',
-        check: checkPlantarflexion,
-        angleRange: [110, 140],
-        joint: 'ankle'
-      },
-      FootInversion: {
-        instructions: 'Turn sole inward (inversion) – keep heel down if possible.',
-        check: checkInversion,
-        joint: 'foot'
-      },
-      FootEversion: {
-        instructions: 'Turn sole outward (eversion) – keep heel down if possible.',
-        check: checkEversion,
-        joint: 'foot'
-      },
-      HeadRotation: {
-        instructions: 'Turn head side to side ("no") – aim for 60°–80° rotation.',
-        check: checkHeadRotation,
-        angleRange: [50, 85],
-        joint: 'neck'
-      },
-      ShoulderCircumduction: {
-        instructions: 'Move arm in big circle (circumduction) – hold at top/out position.',
-        check: checkShoulderAbduction, // reuse abduction as proxy for end pos
-        angleRange: [80, 120],
-        joint: 'shoulder'
-      }
+      ElbowFlexion: { instructions: 'Bend your elbow (flexion) to ~70°–110° (like curling). Hold.', check: checkElbowFlexion, angleRange: [70, 110], joint: 'elbow' },
+      ElbowExtension: { instructions: 'Straighten your elbow (extension) close to 170°–180°.', check: checkElbowExtension, angleRange: [160, 180], joint: 'elbow' },
+      ShoulderAbduction: { instructions: 'Raise your arm out to the side (abduction) ~80°–110° from body.', check: checkShoulderAbduction, angleRange: [80, 110], joint: 'shoulder' },
+      ShoulderAdduction: { instructions: 'Bring your arm toward midline (adduction) from raised position.', check: checkShoulderAdduction, angleRange: [0, 40], joint: 'shoulder' },
+      ForearmSupination: { instructions: 'Turn palm up/forward (supination) – arm straight or bent.', check: checkSupination, joint: 'forearm' },
+      ForearmPronation: { instructions: 'Turn palm down/backward (pronation) – arm straight or bent.', check: checkPronation, joint: 'forearm' },
+      AnkleDorsiflexion: { instructions: 'Pull foot/toes upward (dorsiflexion) ~15°–30° from floor.', check: checkDorsiflexion, angleRange: [80, 110], joint: 'ankle' },
+      AnklePlantarflexion: { instructions: 'Point toes downward (plantar flexion) ~110°–140° from shin.', check: checkPlantarflexion, angleRange: [110, 140], joint: 'ankle' },
+      FootInversion: { instructions: 'Turn sole inward (inversion) – keep heel down if possible.', check: checkInversion, joint: 'foot' },
+      FootEversion: { instructions: 'Turn sole outward (eversion) – keep heel down if possible.', check: checkEversion, joint: 'foot' },
+      HeadRotation: { instructions: 'Turn head side to side ("no") – aim for 60°–80° rotation.', check: checkHeadRotation, angleRange: [50, 85], joint: 'neck' },
+      ShoulderCircumduction: { instructions: 'Move arm in big circle (circumduction) – hold at top/out position.', check: checkShoulderAbduction, angleRange: [80, 120], joint: 'shoulder' }
     };
+
+    function updateMirroring() {
+      const shouldMirror = currentFacingMode === 'user';
+      video.style.transform = shouldMirror ? 'scaleX(-1)' : 'scaleX(1)';
+      canvas.style.transform = shouldMirror ? 'scaleX(-1)' : 'scaleX(1)';
+    }
 
     async function startCamera(facingMode = 'environment') {
       try {
@@ -201,6 +148,8 @@
         });
         video.srcObject = stream;
         currentFacingMode = facingMode;
+        updateMirroring();  // Apply correct mirroring based on mode
+
         video.onloadedmetadata = () => {
           video.play().catch(e => console.error("Play error:", e));
           canvas.width = video.videoWidth;
@@ -238,9 +187,10 @@
     }
 
     function calculateAngle(a, b, c) {
-      let ax = currentFacingMode === 'user' ? canvas.width - a.x : a.x;
-      let bx = currentFacingMode === 'user' ? canvas.width - b.x : b.x;
-      let cx = currentFacingMode === 'user' ? canvas.width - c.x : c.x;
+      const flip = currentFacingMode === 'user';
+      const ax = flip ? canvas.width - a.x : a.x;
+      const bx = flip ? canvas.width - b.x : b.x;
+      const cx = flip ? canvas.width - c.x : c.x;
       const radians = Math.atan2(c.y - b.y, cx - bx) - Math.atan2(a.y - b.y, ax - bx);
       let angle = Math.abs(radians * 180 / Math.PI);
       if (angle > 180) angle = 360 - angle;
@@ -271,9 +221,8 @@
         [5,6], [11,12], [5,11], [6,12] // torso
       ];
       lines.forEach(([i,j,k]) => {
-        if (k) {
-          drawLine(kp,i,j); drawLine(kp,j,k);
-        } else drawLine(kp,i,j);
+        if (k) { drawLine(kp,i,j); drawLine(kp,j,k); }
+        else drawLine(kp,i,j);
       });
     }
 
@@ -289,7 +238,7 @@
     }
 
     // ──────────────────────────────────────────────
-    // Check functions (simplified / phone-friendly)
+    // Check functions
     // ──────────────────────────────────────────────
 
     function checkElbowFlexion(kp) { checkLimbAngle(kp, 'left', 'right', 'shoulder','elbow','wrist', 'ElbowFlexion'); }
@@ -324,7 +273,7 @@
           }
         } else {
           isPoseCorrect = false;
-          feedbackDiv.textContent = `Adjust – aim ${m.instructions.split('(')[1]?.split(')')[0] || m.angleRange[0]+"°–"+m.angleRange[1]+"°"}. Now: ${bestAngle}° (${bestSide})`;
+          feedbackDiv.textContent = `Adjust – aim ${m.angleRange[0]}°–${m.angleRange[1]}°. Now: ${bestAngle}° (${bestSide})`;
           feedbackDiv.style.color = "red";
         }
       } else {
@@ -334,12 +283,11 @@
     }
 
     function checkSupination(kp) {
-      // Rough: wrist above elbow horizontally when palm up (y coord)
       const sides = ['left','right'];
       for (const s of sides) {
         const e = kp[KEYPOINTS[`${s}_elbow`]];
         const w = kp[KEYPOINTS[`${s}_wrist`]];
-        if (e?.score > 0.4 && w?.score > 0.4 && Math.abs(e.y - w.y) < 40 && w.y < e.y) {
+        if (e?.score > 0.4 && w?.score > 0.4 && Math.abs(e.y - w.y) < 40 && w.y < e.y + 20) {
           triggerCorrect();
           return;
         }
@@ -354,7 +302,7 @@
       for (const s of sides) {
         const e = kp[KEYPOINTS[`${s}_elbow`]];
         const w = kp[KEYPOINTS[`${s}_wrist`]];
-        if (e?.score > 0.4 && w?.score > 0.4 && Math.abs(e.y - w.y) < 40 && w.y > e.y) {
+        if (e?.score > 0.4 && w?.score > 0.4 && Math.abs(e.y - w.y) < 40 && w.y > e.y - 20) {
           triggerCorrect();
           return;
         }
@@ -364,26 +312,25 @@
       isPoseCorrect = false;
     }
 
-    function checkDorsiflexion(kp) { checkAnkleAngle(kp, 'Dorsiflexion'); }
-    function checkPlantarflexion(kp) { checkAnkleAngle(kp, 'Plantarflexion'); }
+    function checkDorsiflexion(kp) { checkAnkleAngle(kp, 'AnkleDorsiflexion'); }
+    function checkPlantarflexion(kp) { checkAnkleAngle(kp, 'AnklePlantarflexion'); }
 
     function checkAnkleAngle(kp, mov) {
       const sides = ['left','right'];
       let best = -1;
       for (const s of sides) {
-        const h = kp[KEYPOINTS[`${s}_knee`]]; // proxy proximal
-        const k = kp[KEYPOINTS[`${s}_ankle`]];
-        const a = kp[KEYPOINTS[`${s}_ankle`]]; // ankle to toe approx vertical
-        if (h?.score > 0.3 && k?.score > 0.3) {
-          // approx angle shin-to-foot (neutral ~90°)
-          const angle = calculateAngle(h, k, {x:k.x, y:k.y+50}); // fake toe down
+        const h = kp[KEYPOINTS[`${s}_knee`]];
+        const a = kp[KEYPOINTS[`${s}_ankle`]];
+        if (h?.score > 0.3 && a?.score > 0.3) {
+          const angle = calculateAngle(h, a, {x: a.x, y: a.y + 60}); // rough
           if (angle > best) best = angle;
         }
       }
       if (best > 70) {
         const m = MOVEMENTS[mov];
-        if (best >= m.angleRange[0] && best <= m.angleRange[1]) triggerCorrect();
-        else {
+        if (best >= m.angleRange[0] && best <= m.angleRange[1]) {
+          triggerCorrect();
+        } else {
           feedbackDiv.textContent = `Adjust ankle – current ~${best}°`;
           feedbackDiv.style.color = "red";
           isPoseCorrect = false;
@@ -395,11 +342,9 @@
     }
 
     function checkInversion(kp) {
-      // Rough: ankle visible, foot tilted in (hard with 17 pts)
-      if (kp[KEYPOINTS.left_ankle]?.score > 0.4 || kp[KEYPOINTS.right_ankle]?.score > 0.4) {
-        feedbackDiv.textContent = "Good inversion – hold foot turned in";
-        feedbackDiv.style.color = "green";
+      if (kp[KEYPOINTS.left_ankle]?.score > 0.35 || kp[KEYPOINTS.right_ankle]?.score > 0.35) {
         triggerCorrect();
+        feedbackDiv.textContent = "Good – hold foot turned inward";
       } else {
         feedbackDiv.textContent = "Turn sole inward more clearly";
         feedbackDiv.style.color = "red";
@@ -407,10 +352,9 @@
     }
 
     function checkEversion(kp) {
-      if (kp[KEYPOINTS.left_ankle]?.score > 0.4 || kp[KEYPOINTS.right_ankle]?.score > 0.4) {
-        feedbackDiv.textContent = "Good eversion – hold foot turned out";
-        feedbackDiv.style.color = "green";
+      if (kp[KEYPOINTS.left_ankle]?.score > 0.35 || kp[KEYPOINTS.right_ankle]?.score > 0.35) {
         triggerCorrect();
+        feedbackDiv.textContent = "Good – hold foot turned outward";
       } else {
         feedbackDiv.textContent = "Turn sole outward more clearly";
         feedbackDiv.style.color = "red";
@@ -425,16 +369,16 @@
         const diff = Math.abs(le.x - re.x);
         const mid = (le.x + re.x) / 2;
         const offset = Math.abs(nose.x - mid);
-        const approxDeg = (offset / diff) * 180; // rough
+        const approxDeg = (offset / diff) * 180;
         if (approxDeg > 45) {
           triggerCorrect();
           feedbackDiv.textContent += ` (~${Math.round(approxDeg)}°)`;
         } else {
-          feedbackDiv.textContent = "Turn head more to side";
+          feedbackDiv.textContent = "Turn head more to the side";
           feedbackDiv.style.color = "red";
         }
       } else {
-        feedbackDiv.textContent = "Face camera – turn head";
+        feedbackDiv.textContent = "Face camera and turn head";
         feedbackDiv.style.color = "red";
       }
     }
@@ -472,11 +416,13 @@
     document.getElementById('toggleCameraBtn').addEventListener('click', () => {
       const newMode = currentFacingMode === 'environment' ? 'user' : 'environment';
       startCamera(newMode);
+      document.getElementById('toggleCameraBtn').textContent = `Toggle Camera (${newMode === 'user' ? 'Selfie' : 'Rear'})`;
     });
 
-    // Init default
+    // Initial setup
+    updateMirroring();
     const def = MOVEMENTS[movementSelect.value];
-    instructionText.innerHTML += `<br>4. ${def.instructions}`;
+    instructionText.innerHTML += `<br>Current: ${def.instructions}`;
   </script>
 </body>
 </html>
