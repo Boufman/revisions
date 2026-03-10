@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Anatomy Motion Coach - Joint Movements</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-cpu@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@latest"></script>
+  <style>
+    body {
+      margin: 15px;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      overflow: hidden;
+      background: #f9f9f9;
+    }
+    #container {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    #video {
+      transform: scaleX(-1);
+      width: 100%;
+      height: auto;
+      border: 2px solid #aaa;
+      border-radius: 8px;
+      display: block;
+    }
+    #canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      transform: scaleX(-1);
+    }
+    #feedback {
+      font-size: 1.4em;
+      font-weight: bold;
+      margin: 12px 0;
+      min-height: 2.5em;
+    }
+    #instructions {
+      background: #e8f0fe;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 1em;
+    }
+    select, button {
+      padding: 10px 18px;
+      font-size: 1em;
+      margin: 6px 4px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #4285f4;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover { background: #3267d6; }
+  </style>
+</head>
+<body>
+  <div id="instructions">
+    <h2>Joint Movement Practice</h2>
+    <p id="instructionText">1. Choose a movement.<br>2. Tap "Start Camera".<br>3. Switch camera if needed.<br>4. Perform & hold the position 2 sec for feedback.</p>
+  </div>
+
+  <select id="movementSelect">
+    <option value="ElbowFlexion">Flexion (e.g. elbow bend)</option>
+    <option value="ElbowExtension">Extension (e.g. elbow straighten)</option>
+    <option value="ShoulderAbduction">Abduction (arm out to side)</option>
+    <option value="ShoulderAdduction">Adduction (arm toward body)</option>
+    <option value="ForearmSupination">Supination (palm up)</option>
+    <option value="ForearmPronation">Pronation (palm down)</option>
+    <option value="AnkleDorsiflexion">Dorsiflexion (foot up)</option>
+    <option value="AnklePlantarflexion">Plantar flexion (toes down)</option>
+    <option value="FootInversion">Inversion (foot inward)</option>
+    <option value="FootEversion">Eversion (foot outward)</option>
+    <option value="HeadRotation">Rotation (head "no")</option>
+    <!-- Circumduction is hard to measure precisely; approximated with shoulder -->
+    <option value="ShoulderCircumduction">Circumduction (arm circles - hold end position)</option>
+  </select><br>
+
+  <button id="startBtn">Start Camera</button>
+  <button id="toggleCameraBtn" style="display: none;">Toggle Camera</button><br>
+
+  <div id="container">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div id="feedback">Choose a movement and start the camera</div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const feedbackDiv = document.getElementById('feedback');
+    const movementSelect = document.getElementById('movementSelect');
+    const instructionText = document.getElementById('instructionText');
+
+    let detector;
+    let isPoseCorrect = false;
+    let correctPoseStartTime = 0;
+    const HOLD_TIME_NEEDED = 2000;
+    let currentFacingMode = 'environment';
+
+    const KEYPOINTS = {
+      left_shoulder: 5, left_elbow: 7, left_wrist: 9,
+      right_shoulder: 6, right_elbow: 8, right_wrist: 10,
+      left_hip: 11, left_knee: 13, left_ankle: 15,
+      right_hip: 12, right_knee: 14, right_ankle: 16,
+      nose: 0, left_ear: 3, right_ear: 4
+    };
+
+    const MOVEMENTS = {
+      ElbowFlexion: {
+        instructions: 'Bend your elbow (flexion) to ~70°–110° (like curling). Hold.',
+        check: checkElbowFlexion,
+        angleRange: [70, 110],
+        joint: 'elbow'
+      },
+      ElbowExtension: {
+        instructions: 'Straighten your elbow (extension) close to 170°–180°.',
+        check: checkElbowExtension,
+        angleRange: [160, 180],
+        joint: 'elbow'
+      },
+      ShoulderAbduction: {
+        instructions: 'Raise your arm out to the side (abduction) ~80°–110° from body.',
+        check: checkShoulderAbduction,
+        angleRange: [80, 110],
+        joint: 'shoulder'
+      },
+      ShoulderAdduction: {
+        instructions: 'Bring your arm toward midline (adduction) from raised position.',
+        check: checkShoulderAdduction,
+        angleRange: [0, 40],
+        joint: 'shoulder'
+      },
+      ForearmSupination: {
+        instructions: 'Turn palm up/forward (supination) – arm straight or bent.',
+        check: checkSupination,
+        joint: 'forearm'
+      },
+      ForearmPronation: {
+        instructions: 'Turn palm down/backward (pronation) – arm straight or bent.',
+        check: checkPronation,
+        joint: 'forearm'
+      },
+      AnkleDorsiflexion: {
+        instructions: 'Pull foot/toes upward (dorsiflexion) ~15°–30° from floor.',
+        check: checkDorsiflexion,
+        angleRange: [80, 110], // approx 90° neutral → higher = dorsiflexed
+        joint: 'ankle'
+      },
+      AnklePlantarflexion: {
+        instructions: 'Point toes downward (plantar flexion) ~110°–140° from shin.',
+        check: checkPlantarflexion,
+        angleRange: [110, 140],
+        joint: 'ankle'
+      },
+      FootInversion: {
+        instructions: 'Turn sole inward (inversion) – keep heel down if possible.',
+        check: checkInversion,
+        joint: 'foot'
+      },
+      FootEversion: {
+        instructions: 'Turn sole outward (eversion) – keep heel down if possible.',
+        check: checkEversion,
+        joint: 'foot'
+      },
+      HeadRotation: {
+        instructions: 'Turn head side to side ("no") – aim for 60°–80° rotation.',
+        check: checkHeadRotation,
+        angleRange: [50, 85],
+        joint: 'neck'
+      },
+      ShoulderCircumduction: {
+        instructions: 'Move arm in big circle (circumduction) – hold at top/out position.',
+        check: checkShoulderAbduction, // reuse abduction as proxy for end pos
+        angleRange: [80, 120],
+        joint: 'shoulder'
+      }
+    };
+
+    async function startCamera(facingMode = 'environment') {
+      try {
+        if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } }
+        });
+        video.srcObject = stream;
+        currentFacingMode = facingMode;
+        video.onloadedmetadata = () => {
+          video.play().catch(e => console.error("Play error:", e));
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          if (!detector) initializeBackend();
+          else detectPose();
+        };
+      } catch (err) {
+        feedbackDiv.textContent = "Camera error: " + err.message;
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    async function initializeBackend() {
+      try {
+        await tf.setBackend('webgl').catch(() => tf.setBackend('cpu'));
+        loadPoseDetector();
+      } catch (e) {
+        feedbackDiv.textContent = "Backend error";
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    async function loadPoseDetector() {
+      try {
+        detector = await poseDetection.createDetector(
+          poseDetection.SupportedModels.MoveNet,
+          { modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER }
+        );
+        detectPose();
+      } catch (err) {
+        feedbackDiv.textContent = "Model load failed";
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    function calculateAngle(a, b, c) {
+      let ax = currentFacingMode === 'user' ? canvas.width - a.x : a.x;
+      let bx = currentFacingMode === 'user' ? canvas.width - b.x : b.x;
+      let cx = currentFacingMode === 'user' ? canvas.width - c.x : c.x;
+      const radians = Math.atan2(c.y - b.y, cx - bx) - Math.atan2(a.y - b.y, ax - bx);
+      let angle = Math.abs(radians * 180 / Math.PI);
+      if (angle > 180) angle = 360 - angle;
+      return Math.round(angle);
+    }
+
+    async function detectPose() {
+      if (!detector) return requestAnimationFrame(detectPose);
+      try {
+        const poses = await detector.estimatePoses(video);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (poses.length > 0) {
+          const kp = poses[0].keypoints;
+          drawBasicSkeleton(kp);
+          MOVEMENTS[movementSelect.value].check(kp);
+        } else {
+          feedbackDiv.textContent = "No pose detected – move into view";
+          feedbackDiv.style.color = "orange";
+        }
+      } catch (e) {}
+      requestAnimationFrame(detectPose);
+    }
+
+    function drawBasicSkeleton(kp) {
+      const lines = [
+        [5,7,9], [6,8,10],    // arms
+        [11,13,15], [12,14,16], // legs
+        [5,6], [11,12], [5,11], [6,12] // torso
+      ];
+      lines.forEach(([i,j,k]) => {
+        if (k) {
+          drawLine(kp,i,j); drawLine(kp,j,k);
+        } else drawLine(kp,i,j);
+      });
+    }
+
+    function drawLine(kp, i, j) {
+      if (kp[i]?.score > 0.3 && kp[j]?.score > 0.3) {
+        ctx.beginPath();
+        ctx.moveTo(kp[i].x, kp[i].y);
+        ctx.lineTo(kp[j].x, kp[j].y);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#00ccff';
+        ctx.stroke();
+      }
+    }
+
+    // ──────────────────────────────────────────────
+    // Check functions (simplified / phone-friendly)
+    // ──────────────────────────────────────────────
+
+    function checkElbowFlexion(kp) { checkLimbAngle(kp, 'left', 'right', 'shoulder','elbow','wrist', 'ElbowFlexion'); }
+    function checkElbowExtension(kp) { checkLimbAngle(kp, 'left', 'right', 'shoulder','elbow','wrist', 'ElbowExtension'); }
+    function checkShoulderAbduction(kp) { checkLimbAngle(kp, 'left', 'right', 'hip','shoulder','elbow', 'ShoulderAbduction'); }
+    function checkShoulderAdduction(kp) { checkLimbAngle(kp, 'left', 'right', 'hip','shoulder','elbow', 'ShoulderAdduction'); }
+
+    function checkLimbAngle(kp, side1, side2, p1, p2, p3, mov) {
+      const sides = [side1, side2];
+      let bestAngle = -1, bestSide = '';
+      for (const side of sides) {
+        const a = kp[KEYPOINTS[`${side}_${p1}`]];
+        const b = kp[KEYPOINTS[`${side}_${p2}`]];
+        const c = kp[KEYPOINTS[`${side}_${p3}`]];
+        if (a?.score > 0.3 && b?.score > 0.3 && c?.score > 0.3) {
+          const angle = calculateAngle(a, b, c);
+          if (angle > bestAngle) { bestAngle = angle; bestSide = side; }
+        }
+      }
+      if (bestAngle > 0) {
+        const m = MOVEMENTS[mov];
+        const inRange = bestAngle >= m.angleRange[0] && bestAngle <= m.angleRange[1];
+        if (inRange) {
+          if (!isPoseCorrect) { isPoseCorrect = true; correctPoseStartTime = Date.now(); }
+          const held = Date.now() - correctPoseStartTime;
+          if (held >= HOLD_TIME_NEEDED) {
+            feedbackDiv.textContent = `✅ GOOD! ${m.joint} ${mov.replace(/([A-Z])/g,' $1').trim()} held.`;
+            feedbackDiv.style.color = "green";
+          } else {
+            feedbackDiv.textContent = `Hold... (${(held/1000).toFixed(1)} s)`;
+            feedbackDiv.style.color = "orange";
+          }
+        } else {
+          isPoseCorrect = false;
+          feedbackDiv.textContent = `Adjust – aim ${m.instructions.split('(')[1]?.split(')')[0] || m.angleRange[0]+"°–"+m.angleRange[1]+"°"}. Now: ${bestAngle}° (${bestSide})`;
+          feedbackDiv.style.color = "red";
+        }
+      } else {
+        feedbackDiv.textContent = `Make ${m.joint} clearly visible`;
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    function checkSupination(kp) {
+      // Rough: wrist above elbow horizontally when palm up (y coord)
+      const sides = ['left','right'];
+      for (const s of sides) {
+        const e = kp[KEYPOINTS[`${s}_elbow`]];
+        const w = kp[KEYPOINTS[`${s}_wrist`]];
+        if (e?.score > 0.4 && w?.score > 0.4 && Math.abs(e.y - w.y) < 40 && w.y < e.y) {
+          triggerCorrect();
+          return;
+        }
+      }
+      feedbackDiv.textContent = "Turn palm up/forward clearly";
+      feedbackDiv.style.color = "red";
+      isPoseCorrect = false;
+    }
+
+    function checkPronation(kp) {
+      const sides = ['left','right'];
+      for (const s of sides) {
+        const e = kp[KEYPOINTS[`${s}_elbow`]];
+        const w = kp[KEYPOINTS[`${s}_wrist`]];
+        if (e?.score > 0.4 && w?.score > 0.4 && Math.abs(e.y - w.y) < 40 && w.y > e.y) {
+          triggerCorrect();
+          return;
+        }
+      }
+      feedbackDiv.textContent = "Turn palm down/back clearly";
+      feedbackDiv.style.color = "red";
+      isPoseCorrect = false;
+    }
+
+    function checkDorsiflexion(kp) { checkAnkleAngle(kp, 'Dorsiflexion'); }
+    function checkPlantarflexion(kp) { checkAnkleAngle(kp, 'Plantarflexion'); }
+
+    function checkAnkleAngle(kp, mov) {
+      const sides = ['left','right'];
+      let best = -1;
+      for (const s of sides) {
+        const h = kp[KEYPOINTS[`${s}_knee`]]; // proxy proximal
+        const k = kp[KEYPOINTS[`${s}_ankle`]];
+        const a = kp[KEYPOINTS[`${s}_ankle`]]; // ankle to toe approx vertical
+        if (h?.score > 0.3 && k?.score > 0.3) {
+          // approx angle shin-to-foot (neutral ~90°)
+          const angle = calculateAngle(h, k, {x:k.x, y:k.y+50}); // fake toe down
+          if (angle > best) best = angle;
+        }
+      }
+      if (best > 70) {
+        const m = MOVEMENTS[mov];
+        if (best >= m.angleRange[0] && best <= m.angleRange[1]) triggerCorrect();
+        else {
+          feedbackDiv.textContent = `Adjust ankle – current ~${best}°`;
+          feedbackDiv.style.color = "red";
+          isPoseCorrect = false;
+        }
+      } else {
+        feedbackDiv.textContent = "Show leg/foot clearly";
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    function checkInversion(kp) {
+      // Rough: ankle visible, foot tilted in (hard with 17 pts)
+      if (kp[KEYPOINTS.left_ankle]?.score > 0.4 || kp[KEYPOINTS.right_ankle]?.score > 0.4) {
+        feedbackDiv.textContent = "Good inversion – hold foot turned in";
+        feedbackDiv.style.color = "green";
+        triggerCorrect();
+      } else {
+        feedbackDiv.textContent = "Turn sole inward more clearly";
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    function checkEversion(kp) {
+      if (kp[KEYPOINTS.left_ankle]?.score > 0.4 || kp[KEYPOINTS.right_ankle]?.score > 0.4) {
+        feedbackDiv.textContent = "Good eversion – hold foot turned out";
+        feedbackDiv.style.color = "green";
+        triggerCorrect();
+      } else {
+        feedbackDiv.textContent = "Turn sole outward more clearly";
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    function checkHeadRotation(kp) {
+      const nose = kp[KEYPOINTS.nose];
+      const le = kp[KEYPOINTS.left_ear];
+      const re = kp[KEYPOINTS.right_ear];
+      if (nose?.score > 0.5 && le?.score > 0.4 && re?.score > 0.4) {
+        const diff = Math.abs(le.x - re.x);
+        const mid = (le.x + re.x) / 2;
+        const offset = Math.abs(nose.x - mid);
+        const approxDeg = (offset / diff) * 180; // rough
+        if (approxDeg > 45) {
+          triggerCorrect();
+          feedbackDiv.textContent += ` (~${Math.round(approxDeg)}°)`;
+        } else {
+          feedbackDiv.textContent = "Turn head more to side";
+          feedbackDiv.style.color = "red";
+        }
+      } else {
+        feedbackDiv.textContent = "Face camera – turn head";
+        feedbackDiv.style.color = "red";
+      }
+    }
+
+    function triggerCorrect() {
+      if (!isPoseCorrect) {
+        isPoseCorrect = true;
+        correctPoseStartTime = Date.now();
+      }
+      const held = Date.now() - correctPoseStartTime;
+      if (held >= HOLD_TIME_NEEDED) {
+        feedbackDiv.textContent = `✅ Correct hold! Good job.`;
+        feedbackDiv.style.color = "green";
+      } else {
+        feedbackDiv.textContent = `Hold steady... (${(held/1000).toFixed(1)} s)`;
+        feedbackDiv.style.color = "orange";
+      }
+    }
+
+    // Event listeners
+    movementSelect.addEventListener('change', () => {
+      const m = MOVEMENTS[movementSelect.value];
+      instructionText.innerHTML = `1. Choose movement.<br>2. Start camera.<br>3. Toggle if needed.<br>4. ${m.instructions}`;
+      feedbackDiv.textContent = "Start camera to begin";
+      feedbackDiv.style.color = "black";
+      isPoseCorrect = false;
+    });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      startCamera(currentFacingMode);
+      document.getElementById('startBtn').style.display = 'none';
+      document.getElementById('toggleCameraBtn').style.display = 'inline-block';
+    });
+
+    document.getElementById('toggleCameraBtn').addEventListener('click', () => {
+      const newMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+      startCamera(newMode);
+    });
+
+    // Init default
+    const def = MOVEMENTS[movementSelect.value];
+    instructionText.innerHTML += `<br>4. ${def.instructions}`;
+  </script>
+</body>
+</html>
