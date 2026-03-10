@@ -11,25 +11,29 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@latest"></script>
   <style>
     body {
-      margin: 15px;
+      margin: 10px;
       font-family: Arial, sans-serif;
       text-align: center;
-      overflow: hidden;
       background: #f9f9f9;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     #container {
       position: relative;
-      display: inline-block;
       width: 100%;
       max-width: 100%;
       margin: 0 auto;
+      max-height: 65vh;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
     }
     #video {
       width: 100%;
-      height: auto;
-      border: 2px solid #aaa;
-      border-radius: 8px;
+      height: 100%;
+      object-fit: contain;
       display: block;
+      background: #000;
     }
     #canvas {
       position: absolute;
@@ -47,7 +51,7 @@
       background: #e8f0fe;
       padding: 12px;
       border-radius: 8px;
-      margin-bottom: 12px;
+      margin: 10px 0;
       font-size: 1em;
     }
     select, button {
@@ -148,7 +152,7 @@
         });
         video.srcObject = stream;
         currentFacingMode = facingMode;
-        updateMirroring();  // Apply correct mirroring based on mode
+        updateMirroring();
 
         video.onloadedmetadata = () => {
           video.play().catch(e => console.error("Play error:", e));
@@ -237,10 +241,6 @@
       }
     }
 
-    // ──────────────────────────────────────────────
-    // Check functions
-    // ──────────────────────────────────────────────
-
     function checkElbowFlexion(kp) { checkLimbAngle(kp, 'left', 'right', 'shoulder','elbow','wrist', 'ElbowFlexion'); }
     function checkElbowExtension(kp) { checkLimbAngle(kp, 'left', 'right', 'shoulder','elbow','wrist', 'ElbowExtension'); }
     function checkShoulderAbduction(kp) { checkLimbAngle(kp, 'left', 'right', 'hip','shoulder','elbow', 'ShoulderAbduction'); }
@@ -287,7 +287,7 @@
       for (const s of sides) {
         const e = kp[KEYPOINTS[`${s}_elbow`]];
         const w = kp[KEYPOINTS[`${s}_wrist`]];
-        if (e?.score > 0.4 && w?.score > 0.4 && Math.abs(e.y - w.y) < 40 && w.y < e.y + 20) {
+        if (e?.score > 0.4 && w?.score > 0.4 && Math.abs(e.y - w.y) < 50 && w.y < e.y + 30) {
           triggerCorrect();
           return;
         }
@@ -302,7 +302,7 @@
       for (const s of sides) {
         const e = kp[KEYPOINTS[`${s}_elbow`]];
         const w = kp[KEYPOINTS[`${s}_wrist`]];
-        if (e?.score > 0.4 && w?.score > 0.4 && Math.abs(e.y - w.y) < 40 && w.y > e.y - 20) {
+        if (e?.score > 0.4 && w?.score > 0.4 && Math.abs(e.y - w.y) < 50 && w.y > e.y - 30) {
           triggerCorrect();
           return;
         }
@@ -322,7 +322,7 @@
         const h = kp[KEYPOINTS[`${s}_knee`]];
         const a = kp[KEYPOINTS[`${s}_ankle`]];
         if (h?.score > 0.3 && a?.score > 0.3) {
-          const angle = calculateAngle(h, a, {x: a.x, y: a.y + 60}); // rough
+          const angle = calculateAngle(h, a, {x: a.x, y: a.y + 60});
           if (angle > best) best = angle;
         }
       }
@@ -398,7 +398,6 @@
       }
     }
 
-    // Event listeners
     movementSelect.addEventListener('change', () => {
       const m = MOVEMENTS[movementSelect.value];
       instructionText.innerHTML = `1. Choose movement.<br>2. Start camera.<br>3. Toggle if needed.<br>4. ${m.instructions}`;
