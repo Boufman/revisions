@@ -316,30 +316,78 @@
     function checkPlantarflexion(kp) { checkAnkleAngle(kp, 'AnklePlantarflexion'); }
 
     function checkAnkleAngle(kp, mov) {
-      const sides = ['left','right'];
-      let best = -1;
-      for (const s of sides) {
-        const h = kp[KEYPOINTS[`${s}_knee`]];
-        const a = kp[KEYPOINTS[`${s}_ankle`]];
-        if (h?.score > 0.3 && a?.score > 0.3) {
-          const angle = calculateAngle(h, a, {x: a.x, y: a.y + 60});
-          if (angle > best) best = angle;
-        }
-      }
-      if (best > 70) {
-        const m = MOVEMENTS[mov];
-        if (best >= m.angleRange[0] && best <= m.angleRange[1]) {
-          triggerCorrect();
-        } else {
-          feedbackDiv.textContent = `Adjust ankle – current ~${best}°`;
-          feedbackDiv.style.color = "red";
-          isPoseCorrect = false;
-        }
-      } else {
-        feedbackDiv.textContent = "Show leg/foot clearly";
-        feedbackDiv.style.color = "red";
+  const sides = ['left', 'right'];
+  let bestAngle = -1;
+  let bestSide = '';
+
+  for (const s of sides) {
+    const knee = kp[KEYPOINTS[`${s}_knee`]];
+    const ankle = kp[KEYPOINTS[`${s}_ankle`]];
+    const hip   = kp[KEYPOINTS[`${s}_hip`]];   // ← we add hip for better context
+
+    if (knee?.score > 0.35 && ankle?.score > 0.35 && hip?.score > 0.25) {
+      // 1. Shank vector (knee to ankle)
+      const shankVec = { x: ankle.x - knee.x, y: ankle.y - knee.y };
+
+      // 2. Approximate foot vector.
+      //    In neutral, foot is roughly perpendicular to shank, but we approximate
+      //    by assuming foot continues "forward" relative to shank direction.
+      //    A practical trick: use a vector from ankle in the direction orthogonal to shank
+      //    (rotate shank vector 90 degrees), then adjust sign based on movement.
+
+      // Rotate shank vector 90° clockwise for "forward" foot assumption in right-side-up view
+      let footVec = { x: shankVec.y, y: -shankVec.x }; // perpendicular
+
+      // Normalize and scale (arbitrary length, e.g. 80 pixels)
+      const len = Math.hypot(footVec.x, footVec.y) || 1;
+      footVec.x = (footVec.x / len) * 80;
+      footVec.y = (footVec.y / len) * 80;
+
+      const fakeToe = { x: ankle.x + footVec.x, y: ankle.y + footVec.y };
+
+      // Now calculate the angle knee-ankle-toe using your existing function
+      let angle = calculateAngle(knee, ankle, fakeToe);
+
+      // Flip convention so dorsiflexion gives ~80–100°, plantarflexion >110–130°
+      // (your current ranges are roughly ok, but invert if needed)
+      // Many apps flip it: angle = 180 - angle;  // if you want 90° neutral
+
+      if (angle > bestAngle) {
+        bestAngle = angle;
+        bestSide = s;
       }
     }
+  }
+
+  if (bestAngle > 60) {  // raised threshold to avoid noise
+    const m = MOVEMENTS[mov];
+    // Optional: invert if your calculateAngle gives the supplementary angle
+    // bestAngle = 180 - bestAngle;
+
+    const inRange = bestAngle >= m.angleRange[0] && bestAngle <= m.angleRange[1];
+
+    if (inRange) {
+      // same hold logic...
+      if (!isPoseCorrect) { isPoseCorrect = true; correctPoseStartTime = Date.now(); }
+      const held = Date.now() - correctPoseStartTime;
+      if (held >= HOLD_TIME_NEEDED) {
+        feedbackDiv.textContent = `✅ GOOD! ${m.joint} ${mov.replace(/([A-Z])/g,' $1').trim()} held. (~${bestAngle}° on ${bestSide})`;
+        feedbackDiv.style.color = "green";
+      } else {
+        feedbackDiv.textContent = `Hold... (${(held/1000).toFixed(1)} s)  ~${bestAngle}°`;
+        feedbackDiv.style.color = "orange";
+      }
+    } else {
+      isPoseCorrect = false;
+      feedbackDiv.textContent = `Adjust – aim ${m.angleRange[0]}°–${m.angleRange[1]}°. Now: ~${Math.round(bestAngle)}° (${bestSide})`;
+      feedbackDiv.style.color = "red";
+    }
+  } else {
+    feedbackDiv.textContent = "Show full lower leg & foot clearly (side view best)";
+    feedbackDiv.style.color = "red";
+    isPoseCorrect = false;
+  }
+}
 
     function checkInversion(kp) {
       if (kp[KEYPOINTS.left_ankle]?.score > 0.35 || kp[KEYPOINTS.right_ankle]?.score > 0.35) {
