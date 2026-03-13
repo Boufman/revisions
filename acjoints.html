@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Anatomy Motion Coach - Joint Movements</title>
+  <title>Anatomy Motion Coach - Joint Movements (Improved Ankles)</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-cpu@latest"></script>
@@ -73,7 +73,7 @@
 <body>
   <div id="instructions">
     <h2>Joint Movement Practice</h2>
-    <p id="instructionText">1. Choose a movement.<br>2. Tap "Start Camera".<br>3. Switch camera if needed.<br>4. Perform & hold the position 2 sec for feedback.</p>
+    <p id="instructionText">1. Choose a movement.<br>2. Tap "Start Camera".<br>3. Switch camera if needed.<br>4. Perform & hold the position 2 sec for feedback.<br><strong>Best for ankles:</strong> side view of leg + foot clearly visible.</p>
   </div>
 
   <select id="movementSelect">
@@ -83,8 +83,8 @@
     <option value="ShoulderAdduction">Adduction (arm toward body)</option>
     <option value="ForearmSupination">Supination (palm up)</option>
     <option value="ForearmPronation">Pronation (palm down)</option>
-    <option value="AnkleDorsiflexion">Dorsiflexion (foot up)</option>
-    <option value="AnklePlantarflexion">Plantar flexion (toes down)</option>
+    <option value="AnkleDorsiflexion">Dorsiflexion (toes/foot up)</option>
+    <option value="AnklePlantarflexion">Plantar flexion (toes/foot down)</option>
     <option value="FootInversion">Inversion (foot inward)</option>
     <option value="FootEversion">Eversion (foot outward)</option>
     <option value="HeadRotation">Rotation (head "no")</option>
@@ -116,11 +116,16 @@
     let currentFacingMode = 'environment';
 
     const KEYPOINTS = {
-      left_shoulder: 5, left_elbow: 7, left_wrist: 9,
-      right_shoulder: 6, right_elbow: 8, right_wrist: 10,
-      left_hip: 11, left_knee: 13, left_ankle: 15,
-      right_hip: 12, right_knee: 14, right_ankle: 16,
-      nose: 0, left_ear: 3, right_ear: 4
+      left_shoulder: 11, right_shoulder: 12,
+      left_elbow: 13,    right_elbow: 14,
+      left_wrist: 15,    right_wrist: 16,
+      left_hip: 23,      right_hip: 24,
+      left_knee: 25,     right_knee: 26,
+      left_ankle: 27,    right_ankle: 28,
+      left_heel: 29,     right_heel: 30,
+      left_foot_index: 31, right_foot_index: 32,
+      nose: 0,
+      left_ear: 7,       right_ear: 8
     };
 
     const MOVEMENTS = {
@@ -130,8 +135,8 @@
       ShoulderAdduction: { instructions: 'Bring your arm toward midline (adduction) from raised position.', check: checkShoulderAdduction, angleRange: [0, 40], joint: 'shoulder' },
       ForearmSupination: { instructions: 'Turn palm up/forward (supination) – arm straight or bent.', check: checkSupination, joint: 'forearm' },
       ForearmPronation: { instructions: 'Turn palm down/backward (pronation) – arm straight or bent.', check: checkPronation, joint: 'forearm' },
-      AnkleDorsiflexion: { instructions: 'Pull foot/toes upward (dorsiflexion) ~15°–30° from floor.', check: checkDorsiflexion, angleRange: [80, 110], joint: 'ankle' },
-      AnklePlantarflexion: { instructions: 'Point toes downward (plantar flexion) ~110°–140° from shin.', check: checkPlantarflexion, angleRange: [110, 140], joint: 'ankle' },
+      AnkleDorsiflexion: { instructions: 'Pull foot/toes upward (dorsiflexion) ~15°–30° from floor. Side view best.', check: checkAnkleAngle, angleRange: [70, 95], joint: 'ankle' },
+      AnklePlantarflexion: { instructions: 'Point toes downward (plantar flexion) ~110°–155° leg-to-foot angle.', check: checkAnkleAngle, angleRange: [110, 155], joint: 'ankle' },
       FootInversion: { instructions: 'Turn sole inward (inversion) – keep heel down if possible.', check: checkInversion, joint: 'foot' },
       FootEversion: { instructions: 'Turn sole outward (eversion) – keep heel down if possible.', check: checkEversion, joint: 'foot' },
       HeadRotation: { instructions: 'Turn head side to side ("no") – aim for 60°–80° rotation.', check: checkHeadRotation, angleRange: [50, 85], joint: 'neck' },
@@ -153,7 +158,6 @@
         video.srcObject = stream;
         currentFacingMode = facingMode;
         updateMirroring();
-
         video.onloadedmetadata = () => {
           video.play().catch(e => console.error("Play error:", e));
           canvas.width = video.videoWidth;
@@ -180,12 +184,16 @@
     async function loadPoseDetector() {
       try {
         detector = await poseDetection.createDetector(
-          poseDetection.SupportedModels.MoveNet,
-          { modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER }
+          poseDetection.SupportedModels.BlazePose,
+          {
+            runtime: 'tfjs',
+            modelType: 'full',           // 'full' = most accurate ankles
+            enableSmoothing: true
+          }
         );
         detectPose();
       } catch (err) {
-        feedbackDiv.textContent = "Model load failed";
+        feedbackDiv.textContent = "Model load failed – slow device? Try changing modelType to 'lite'";
         feedbackDiv.style.color = "red";
       }
     }
@@ -220,14 +228,12 @@
 
     function drawBasicSkeleton(kp) {
       const lines = [
-        [5,7,9], [6,8,10],    // arms
-        [11,13,15], [12,14,16], // legs
-        [5,6], [11,12], [5,11], [6,12] // torso
+        [11,13,15], [12,14,16],     // arms
+        [23,25,27], [24,26,28],     // legs to heel
+        [27,31], [28,32],           // heel to toe (foot)
+        [11,12], [23,24], [11,23], [12,24]  // torso
       ];
-      lines.forEach(([i,j,k]) => {
-        if (k) { drawLine(kp,i,j); drawLine(kp,j,k); }
-        else drawLine(kp,i,j);
-      });
+      lines.forEach(([i,j]) => drawLine(kp, i, j));
     }
 
     function drawLine(kp, i, j) {
@@ -241,6 +247,9 @@
       }
     }
 
+    // ────────────────────────────────────────────────
+    //               UPPER BODY CHECKS (unchanged)
+    // ────────────────────────────────────────────────
     function checkElbowFlexion(kp) { checkLimbAngle(kp, 'left', 'right', 'shoulder','elbow','wrist', 'ElbowFlexion'); }
     function checkElbowExtension(kp) { checkLimbAngle(kp, 'left', 'right', 'shoulder','elbow','wrist', 'ElbowExtension'); }
     function checkShoulderAbduction(kp) { checkLimbAngle(kp, 'left', 'right', 'hip','shoulder','elbow', 'ShoulderAbduction'); }
@@ -312,101 +321,86 @@
       isPoseCorrect = false;
     }
 
-    function checkDorsiflexion(kp) { checkAnkleAngle(kp, 'AnkleDorsiflexion'); }
-    function checkPlantarflexion(kp) { checkAnkleAngle(kp, 'AnklePlantarflexion'); }
-
+    // ────────────────────────────────────────────────
+    //               IMPROVED ANKLE CHECK (main fix)
+    // ────────────────────────────────────────────────
     function checkAnkleAngle(kp, mov) {
-  const sides = ['left', 'right'];
-  let bestAngle = -1;
-  let bestSide = '';
+      const sides = ['left', 'right'];
+      let bestAngle = -1;
+      let bestFootTilt = 0;
+      let bestSide = '';
 
-  for (const s of sides) {
-    const knee = kp[KEYPOINTS[`${s}_knee`]];
-    const ankle = kp[KEYPOINTS[`${s}_ankle`]];
-    const hip   = kp[KEYPOINTS[`${s}_hip`]];   // ← we add hip for better context
+      for (const s of sides) {
+        const knee = kp[KEYPOINTS[`${s}_knee`]];
+        const ankle = kp[KEYPOINTS[`${s}_ankle`]];
+        const toe   = kp[KEYPOINTS[`${s}_foot_index`]];
 
-    if (knee?.score > 0.35 && ankle?.score > 0.35 && hip?.score > 0.25) {
-      // 1. Shank vector (knee to ankle)
-      const shankVec = { x: ankle.x - knee.x, y: ankle.y - knee.y };
+        if (knee?.score > 0.4 && ankle?.score > 0.4 && toe?.score > 0.35) {
+          // Leg-to-foot angle (knee-ankle-toe) — main clinical measure
+          let angle = calculateAngle(knee, ankle, toe);
 
-      // 2. Approximate foot vector.
-      //    In neutral, foot is roughly perpendicular to shank, but we approximate
-      //    by assuming foot continues "forward" relative to shank direction.
-      //    A practical trick: use a vector from ankle in the direction orthogonal to shank
-      //    (rotate shank vector 90 degrees), then adjust sign based on movement.
+          // Foot-to-floor tilt (how much pointed down/up relative to horizontal)
+          const footVec = { x: toe.x - ankle.x, y: toe.y - ankle.y };
+          let footTilt = Math.atan2(footVec.y, footVec.x) * 180 / Math.PI;
+          footTilt = Math.abs(footTilt);  // 0° = flat, higher = more plantarflexed
 
-      // Rotate shank vector 90° clockwise for "forward" foot assumption in right-side-up view
-      let footVec = { x: shankVec.y, y: -shankVec.x }; // perpendicular
-
-      // Normalize and scale (arbitrary length, e.g. 80 pixels)
-      const len = Math.hypot(footVec.x, footVec.y) || 1;
-      footVec.x = (footVec.x / len) * 80;
-      footVec.y = (footVec.y / len) * 80;
-
-      const fakeToe = { x: ankle.x + footVec.x, y: ankle.y + footVec.y };
-
-      // Now calculate the angle knee-ankle-toe using your existing function
-      let angle = calculateAngle(knee, ankle, fakeToe);
-
-      // Flip convention so dorsiflexion gives ~80–100°, plantarflexion >110–130°
-      // (your current ranges are roughly ok, but invert if needed)
-      // Many apps flip it: angle = 180 - angle;  // if you want 90° neutral
-
-      if (angle > bestAngle) {
-        bestAngle = angle;
-        bestSide = s;
+          if (angle > bestAngle) {
+            bestAngle = angle;
+            bestFootTilt = footTilt;
+            bestSide = s;
+          }
+        }
       }
-    }
-  }
 
-  if (bestAngle > 60) {  // raised threshold to avoid noise
-    const m = MOVEMENTS[mov];
-    // Optional: invert if your calculateAngle gives the supplementary angle
-    // bestAngle = 180 - bestAngle;
+      if (bestAngle > 60) {
+        const m = MOVEMENTS[mov];
+        const inRange = bestAngle >= m.angleRange[0] && bestAngle <= m.angleRange[1];
 
-    const inRange = bestAngle >= m.angleRange[0] && bestAngle <= m.angleRange[1];
-
-    if (inRange) {
-      // same hold logic...
-      if (!isPoseCorrect) { isPoseCorrect = true; correctPoseStartTime = Date.now(); }
-      const held = Date.now() - correctPoseStartTime;
-      if (held >= HOLD_TIME_NEEDED) {
-        feedbackDiv.textContent = `✅ GOOD! ${m.joint} ${mov.replace(/([A-Z])/g,' $1').trim()} held. (~${bestAngle}° on ${bestSide})`;
-        feedbackDiv.style.color = "green";
+        if (inRange) {
+          if (!isPoseCorrect) { isPoseCorrect = true; correctPoseStartTime = Date.now(); }
+          const held = Date.now() - correctPoseStartTime;
+          if (held >= HOLD_TIME_NEEDED) {
+            feedbackDiv.textContent = `✅ GOOD! ${m.joint} ${mov.replace(/([A-Z])/g,' $1').trim()} held. Leg-foot: ~${Math.round(bestAngle)}° | Foot-to-floor: ~${Math.round(bestFootTilt)}° (${bestSide})`;
+            feedbackDiv.style.color = "green";
+          } else {
+            feedbackDiv.textContent = `Hold... (${(held/1000).toFixed(1)}s)  ~${Math.round(bestAngle)}° (floor tilt ${Math.round(bestFootTilt)}°)`;
+            feedbackDiv.style.color = "orange";
+          }
+        } else {
+          isPoseCorrect = false;
+          feedbackDiv.textContent = `Adjust – aim ${m.angleRange[0]}°–${m.angleRange[1]}°. Now: ~${Math.round(bestAngle)}° (floor tilt ~${Math.round(bestFootTilt)}°)`;
+          feedbackDiv.style.color = "red";
+        }
       } else {
-        feedbackDiv.textContent = `Hold... (${(held/1000).toFixed(1)} s)  ~${bestAngle}°`;
-        feedbackDiv.style.color = "orange";
+        feedbackDiv.textContent = "Show full lower leg + foot clearly (side view best)";
+        feedbackDiv.style.color = "red";
+        isPoseCorrect = false;
       }
-    } else {
-      isPoseCorrect = false;
-      feedbackDiv.textContent = `Adjust – aim ${m.angleRange[0]}°–${m.angleRange[1]}°. Now: ~${Math.round(bestAngle)}° (${bestSide})`;
-      feedbackDiv.style.color = "red";
     }
-  } else {
-    feedbackDiv.textContent = "Show full lower leg & foot clearly (side view best)";
-    feedbackDiv.style.color = "red";
-    isPoseCorrect = false;
-  }
-}
 
     function checkInversion(kp) {
-      if (kp[KEYPOINTS.left_ankle]?.score > 0.35 || kp[KEYPOINTS.right_ankle]?.score > 0.35) {
+      // Basic placeholder — can be improved with heel/toe lateral/medial offset later
+      const ankles = [kp[KEYPOINTS.left_ankle], kp[KEYPOINTS.right_ankle]];
+      if (ankles.some(a => a?.score > 0.4)) {
         triggerCorrect();
         feedbackDiv.textContent = "Good – hold foot turned inward";
       } else {
         feedbackDiv.textContent = "Turn sole inward more clearly";
         feedbackDiv.style.color = "red";
       }
+      isPoseCorrect = false;
     }
 
     function checkEversion(kp) {
-      if (kp[KEYPOINTS.left_ankle]?.score > 0.35 || kp[KEYPOINTS.right_ankle]?.score > 0.35) {
+      const ankles = [kp[KEYPOINTS.left_ankle], kp[KEYPOINTS.right_ankle]];
+      if (ankles.some(a => a?.score > 0.4)) {
         triggerCorrect();
         feedbackDiv.textContent = "Good – hold foot turned outward";
       } else {
         feedbackDiv.textContent = "Turn sole outward more clearly";
         feedbackDiv.style.color = "red";
       }
+      isPoseCorrect = false;
     }
 
     function checkHeadRotation(kp) {
@@ -446,6 +440,9 @@
       }
     }
 
+    // ────────────────────────────────────────────────
+    //               EVENT LISTENERS
+    // ────────────────────────────────────────────────
     movementSelect.addEventListener('change', () => {
       const m = MOVEMENTS[movementSelect.value];
       instructionText.innerHTML = `1. Choose movement.<br>2. Start camera.<br>3. Toggle if needed.<br>4. ${m.instructions}`;
