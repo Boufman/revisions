@@ -1,0 +1,270 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.wrap { padding: 1.5rem 1rem; max-width: 780px; margin: 0 auto; font-family: var(--font-sans); }
+h1 { font-size: 18px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.25rem; }
+.sub { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1.25rem; }
+.prog-bar { height: 4px; background: var(--color-border-tertiary); border-radius: 2px; margin-bottom: 1.25rem; }
+.prog-fill { height: 4px; background: #185FA5; border-radius: 2px; transition: width 0.4s; }
+.q-nav { display: flex; gap: 6px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.q-dot { width: 28px; height: 28px; border-radius: 50%; border: 0.5px solid var(--color-border-secondary); font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--color-text-secondary); background: transparent; font-family: var(--font-sans); transition: all 0.15s; }
+.q-dot.active { background: #185FA5; color: white; border-color: #185FA5; }
+.q-dot.done-ok { background: #EAF3DE; color: #27500A; border-color: #639922; }
+.q-dot.done-wrong { background: #FCEBEB; color: #791F1F; border-color: #A32D2D; }
+.q-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+.q-type { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-bottom: 0.5rem; }
+.q-title { font-size: 16px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.75rem; }
+.hint { font-size: 12px; color: var(--color-text-tertiary); font-style: italic; margin-bottom: 1rem; }
+.chain { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px; margin-bottom: 1rem; }
+.chain-node { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.node-label { font-size: 11px; color: var(--color-text-tertiary); text-align: center; max-width: 150px; line-height: 1.3; min-height: 16px; }
+.node-box { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 7px 10px; font-size: 12px; color: var(--color-text-primary); text-align: center; min-width: 110px; max-width: 155px; line-height: 1.4; }
+.node-box.given { background: #E6F1FB; color: #0C447C; border-color: #185FA5; font-weight: 500; }
+.arrow { font-size: 16px; color: var(--color-text-tertiary); padding: 0 2px; align-self: center; margin-top: 20px; }
+.blank-pair { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.blank-pair select { width: 145px; }
+select { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 5px 6px; font-size: 12px; color: var(--color-text-primary); font-family: var(--font-sans); cursor: pointer; width: 145px; }
+select:focus { outline: none; border-color: #185FA5; }
+select.correct { background: #EAF3DE; color: #27500A; border-color: #639922; }
+select.wrong { background: #FCEBEB; color: #791F1F; border-color: #A32D2D; }
+.sel-label { font-size: 10px; color: var(--color-text-tertiary); text-align: center; }
+.btn-row { display: flex; gap: 8px; margin-top: 0.75rem; flex-wrap: wrap; }
+button { background: transparent; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 8px 16px; font-size: 13px; color: var(--color-text-primary); cursor: pointer; font-family: var(--font-sans); transition: background 0.15s; }
+button:hover { background: var(--color-background-secondary); }
+button.primary { background: #185FA5; color: white; border-color: #185FA5; }
+button.primary:hover { background: #0C447C; }
+.feedback { margin-top: 0.75rem; padding: 0.65rem 0.9rem; border-radius: var(--border-radius-md); font-size: 13px; line-height: 1.6; display: none; }
+.feedback.show { display: block; }
+.feedback.correct-fb { background: #EAF3DE; color: #27500A; border-left: 3px solid #639922; }
+.feedback.wrong-fb { background: #FCEBEB; color: #791F1F; border-left: 3px solid #A32D2D; }
+.score-banner { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.5rem; text-align: center; margin-top: 1rem; }
+.score-num { font-size: 36px; font-weight: 500; color: var(--color-text-primary); }
+.score-label { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
+</style>
+
+<div class="wrap">
+  <h1>Energy Conversion Chains</h1>
+  <p class="sub">Section A · Questions 1–10 · PREPHC405 — select Kinetic or Potential + the specific form</p>
+  <div class="prog-bar"><div class="prog-fill" id="prog" style="width:10%"></div></div>
+  <div class="q-nav" id="qnav"></div>
+  <div id="qarea"></div>
+</div>
+
+<script>
+const KP = ["--Select--", "Kinetic", "Potential"];
+const FORM = ["--Select--", "Heat / Thermal", "Mechanical", "Electromagnetic / Light", "Sound", "Chemical", "Electrical", "Elastic / Tension", "Gravitational", "Nuclear", "ATP (stored)", "Steam / Water vapor"];
+
+const questions = [
+  {
+    title: "1. Kettle Boiling Water",
+    hint: "Electricity heats the water, then the water changes state.",
+    nodes: [
+      { given: true, text: "Kinetic Electromagnetic energy\n(electricity)", label: "Start" },
+      { id: "q1a", kp_ans: "Kinetic", form_ans: "Heat / Thermal", label: "1st conversion" },
+      { id: "q1b", kp_ans: "Kinetic", form_ans: "Steam / Water vapor", label: "2nd conversion" },
+    ],
+    fb_ok: "✓ Correct! Kinetic Electromagnetic (electricity) → Kinetic Heat/Thermal energy → Kinetic Steam/Water vapor energy. Heat makes the water molecules move faster until they escape as steam.",
+    fb_wrong: "✗ The chain is: Kinetic Electromagnetic → Kinetic Heat/Thermal → Kinetic Steam/Water vapor. Both outputs are kinetic — heat is particle movement, steam is moving water vapor."
+  },
+  {
+    title: "2. Person Running on Treadmill",
+    hint: "Food is stored energy. The body converts it through ATP, then movement, then waste heat.",
+    nodes: [
+      { given: true, text: "Potential Chemical energy\n(food)", label: "Start" },
+      { id: "q2a", kp_ans: "Potential", form_ans: "Chemical", label: "ATP step", note: "(ATP)" },
+      { id: "q2b", kp_ans: "Kinetic", form_ans: "Mechanical", label: "Useful output" },
+      { id: "q2c", kp_ans: "Kinetic", form_ans: "Heat / Thermal", label: "Waste" },
+    ],
+    fb_ok: "✓ Correct! Potential Chemical (food) → Potential Chemical (ATP stored) → Kinetic Mechanical (movement) → Kinetic Heat/Thermal (waste). ATP is still stored potential chemical energy.",
+    fb_wrong: "✗ The chain is: Potential Chemical (food) → Potential Chemical (ATP) → Kinetic Mechanical (movement) → Kinetic Heat/Thermal (waste). Note ATP is potential chemical energy — it's stored until released."
+  },
+  {
+    title: "3. Human Ear Hearing Sound",
+    hint: "Sound enters, causes vibration, then becomes a nerve signal.",
+    nodes: [
+      { id: "q3a", kp_ans: "Kinetic", form_ans: "Sound", label: "External ear captures" },
+      { id: "q3b", kp_ans: "Kinetic", form_ans: "Mechanical", label: "Tympanic membrane\n& ossicles (vibration)" },
+      { id: "q3c", kp_ans: "Kinetic", form_ans: "Electrical", label: "Cochlea → nerve\nimpulses" },
+    ],
+    fb_ok: "✓ Correct! Kinetic Sound → Kinetic Mechanical (vibration) → Kinetic Electrical (nerve impulses). All three are kinetic — energy is actively moving through each stage.",
+    fb_wrong: "✗ All three are kinetic: Kinetic Sound → Kinetic Mechanical (vibration in ossicles) → Kinetic Electrical (nerve impulses sent to brain). Sound, vibration, and electrical signals are all forms of kinetic energy."
+  },
+  {
+    title: "4. Light Bulb",
+    hint: "A bulb produces one useful output and one wasteful output — both kinetic.",
+    nodes: [
+      { given: true, text: "Kinetic Electrical energy", label: "Start" },
+      { id: "q4a", kp_ans: "Kinetic", form_ans: "Electromagnetic / Light", label: "Useful output" },
+      { id: "q4b", kp_ans: "Kinetic", form_ans: "Heat / Thermal", label: "Waste output" },
+    ],
+    fb_ok: "✓ Correct! Kinetic Electrical → Kinetic Electromagnetic/Light (useful) + Kinetic Heat/Thermal (waste). Traditional bulbs waste ~95% as heat!",
+    fb_wrong: "✗ Both outputs are kinetic: Kinetic Electrical → Kinetic Electromagnetic/Light + Kinetic Heat/Thermal (waste). Electromagnetic radiation and heat are both active, moving forms of energy."
+  },
+  {
+    title: "5. Car Engine",
+    hint: "Fuel (stored energy) burns, moves the car, but also wastes energy as sound.",
+    nodes: [
+      { given: true, text: "Potential Chemical energy\n(fuel)", label: "Start" },
+      { id: "q5a", kp_ans: "Kinetic", form_ans: "Heat / Thermal", label: "Combustion" },
+      { id: "q5b", kp_ans: "Kinetic", form_ans: "Mechanical", label: "Useful output\n(wheels turning)" },
+      { id: "q5c", kp_ans: "Kinetic", form_ans: "Sound", label: "Waste output" },
+    ],
+    fb_ok: "✓ Correct! Potential Chemical → Kinetic Heat/Thermal (combustion) → Kinetic Mechanical (motion) + Kinetic Sound (waste).",
+    fb_wrong: "✗ The chain is: Potential Chemical → Kinetic Heat/Thermal (combustion) → Kinetic Mechanical (wheels) + Kinetic Sound (waste). After the stored chemical energy is released, all subsequent forms are kinetic."
+  },
+  {
+    title: "6. Eating Food and Exercising",
+    hint: "Food is stored. ATP is stored. Movement and heat are active.",
+    nodes: [
+      { id: "q6a", kp_ans: "Potential", form_ans: "Chemical", label: "Food" },
+      { given: true, text: "Potential Chemical\n(ATP)", label: "ATP step" },
+      { id: "q6b", kp_ans: "Kinetic", form_ans: "Mechanical", label: "Movement" },
+      { id: "q6c", kp_ans: "Kinetic", form_ans: "Heat / Thermal", label: "Waste heat" },
+    ],
+    fb_ok: "✓ Correct! Potential Chemical (food) → Potential Chemical (ATP) → Kinetic Mechanical (movement) + Kinetic Heat/Thermal (waste).",
+    fb_wrong: "✗ Food = Potential Chemical. ATP = Potential Chemical (still stored). Movement = Kinetic Mechanical. Waste = Kinetic Heat/Thermal."
+  },
+  {
+    title: "7. Speaking / Singing",
+    hint: "ATP powers the vocal cords — vibrating air creates the final energy form.",
+    nodes: [
+      { given: true, text: "Potential Chemical energy\n(ATP)", label: "Start" },
+      { given: true, text: "Kinetic Mechanical energy\n(vocal cords vibrate)", label: "Middle" },
+      { id: "q7a", kp_ans: "Kinetic", form_ans: "Sound", label: "Final output" },
+    ],
+    fb_ok: "✓ Correct! Potential Chemical (ATP) → Kinetic Mechanical (vocal cords) → Kinetic Sound. Sound is kinetic energy — it's vibrating air molecules moving outward.",
+    fb_wrong: "✗ The final output is Kinetic Sound energy. Sound waves are kinetic — they are vibrations actively moving through air."
+  },
+  {
+    title: "8. IV Drip Bag",
+    hint: "The bag is hung high above the patient. Height stores a specific type of potential energy.",
+    nodes: [
+      { id: "q8a", kp_ans: "Potential", form_ans: "Gravitational", label: "Bag hanging high\n(stored by height)" },
+      { given: true, text: "Pressure", label: "Intermediate" },
+      { given: true, text: "Flow into vein\n(Kinetic Mechanical)", label: "Result" },
+    ],
+    fb_ok: "✓ Correct! Potential Gravitational energy (height of bag) → Pressure → Kinetic Mechanical (fluid flow). Gravity acting on the fluid at height = gravitational potential energy.",
+    fb_wrong: "✗ The bag's height stores Potential Gravitational energy. Gravity pulls the fluid down, creating the pressure that drives flow into the vein."
+  },
+  {
+    title: "9. Stretching a Resistance Band",
+    hint: "Active movement is stored in the stretched band — what kind of stored energy is that?",
+    nodes: [
+      { given: true, text: "Kinetic Mechanical energy\n(your movement)", label: "Start" },
+      { id: "q9a", kp_ans: "Potential", form_ans: "Elastic / Tension", label: "Energy stored\nin stretched band" },
+    ],
+    fb_ok: "✓ Correct! Kinetic Mechanical → Potential Elastic/Tension. Stretching stores energy in the band's structure — it is potential because it is stored, ready to be released.",
+    fb_wrong: "✗ The stretched band holds Potential Elastic/Tension energy. It is potential because it is stored — when released, it converts back to kinetic mechanical energy."
+  },
+  {
+    title: "10. Nuclear Medicine Scan",
+    hint: "Radioactive atoms store energy in their nuclei. What they emit travels as a wave.",
+    nodes: [
+      { id: "q10a", kp_ans: "Potential", form_ans: "Nuclear", label: "Radioactive\nmaterial" },
+      { id: "q10b", kp_ans: "Kinetic", form_ans: "Electromagnetic / Light", label: "Radiation detected\nby scanner" },
+    ],
+    fb_ok: "✓ Correct! Potential Nuclear → Kinetic Electromagnetic. Nuclear energy is stored in atomic nuclei (potential). Gamma rays emitted are electromagnetic radiation actively moving through space (kinetic).",
+    fb_wrong: "✗ Radioactive material = Potential Nuclear energy (stored in atoms). The emitted gamma rays = Kinetic Electromagnetic energy (radiation actively moving through space, detected by scanner)."
+  }
+];
+
+let current = 0;
+let results = new Array(questions.length).fill(null);
+let userSel = {};
+
+function getBlanks(q) { return q.nodes.filter(n => n.id); }
+
+function checkQ(idx) {
+  const q = questions[idx];
+  let allOk = true;
+  getBlanks(q).forEach(b => {
+    const kp = userSel[b.id+'_kp'] || '--Select--';
+    const fm = userSel[b.id+'_fm'] || '--Select--';
+    if (kp !== b.kp_ans || fm !== b.form_ans) allOk = false;
+  });
+  results[idx] = allOk;
+  render(false);
+}
+
+function renderNav() {
+  const nav = document.getElementById('qnav');
+  nav.innerHTML = '';
+  questions.forEach((q, i) => {
+    const d = document.createElement('button');
+    d.className = 'q-dot' + (i === current ? ' active' : '') + (results[i] === true ? ' done-ok' : '') + (results[i] === false ? ' done-wrong' : '');
+    d.textContent = i + 1;
+    d.onclick = () => { current = i; render(); };
+    nav.appendChild(d);
+  });
+  document.getElementById('prog').style.width = (((current+1)/questions.length)*100)+'%';
+}
+
+function renderQ(q, idx) {
+  const answered = results[idx] !== null;
+  let html = `<div class="q-card">`;
+  html += `<div class="q-type">Energy conversion chain · Fill in the blanks</div>`;
+  html += `<div class="q-title">${q.title}</div>`;
+  html += `<p class="hint">${q.hint}</p>`;
+  html += `<div class="chain">`;
+  q.nodes.forEach((node, ni) => {
+    if (ni > 0) html += `<div class="arrow">→</div>`;
+    const lbl = (node.label||'').replace(/\n/g,'<br>');
+    if (node.given) {
+      html += `<div class="chain-node"><div class="node-label">${lbl}</div><div class="node-box given">${node.text.replace(/\n/g,'<br>')}</div></div>`;
+    } else {
+      const kpVal = userSel[node.id+'_kp'] || '--Select--';
+      const fmVal = userSel[node.id+'_fm'] || '--Select--';
+      const kpOk = kpVal === node.kp_ans;
+      const fmOk = fmVal === node.form_ans;
+      const kpCls = answered ? (kpOk ? 'correct' : 'wrong') : '';
+      const fmCls = answered ? (fmOk ? 'correct' : 'wrong') : '';
+      const dis = answered ? 'disabled' : '';
+      const kpOpts = KP.map(o => `<option ${kpVal===o?'selected':''}>${o}</option>`).join('');
+      const fmOpts = FORM.map(o => `<option ${fmVal===o?'selected':''}>${o}</option>`).join('');
+      const noteHtml = node.note ? `<div class="sel-label" style="font-style:italic;">${node.note}</div>` : '';
+      html += `<div class="chain-node">
+        <div class="node-label">${lbl}</div>
+        <div class="blank-pair">
+          <div class="sel-label">Kinetic or Potential?</div>
+          <select class="${kpCls}" ${dis} onchange="saveSel('${node.id}_kp', this.value)">${kpOpts}</select>
+          <div class="sel-label" style="margin-top:4px;">Specific form?</div>
+          <select class="${fmCls}" ${dis} onchange="saveSel('${node.id}_fm', this.value)">${fmOpts}</select>
+          ${noteHtml}
+        </div>
+      </div>`;
+    }
+  });
+  html += `</div>`;
+  if (answered) {
+    const ok = results[idx];
+    html += `<div class="feedback show ${ok?'correct-fb':'wrong-fb'}">${ok ? q.fb_ok : q.fb_wrong}</div>`;
+  }
+  if (!answered) {
+    html += `<div class="btn-row"><button class="primary" onclick="checkQ(${idx})">Check answers</button></div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+window.saveSel = function(key, val) { userSel[key] = val; };
+
+function render(resetSel) {
+  renderNav();
+  const q = questions[current];
+  let html = renderQ(q, current);
+  const allDone = results.every(r => r !== null);
+  html += `<div class="btn-row">`;
+  if (current > 0) html += `<button onclick="go(-1)">← Previous</button>`;
+  if (current < questions.length - 1) html += `<button class="primary" onclick="go(1)">Next →</button>`;
+  html += `</div>`;
+  if (allDone) {
+    const score = results.filter(Boolean).length;
+    html += `<div class="score-banner"><div class="score-num">${score}/10</div><div class="score-label">${score===10?'Full marks — excellent work!':score>=7?'Great effort! Review any you missed.':score>=5?'Good start — check the feedback on each question.':'Keep revising the energy types and try again!'}</div></div>`;
+  }
+  document.getElementById('qarea').innerHTML = html;
+}
+
+window.go = function(dir) { current = Math.max(0, Math.min(questions.length-1, current+dir)); render(); };
+
+render();
+</script>
