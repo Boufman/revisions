@@ -1,0 +1,126 @@
+
+Richard Maganga <rick.maganga@gmail.com>
+09:00 (0 minutes ago)
+to me
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Logger - Voice to QR</title>
+<style>
+body { font-family: system-ui; padding: 20px; background: #1a1a2e; color: white; }
+button { background: #0f3460; color: white; border: none; padding: 15px; margin: 10px 0; width: 100%; font-size: 18px; border-radius: 10px; }
+.qr { text-align: center; margin: 20px 0; }
+#output { background: #16213e; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 12px; word-break: break-all; }
+textarea { width: 100%; padding: 10px; margin: 10px 0; background: #0f3460; color: white; border: none; border-radius: 8px; }
+</style>
+</head>
+<body>
+<h2>🎤 Field Logger</h2>
+<p>Engineer: RM (fixed)</p>
+
+<button id="searchBtn">🔍 "Search serial number..."</button>
+<button id="testBtn">📊 "Run tests..."</button>
+<button id="partsBtn">🔧 "Parts: power cord, fuse..."</button>
+<button id="ocrBtn">📸 "Scan part barcode"</button>
+
+<div class="qr" id="qrCode"></div>
+<div id="output">Ready</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+let currentData = "";
+
+// Speech recognition
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function startListening(promptText, callback) {
+let recognition = new SpeechRecognition();
+recognition.lang = 'en-US';
+recognition.start();
+document.getElementById('output').innerHTML = "🎙️ " + promptText;
+recognition.onresult = (e) => {
+let text = e.results[0][0].transcript;
+callback(text);
+};
+}
+
+// Search: "search serial number 12345" or "find asset pump-01"
+document.getElementById('searchBtn').onclick = () => {
+startListening("Say serial number or asset label...", (text) => {
+let command = "SEARCH|" + text.toUpperCase();
+generateQR(command);
+document.getElementById('output').innerHTML = "🔍 QR ready: " + command;
+});
+};
+
+// Tests: "ground leakage 500, earth leakage 490, resistance 1.2, touch leakage 950..."
+document.getElementById('testBtn').onclick = () => {
+startListening("Say test values...", (text) => {
+// Parse natural speech into values
+let values = {
+gnd_lt: extractNumber(text, /ground leakage\s*(\d+)/i),
+gnd_rt: extractNumber(text, /resistance\s*(\d+\.?\d*)/i),
+eleak: extractNumber(text, /earth leakage\s*(\d+)/i),
+elno: extractNumber(text, /neutral open\s*(\d+)/i),
+tl: extractNumber(text, /touch leakage\s*(\d+)/i),
+tlno: extractNumber(text, /touch leakage neutral\s*(\d+)/i),
+tleo: extractNumber(text, /touch leakage earth\s*(\d+)/i),
+prot_e: extractNumber(text, /protective earth\s*(\d+)/i)
+};
+
+let command = "TESTS|" +
+(values.gnd_lt || "") + "|" +
+(values.gnd_rt || "") + "|" +
+(values.eleak || "") + "|" +
+(values.elno || "") + "|" +
+(values.tl || "") + "|" +
+(values.tlno || "") + "|" +
+(values.tleo || "") + "|" +
+(values.prot_e || "") + "|100"; // Ins always 100
+
+generateQR(command);
+document.getElementById('output').innerHTML = "📊 QR ready: " + command;
+});
+};
+
+// Parts: "parts power cord, fuse, gasket"
+document.getElementById('partsBtn').onclick = () => {
+startListening("Say parts...", (text) => {
+let parts = text.split(/,|and/).map(p => p.trim()).slice(0,6);
+while(parts.length < 6) parts.push("");
+let command = "PARTS|" + parts.join("|");
+generateQR(command);
+document.getElementById('output').innerHTML = "🔧 QR ready: " + command;
+});
+};
+
+// OCR from packaging (using phone camera)
+document.getElementById('ocrBtn').onclick = () => {
+// Use device camera + Tesseract or native iOS/Android OCR
+alert("On iPhone: Camera → copy text → paste here\nOn Android: Google Lens → copy text");
+let fakeOCR = prompt("Paste OCR text from packaging:");
+if (fakeOCR) {
+let command = "PARTS|" + fakeOCR + "|||||";
+generateQR(command);
+}
+};
+
+function extractNumber(text, pattern) {
+let match = text.match(pattern);
+return match ? match[1] : "";
+}
+
+function generateQR(data) {
+currentData = data;
+document.getElementById('qrCode').innerHTML = "";
+new QRCode(document.getElementById('qrCode'), {
+text: data,
+width: 256,
+height: 256
+});
+}
+</script>
+</body>
+</html>
