@@ -1,1 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Medical Terminology Break the Code</title>
+  <style>
+    /* Mobile-first responsive design */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    html, body {
+      height: 100%;
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      overflow: hidden;
+      position: fixed;
+    }
+    
+    /* Prevent scrolling */
+    body {
+      overflow: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .container {
+      width: 100%;
+      height: 100vh;
+      height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      max-width: 500px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 15px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+    
+    .logo {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #00d4ff;
+      white-space: nowrap;
+    }
+    
+    .stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 5px;
+    }
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 6px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      margin: 8px 0;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    
+    .progress {
+      height: 100%;
+      background: linear-gradient(90deg, #00d4ff, #0095ff);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.5s;
+    }
+    
+    .game-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 5px;
+    }
+    
+    .scroll-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .question-box {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 20px;
+      width: 100%;
+      margin-bottom: 15px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+    }
+    
+    .sentence {
+      font-size: 1.1rem;
+      line-height: 1.4;
+      margin-bottom: 15px;
+      word-break: break-word;
+    }
+    
+    .term {
+      color: #00d4ff;
+      font-weight: bold;
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 12px;
+      border-radius: 12px;
+      transition: all 0.3s;
+      display: inline-block;
+      margin: 10px 0;
+      min-width: 60px;
+      text-align: center;
+    }
+    
+    .term.expanded {
+      transform: scale(1.15);
+      background: rgba(0, 212, 255, 0.2);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+      padding: 15px;
+      font-size: 1.6rem;
+    }
+    
+    .hint {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-top: 8px;
+      min-height: 20px;
+    }
+    
+    .scissor-tool {
+      position: fixed;
+      width: 55px;
+      height: 55px;
+      background: #FFC300;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      cursor: grab;
+      z-index: 1000;
+      box-shadow: 0 4px 20px rgba(255, 195, 0, 0.5);
+      display: none;
+      user-select: none;
+      touch-action: none;
+    }
+    
+    .scissor-tool:active {
+      transform: scale(0.9);
+    }
+    
+    .cut-guide {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 3px;
+      background: linear-gradient(to bottom, transparent, #FFC300, transparent);
+      display: none;
+      pointer-events: none;
+      animation: pulse 1s infinite;
+    }
+    
+    .cut-hint {
+      position: absolute;
+      top: -30px;
+      background: #FFC300;
+      color: black;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      display: none;
+      pointer-events: none;
+      font-weight: bold;
+      z-index: 1001;
+    }
+    
+    .pieces-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin: 15px 0;
+      min-height: 60px;
+      width: 100%;
+      padding: 10px;
+      flex-shrink: 0;
+    }
+    
+    .piece {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      cursor: grab;
+      border: 2px solid transparent;
+      transition: all 0.3s;
+      user-select: none;
+      min-width: 60px;
+      text-align: center;
+    }
+    
+    .piece.dragging {
+      opacity: 0.7;
+      transform: scale(1.1);
+      z-index: 1000;
+    }
+    
+    .piece.correct {
+      border-color: #00ff9d;
+      background: rgba(0, 255, 157, 0.2);
+    }
+    
+    .piece.wrong {
+      border-color: #ff4d6d;
+      background: rgba(255, 77, 109, 0.2);
+      animation: shake 0.5s;
+    }
+    
+    .drop-zones {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: 100%;
+      margin: 15px 0;
+      flex-shrink: 0;
+    }
+    
+    .dropzone {
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 90px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .dropzone.active {
+      border-color: #00d4ff;
+      background: rgba(0, 212, 255, 0.1);
+      transform: scale(1.03);
+    }
+    
+    .zone-label {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-top: 5px;
+    }
+    
+    .meaning-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      cursor: grab;
+      border: 2px solid transparent;
+      transition: all 0.3s;
+      user-select: none;
+      text-align: center;
+      margin: 3px;
+      min-width: 80px;
+    }
+    
+    .meaning-item.dragging {
+      opacity: 0.7;
+      transform: scale(1.05);
+      z-index: 1000;
+    }
+    
+    .meaning-item.matched {
+      background: rgba(0, 255, 157, 0.3);
+      border: 2px solid #00ff9d;
+    }
+    
+    .meaning-item.wrong {
+      border-color: #ff4d6d;
+      background: rgba(255, 77, 109, 0.2);
+    }
+    
+    .meanings-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      width: 100%;
+      margin: 15px 0;
+      padding: 10px;
+      display: none;
+      flex-shrink: 0;
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      width: 100%;
+      justify-content: center;
+      flex-shrink: 0;
+      padding-bottom: 20px;
+    }
+    
+    .btn {
+      background: linear-gradient(45deg, #00d4ff, #0095ff);
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+      min-width: 140px;
+      touch-action: manipulation;
+    }
+    
+    .btn:active {
+      transform: scale(0.95);
+    }
+    
+    .btn-next {
+      display: none;
+    }
+    
+    .feedback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      pointer-events: none;
+      z-index: 10000;
+      opacity: 0;
+      display: none;
+    }
+    
+    .feedback.correct {
+      color: #00ff9d;
+    }
+    
+    .feedback.wrong {
+      color: #ff4d6d;
+    }
+    
+    .end-screen {
+      text-align: center;
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      overflow-y: auto;
+    }
+    
+    .end-screen h2 {
+      font-size: 1.8rem;
+      margin-bottom: 15px;
+      color: #00d4ff;
+    }
+    
+    .end-stats {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      margin: 15px 0;
+      text-align: left;
+    }
+    
+    .end-stat {
+      font-size: 1.1rem;
+      margin: 8px 0;
+      padding: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    @keyframes pop {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+      70% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    }
+    
+    /* Mobile-specific optimizations */
+    @media (max-width: 480px) {
+      .container {
+        padding: 8px;
+      }
+      
+      .header {
+        padding: 10px 12px;
+      }
+      
+      .logo {
+        font-size: 1.1rem;
+      }
+      
+      .stat {
+        padding: 5px 8px;
+        font-size: 0.8rem;
+      }
+      
+      .sentence {
+        font-size: 1rem;
+      }
+      
+      .term {
+        font-size: 1.2rem;
+        padding: 10px;
+      }
+      
+      .term.expanded {
+        font-size: 1.4rem;
+        padding: 12px;
+      }
+      
+      .drop-zones {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      
+      .dropzone {
+        min-height: 80px;
+        padding: 10px;
+      }
+      
+      .piece {
+        padding: 8px 12px;
+        font-size: 1rem;
+      }
+      
+      .meaning-item {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+      }
+      
+      .scissor-tool {
+        width: 50px;
+        height: 50px;
+        font-size: 1.6rem;
+      }
+      
+      .btn {
+        padding: 10px 20px;
+        min-width: 120px;
+        font-size: 0.9rem;
+      }
+    }
+    
+    @media (max-width: 360px) {
+      .stats {
+        gap: 6px;
+      }
+      
+      .stat {
+        padding: 4px 6px;
+        font-size: 0.75rem;
+      }
+      
+      .term {
+        font-size: 1.1rem;
+      }
+      
+      .term.expanded {
+        font-size: 1.3rem;
+      }
+    }
+    
+    /* Landscape mode adjustments */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .container {
+        padding: 5px;
+      }
+      
+      .header {
+        padding: 8px 10px;
+        margin-bottom: 5px;
+      }
+      
+      .question-box {
+        padding: 12px;
+        margin-bottom: 8px;
+      }
+      
+      .drop-zones {
+        grid-template-columns: repeat(3, 1fr);
+        margin: 8px 0;
+      }
+      
+      .dropzone {
+        min-height: 70px;
+        padding: 8px;
+      }
+      
+      .piece {
+        padding: 6px 10px;
+        font-size: 0.9rem;
+      }
+      
+      .meaning-item {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+      }
+    }
+    
+    /* iPhone notch and safe area support */
+    @supports (padding: max(0px)) {
+      .container {
+        padding-left: max(10px, env(safe-area-inset-left));
+        padding-right: max(10px, env(safe-area-inset-right));
+        padding-top: max(10px, env(safe-area-inset-top));
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+      }
+    }
+    
+    /* Hide scrollbar but keep functionality */
+    .scroll-container::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .scroll-container {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">🏥 Med Term</div>
+      <div class="stats">
+        <div class="stat">
+          <span>⭐</span>
+          <span id="coinCount">150</span>
+        </div>
+        <div class="stat">
+          <span>🔥</span>
+          <span id="streakCount">0</span>
+        </div>
+        <div class="stat">
+          <span>🎯</span>
+          <span id="scoreCount">0/10</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="progress-bar">
+      <div class="progress" id="progressBar"></div>
+    </div>
+    
+    <div class="game-area" id="gameArea">
+      <div class="scroll-container" id="scrollContainer">
+        <div class="question-box" id="questionBox">
+          <div class="sentence" id="sentenceText">Loading game...</div>
+          <div class="hint" id="hintText">Tap the highlighted term to expand</div>
+        </div>
+        
+        <div class="pieces-container" id="piecesContainer"></div>
+        
+        <div class="drop-zones" id="dropZones" style="display: none;">
+          <div class="dropzone" data-type="prefix" id="prefixZone">
+            <div style="font-size: 1.8rem;">🔰</div>
+            <div class="zone-label">Prefix</div>
+          </div>
+          <div class="dropzone" data-type="root" id="rootZone">
+            <div style="font-size: 1.8rem;">🎯</div>
+            <div class="zone-label">Root Word</div>
+          </div>
+          <div class="dropzone" data-type="suffix" id="suffixZone">
+            <div style="font-size: 1.8rem;">🏷️</div>
+            <div class="zone-label">Suffix</div>
+          </div>
+        </div>
+        
+        <div class="meanings-container" id="meaningsContainer"></div>
+        
+        <div class="buttons">
+          <button class="btn" id="startBtn" onclick="startGame()">Start Game</button>
+          <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()" style="display: none;">Next Question</button>
+        </div>
+        
+        <div class="end-screen" id="endScreen">
+          <h2>🎉 Game Complete!</h2>
+          <div class="end-stats">
+            <div class="end-stat">Final Score: <span id="finalScore">0</span>/<span id="totalQuestions">10</span></div>
+            <div class="end-stat">Coins Earned: <span id="finalCoins">150</span></div>
+            <div class="end-stat">Best Streak: <span id="finalStreak">0</span></div>
+            <div class="end-stat">Accuracy: <span id="accuracy">0%</span></div>
+          </div>
+          <button class="btn" onclick="location.reload()">Play Again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="scissor-tool" id="scissorTool">✂️</div>
+  
+  <div class="feedback correct" id="feedbackCorrect">✓</div>
+  <div class="feedback wrong" id="feedbackWrong">✗</div>
+  
+  <script>
+    // All 26 questions from original data
+    const allQuestions = [
+  {
+    id:101,
+    sentence:"The patient developed <span class='term' data-term='dermatitis'>dermatitis</span>",
+    answerBreak:"dermat/itis",
+    meanings:["skin","inflammation"],
+    explanation:"inflammation of the skin"
+  },
 
+  {
+    id:102,
+    sentence:"The patient was referred to <span class='term' data-term='nephrology'>nephrology</span>",
+    answerBreak:"nephr/logy",
+    meanings:["kidney","study of"],
+    explanation:"study of the kidneys"
+  },
+
+  {
+    id:103,
+    sentence:"The patient complained of <span class='term' data-term='neuralgia'>neuralgia</span>",
+    answerBreak:"neur/algia",
+    meanings:["nerve","pain"],
+    explanation:"nerve pain"
+  },
+
+  {
+    id:104,
+    sentence:"The patient presented with <span class='term' data-term='otitis'>otitis</span>",
+    answerBreak:"ot/itis",
+    meanings:["ear","inflammation"],
+    explanation:"inflammation of the ear"
+  },
+
+  {
+    id:105,
+    sentence:"The patient underwent a <span class='term' data-term='gastrectomy'>gastrectomy</span>",
+    answerBreak:"gastr/ectomy",
+    meanings:["stomach","surgical removal"],
+    explanation:"surgical removal of the stomach"
+  },
+
+  {
+    id:106,
+    sentence:"The scan showed <span class='term' data-term='nephromegaly'>nephromegaly</span>",
+    answerBreak:"nephr/megaly",
+    meanings:["kidney","enlargement"],
+    explanation:"enlarged kidney"
+  },
+
+  {
+    id:107,
+    sentence:"The patient developed <span class='term' data-term='periarthritis'>periarthritis</span>",
+    answerBreak:"peri/arthr/itis",
+    meanings:["around","joint","inflammation"],
+    explanation:"inflammation around a joint"
+  },
+
+  {
+    id:108,
+    sentence:"The medication was administered <span class='term' data-term='subdermal'>subdermal</span>",
+    answerBreak:"sub/derm/al",
+    meanings:["under","skin","pertaining to"],
+    explanation:"under the skin"
+  },
+
+  {
+    id:109,
+    sentence:"The patient was seen by a <span class='term' data-term='pulmonologist'>pulmonologist</span>",
+    answerBreak:"pulmon/o/logist",
+    meanings:["lung","combining vowel","specialist"],
+    explanation:"lung specialist"
+  },
+
+  {
+    id:110,
+    sentence:"The patient reported <span class='term' data-term='ostealgia'>ostealgia</span>",
+    answerBreak:"oste/algia",
+    meanings:["bone","pain"],
+    explanation:"bone pain"
+  },
+
+  {
+    id:111,
+    sentence:"The patient received an <span class='term' data-term='intradermal'>intradermal</span> injection",
+    answerBreak:"intra/derm/al",
+    meanings:["within","skin","pertaining to"],
+    explanation:"within the skin"
+  },
+
+  {
+    id:12,
+    sentence:"The sample was sent to the <span class='term' data-term='histopathology'>histopathology</span> clinic",
+    answerBreak:"histo/patho/logy",
+    meanings:["tissues","disease","study of"],
+    explanation:"study of disease in tissues"
+  },
+
+  {
+    id:13,
+    sentence:"There was a risk of <span class='term' data-term='gastritis'>gastritis</span>",
+    answerBreak:"gastr/itis",
+    meanings:["stomach","inflammation of"],
+    explanation:"inflammation of the stomach"
+  },
+
+  {
+    id:14,
+    sentence:"The doctor diagnosed her with <span class='term' data-term='cardiomyopathy'>cardiomyopathy</span>",
+    answerBreak:"cardio/myo/pathy",
+    meanings:["heart","muscle","disease"],
+    explanation:"disease of the heart muscle"
+  },
+
+  {
+    id:15,
+    sentence:"The patient underwent a partial pulmonary <span class='term' data-term='lobectomy'>lobectomy</span>",
+    special:"pulmonary",
+    answerBreak:"lob/ec/tom/y",
+    meanings:["lobe","out","cut","process of"],
+    explanation:"cut out one lobe of the lung"
+  },
+
+  {
+    id:16,
+    sentence:"The patient attended <span class='term' data-term='antenatal'>antenatal</span> classes",
+    answerBreak:"ante/natal",
+    meanings:["before","birth"],
+    explanation:"before birth"
+  },
+
+  {
+    id:17,
+    sentence:"The <span class='term' data-term='melanoma'>melanoma</span> measured 7 mm across",
+    answerBreak:"melan/oma",
+    meanings:["dark","tumour"],
+    explanation:"dark tumour"
+  },
+
+  {
+    id:18,
+    sentence:"The patient had a transient <span class='term' data-term='ischaemic'>ischaemic</span> attack",
+    special:"TIA (transient ischaemic attack)",
+    answerBreak:"isc/haemic",
+    meanings:["stop","blood"],
+    explanation:"a blockage in blood flow"
+  },
+
+  {
+    id:19,
+    sentence:"Renal <span class='term' data-term='pyelography'>pyelography</span> confirmed stones were present",
+    answerBreak:"pyelo/graphy",
+    meanings:["pelvis","picture"],
+    explanation:"imaging of the renal pelvis"
+  },
+
+  {
+    id:20,
+    sentence:"The patient was found to have <span class='term' data-term='osteoporosis'>osteoporosis</span>",
+    answerBreak:"osteo/por/osis",
+    meanings:["bone","hole","condition of"],
+    explanation:"condition of porous bones"
+  },
+
+  {
+    id:21,
+    sentence:"The patient suffered from a generalised <span class='term' data-term='lymphadenopathy'>lymphadenopathy</span>",
+    answerBreak:"lymph/adeno/pathy",
+    meanings:["lymph","gland","disease"],
+    explanation:"disease of the lymph glands"
+  },
+
+  {
+    id:22,
+    sentence:"The patient suffered from <span class='term' data-term='dysentery'>dysentery</span>",
+    answerBreak:"dys/enter/y",
+    meanings:["bad or poor","small intestines","process of"],
+    explanation:"something wrong with the small intestine"
+  },
+
+  {
+    id:23,
+    sentence:"The impact resulted in <span class='term' data-term='intracranial'>intracranial</span> bleeding",
+    answerBreak:"intra/cranial",
+    meanings:["inside","skull"],
+    explanation:"bleeding inside the skull"
+  },
+
+  {
+    id:24,
+    sentence:"Elderly people often have <span class='term' data-term='atherosclerosis'>atherosclerosis</span>",
+    answerBreak:"athero/scler/osis",
+    meanings:["fatty plaque","hard","condition of"],
+    explanation:"hardening of blood vessels caused by fatty plaque"
+  },
+
+  {
+    id:25,
+    sentence:"A <span class='term' data-term='tracheotomy'>tracheotomy</span> was performed",
+    answerBreak:"trachea/tom/y",
+    meanings:["windpipe","cut","process of"],
+    explanation:"cut into the windpipe"
+  },
+
+  {
+    id:26,
+    sentence:"The patient developed <span class='term' data-term='hyperglycaemia'>hyperglycaemia</span>",
+    answerBreak:"hyper/glyc/aem/ia",
+    meanings:["above","sugar","blood","condition of"],
+    explanation:"high blood sugar"
+  }
+];
+    
+    // Game State
+    let gameState = {
+      currentQuestion: 0,
+      score: 0,
+      coins: 150,
+      streak: 0,
+      totalQuestions: 10,
+      correctAnswers: 0,
+      gameActive: false,
+      draggedElement: null,
+      draggedElementType: null, // 'piece' or 'meaning'
+      currentQuestionData: null,
+      selectedQuestions: [],
+      pieceToMeaningMap: {},
+      touchStartX: 0,
+      touchStartY: 0
+    };
+    
+    // DOM Elements
+    const gameArea = document.getElementById('gameArea');
+    const scrollContainer = document.getElementById('scrollContainer');
+    const questionBox = document.getElementById('questionBox');
+    const sentenceText = document.getElementById('sentenceText');
+    const hintText = document.getElementById('hintText');
+    const piecesContainer = document.getElementById('piecesContainer');
+    const dropZones = document.getElementById('dropZones');
+    const meaningsContainer = document.getElementById('meaningsContainer');
+    const startBtn = document.getElementById('startBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const endScreen = document.getElementById('endScreen');
+    const scissorTool = document.getElementById('scissorTool');
+    const feedbackCorrect = document.getElementById('feedbackCorrect');
+    const feedbackWrong = document.getElementById('feedbackWrong');
+    const progressBar = document.getElementById('progressBar');
+    const coinCount = document.getElementById('coinCount');
+    const streakCount = document.getElementById('streakCount');
+    const scoreCount = document.getElementById('scoreCount');
+    
+    // Initialize Game
+    function initGame() {
+      showStartScreen();
+      setupTouchEvents();
+      updateUI();
+      adjustForMobile();
+    }
+    
+    function adjustForMobile() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+      
+      document.addEventListener('touchmove', function(e) {
+        if (e.scale !== 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      window.addEventListener('orientationchange', function() {
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+        }, 100);
+      });
+    }
+    
+    function showStartScreen() {
+      sentenceText.innerHTML = "Welcome to Medical Terminology Game!<br><br>Tap the highlighted medical terms, cut them into pieces, and drag to the correct boxes.<br><br>Complete 10 random terms to finish the game.";
+      hintText.textContent = "Tap Start to begin";
+      piecesContainer.innerHTML = "";
+      dropZones.style.display = "none";
+      meaningsContainer.style.display = "none";
+      nextBtn.style.display = "none";
+      endScreen.style.display = "none";
+      startBtn.style.display = "inline-block";
+      gameState.gameActive = false;
+    }
+    
+    function startGame() {
+      // Select 10 random questions from the pool of 26
+      gameState.selectedQuestions = [...allQuestions]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 10);
+      
+      gameState.currentQuestion = 0;
+      gameState.score = 0;
+      gameState.coins = 150;
+      gameState.streak = 0;
+      gameState.correctAnswers = 0;
+      gameState.gameActive = true;
+      startBtn.style.display = "none";
+      loadQuestion(0);
+    }
+    
+    function loadQuestion(questionIndex) {
+      if (questionIndex >= gameState.selectedQuestions.length) {
+        endGame();
+        return;
+      }
+      
+      gameState.currentQuestion = questionIndex;
+      const question = gameState.selectedQuestions[questionIndex];
+      gameState.currentQuestionData = question;
+      
+      // Reset the piece-to-meaning mapping
+      gameState.pieceToMeaningMap = {};
+      
+      sentenceText.innerHTML = question.sentence;
+      hintText.textContent = "Tap the highlighted term to expand it";
+      piecesContainer.innerHTML = "";
+      dropZones.style.display = "none";
+      meaningsContainer.style.display = "none";
+      meaningsContainer.innerHTML = "";
+      nextBtn.style.display = "none";
+      
+      // Reset drop zones
+      const zones = document.querySelectorAll('.dropzone');
+      zones.forEach(zone => {
+        zone.innerHTML = `<div style="font-size: 1.8rem;">${zone.dataset.type === 'prefix' ? '🔰' : zone.dataset.type === 'root' ? '🎯' : '🏷️'}</div>
+                         <div class="zone-label">${zone.dataset.type === 'prefix' ? 'Prefix' : zone.dataset.type === 'root' ? 'Root Word' : 'Suffix'}</div>`;
+      });
+      
+      updateUI();
+      setupTermInteraction();
+      
+      scrollContainer.scrollTop = 0;
+    }
+    
+    function setupTermInteraction() {
+      const termElement = questionBox.querySelector('.term');
+      if (!termElement) return;
+      
+      termElement.addEventListener('click', handleTermClick);
+      termElement.addEventListener('touchstart', handleTermTouch, { passive: false });
+    }
+    
+    function handleTermClick() {
+      this.classList.toggle('expanded');
+      if (this.classList.contains('expanded')) {
+        hintText.textContent = "Drag the scissor over the term and release to cut";
+        showScissorTool();
+      } else {
+        hideScissorTool();
+      }
+    }
+    
+    function handleTermTouch(e) {
+      e.preventDefault();
+      this.classList.toggle('expanded');
+      if (this.classList.contains('expanded')) {
+        hintText.textContent = "Drag the scissor over the term and release to cut";
+        showScissorTool();
+      } else {
+        hideScissorTool();
+      }
+    }
+    
+    function showScissorTool() {
+      scissorTool.style.display = 'flex';
+      
+      const termRect = document.querySelector('.term').getBoundingClientRect();
+      const containerRect = document.querySelector('.container').getBoundingClientRect();
+      
+      scissorTool.style.left = (termRect.left + termRect.width/2 - 25 - containerRect.left) + 'px';
+      scissorTool.style.top = (termRect.bottom + 20 - containerRect.top) + 'px';
+      
+      let isDragging = false;
+      let startX, startY;
+      
+      function startDrag(e) {
+        e.preventDefault();
+        isDragging = true;
+        if (e.type === 'mousedown') {
+          startX = e.clientX - scissorTool.offsetLeft;
+          startY = e.clientY - scissorTool.offsetTop;
+        } else {
+          const touch = e.touches[0];
+          startX = touch.clientX - scissorTool.offsetLeft;
+          startY = touch.clientY - scissorTool.offsetTop;
+        }
+        scissorTool.style.cursor = 'grabbing';
+      }
+      
+      function drag(e) {
+        if (!isDragging) return;
+        let clientX, clientY;
+        
+        if (e.type === 'mousemove') {
+          clientX = e.clientX;
+          clientY = e.clientY;
+        } else {
+          e.preventDefault();
+          const touch = e.touches[0];
+          clientX = touch.clientX;
+          clientY = touch.clientY;
+        }
+        
+        scissorTool.style.left = (clientX - startX) + 'px';
+        scissorTool.style.top = (clientY - startY) + 'px';
+        showCutGuide(clientX);
+      }
+      
+      function stopDrag(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        scissorTool.style.cursor = 'grab';
+        
+        let clientX;
+        if (e.type === 'mouseup') {
+          clientX = e.clientX;
+        } else {
+          const touch = e.changedTouches[0];
+          clientX = touch.clientX;
+        }
+        
+        handleCut(clientX);
+      }
+      
+      scissorTool.addEventListener('mousedown', startDrag);
+      scissorTool.addEventListener('touchstart', startDrag, { passive: false });
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('touchmove', drag, { passive: false });
+      document.addEventListener('mouseup', stopDrag);
+      document.addEventListener('touchend', stopDrag);
+      
+      scissorTool._dragHandlers = { startDrag, drag, stopDrag };
+    }
+    
+    function showCutGuide(xPos) {
+      const existingGuides = document.querySelectorAll('.cut-guide, .cut-hint');
+      existingGuides.forEach(guide => guide.remove());
+      
+      const term = document.querySelector('.term');
+      if (!term) return;
+      
+      const termRect = term.getBoundingClientRect();
+      if (xPos < termRect.left || xPos > termRect.right) return;
+      
+      const guide = document.createElement('div');
+      guide.className = 'cut-guide';
+      guide.style.left = xPos + 'px';
+      guide.style.display = 'block';
+      
+      const hint = document.createElement('div');
+      hint.className = 'cut-hint';
+      hint.textContent = 'Release to cut';
+      hint.style.left = xPos + 'px';
+      hint.style.display = 'block';
+      
+      document.body.appendChild(guide);
+      document.body.appendChild(hint);
+    }
+    
+    function handleCut(cutPosition) {
+      const termElement = document.querySelector('.term');
+      if (!termElement) return;
+      
+      termElement.classList.remove('expanded');
+      scissorTool.style.display = 'none';
+      
+      if (scissorTool._dragHandlers) {
+        scissorTool.removeEventListener('mousedown', scissorTool._dragHandlers.startDrag);
+        scissorTool.removeEventListener('touchstart', scissorTool._dragHandlers.startDrag);
+        document.removeEventListener('mousemove', scissorTool._dragHandlers.drag);
+        document.removeEventListener('touchmove', scissorTool._dragHandlers.drag);
+        document.removeEventListener('mouseup', scissorTool._dragHandlers.stopDrag);
+        document.removeEventListener('touchend', scissorTool._dragHandlers.stopDrag);
+      }
+      
+      const guides = document.querySelectorAll('.cut-guide, .cut-hint');
+      guides.forEach(guide => guide.remove());
+      
+      createPieces();
+      showDropZones();
+    }
+    
+    function hideScissorTool() {
+      scissorTool.style.display = 'none';
+      const guides = document.querySelectorAll('.cut-guide, .cut-hint');
+      guides.forEach(guide => guide.remove());
+    }
+    
+    function createPieces() {
+      piecesContainer.innerHTML = '';
+      const question = gameState.currentQuestionData;
+      const parts = question.answerBreak.split('/');
+      
+      // Determine type for each piece based on common medical terminology patterns
+      const types = parts.map(part => {
+        if (part === 'hypo' || part === 'hyper' || part === 'inter' || part === 'ante' || part === 'intra' || 
+            part === 'poly' || part === 'tachy' || part === 'dys' || part === 'iso') {
+          return 'prefix';
+        } else if (part === 'ic' || part === 'al' || part === 'y' || part === 'ia' || part === 'itis' || 
+                   part === 'pathy' || part === 'osis' || part === 'ectomy' || part === 'tomy' || 
+                   part === 'stomy' || part === 'graphy' || part === 'logy' || part === 'ist' || 
+                   part === 'algia' || part === 'megaly' || part === 'emia' || part === 'uria' || part === 'ec') {
+          return 'suffix';
+        } else {
+          return 'root';
+        }
+      });
+      
+      parts.forEach((piece, index) => {
+        const pieceElement = document.createElement('div');
+        pieceElement.className = 'piece';
+        pieceElement.textContent = piece;
+        pieceElement.dataset.part = piece;
+        pieceElement.dataset.type = types[index];
+        pieceElement.dataset.index = index;
+        
+        setupDraggableElement(pieceElement, 'piece');
+        
+        piecesContainer.appendChild(pieceElement);
+      });
+      
+      hintText.textContent = "Drag pieces to the correct boxes below";
+    }
+    
+    function showDropZones() {
+      dropZones.style.display = 'grid';
+    }
+    
+    function setupDraggableElement(element, type) {
+      element.addEventListener('mousedown', startDrag);
+      element.addEventListener('touchstart', startDragTouch, { passive: false });
+      
+      function startDrag(e) {
+        if (gameState.draggedElement) return;
+        
+        gameState.draggedElement = element;
+        gameState.draggedElementType = type;
+        
+        element.classList.add('dragging');
+        element.style.position = 'fixed';
+        element.style.zIndex = '1000';
+        
+        const rect = element.getBoundingClientRect();
+        gameState.touchStartX = e.clientX - rect.left;
+        gameState.touchStartY = e.clientY - rect.top;
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDrag);
+      }
+      
+      function startDragTouch(e) {
+        if (gameState.draggedElement) return;
+        e.preventDefault();
+        
+        gameState.draggedElement = element;
+        gameState.draggedElementType = type;
+        
+        element.classList.add('dragging');
+        element.style.position = 'fixed';
+        element.style.zIndex = '1000';
+        
+        const touch = e.touches[0];
+        const rect = element.getBoundingClientRect();
+        gameState.touchStartX = touch.clientX - rect.left;
+        gameState.touchStartY = touch.clientY - rect.top;
+        
+        document.addEventListener('touchmove', dragTouch, { passive: false });
+        document.addEventListener('touchend', stopDragTouch);
+      }
+      
+      function drag(e) {
+        if (!gameState.draggedElement) return;
+        
+        gameState.draggedElement.style.left = (e.clientX - gameState.touchStartX) + 'px';
+        gameState.draggedElement.style.top = (e.clientY - gameState.touchStartY) + 'px';
+        
+        highlightDropZones(e.clientX, e.clientY);
+      }
+      
+      function dragTouch(e) {
+        if (!gameState.draggedElement) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        gameState.draggedElement.style.left = (touch.clientX - gameState.touchStartX) + 'px';
+        gameState.draggedElement.style.top = (touch.clientY - gameState.touchStartY) + 'px';
+        
+        highlightDropZones(touch.clientX, touch.clientY);
+      }
+      
+      function stopDrag(e) {
+        if (!gameState.draggedElement) return;
+        
+        handleDrop(e.clientX, e.clientY);
+        cleanupDrag();
+      }
+      
+      function stopDragTouch(e) {
+        if (!gameState.draggedElement) return;
+        
+        const touch = e.changedTouches[0];
+        handleDrop(touch.clientX, touch.clientY);
+        cleanupDrag();
+      }
+      
+      function cleanupDrag() {
+        if (!gameState.draggedElement) return;
+        
+        gameState.draggedElement.classList.remove('dragging');
+        gameState.draggedElement = null;
+        gameState.draggedElementType = null;
+        
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchmove', dragTouch);
+        document.removeEventListener('touchend', stopDragTouch);
+        
+        const zones = document.querySelectorAll('.dropzone');
+        zones.forEach(zone => zone.classList.remove('active'));
+      }
+    }
+    
+    function highlightDropZones(x, y) {
+      const zones = document.querySelectorAll('.dropzone');
+      zones.forEach(zone => {
+        const rect = zone.getBoundingClientRect();
+        if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+          zone.classList.add('active');
+        } else {
+          zone.classList.remove('active');
+        }
+      });
+    }
+    
+    function handleDrop(x, y) {
+      if (!gameState.draggedElement) return;
+      
+      const zones = document.querySelectorAll('.dropzone');
+      let dropped = false;
+      
+      for (const zone of zones) {
+        const rect = zone.getBoundingClientRect();
+        if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+          
+          const elementType = gameState.draggedElementType;
+          const element = gameState.draggedElement;
+          const zoneType = zone.dataset.type;
+          
+          if (elementType === 'piece') {
+            handlePieceDrop(element, zone, zoneType);
+          } else if (elementType === 'meaning') {
+            handleMeaningDrop(element, zone, zoneType);
+          }
+          
+          dropped = true;
+          break;
+        }
+      }
+      
+      if (!dropped) {
+        gameState.draggedElement.style.position = 'static';
+        gameState.draggedElement.style.zIndex = '';
+        
+        if (gameState.draggedElementType === 'piece') {
+          piecesContainer.appendChild(gameState.draggedElement);
+        } else if (gameState.draggedElementType === 'meaning') {
+          meaningsContainer.appendChild(gameState.draggedElement);
+        }
+      }
+    }
+    
+    function handlePieceDrop(piece, zone, zoneType) {
+      const correctType = piece.dataset.type;
+      
+      if (correctType === zoneType) {
+        zone.appendChild(piece);
+        piece.classList.add('correct');
+        piece.style.position = 'static';
+        showFeedback('correct');
+        gameState.coins += 10;
+        gameState.streak++;
+        
+        // Map this piece index to its zone for meaning matching
+        const pieceIndex = parseInt(piece.dataset.index);
+        gameState.pieceToMeaningMap[pieceIndex] = zone.id;
+        
+        checkPiecesComplete();
+      } else {
+        piece.classList.add('wrong');
+        showFeedback('wrong');
+        gameState.streak = 0;
+        
+        setTimeout(() => {
+          piece.classList.remove('wrong');
+          piece.style.position = 'static';
+          piecesContainer.appendChild(piece);
+        }, 800);
+      }
+      
+      updateUI();
+    }
+    
+    function handleMeaningDrop(meaning, zone, zoneType) {
+      const question = gameState.currentQuestionData;
+      
+      // Get all pieces in this zone
+      const piecesInZone = zone.querySelectorAll('.piece.correct');
+      let isCorrect = false;
+      
+      // Check if this meaning matches ANY piece in the zone
+      for (const piece of piecesInZone) {
+        const pieceIndex = parseInt(piece.dataset.index);
+        if (pieceIndex < question.meanings.length && meaning.textContent === question.meanings[pieceIndex]) {
+          isCorrect = true;
+          break;
+        }
+      }
+      
+      if (isCorrect) {
+        zone.appendChild(meaning);
+        meaning.classList.add('matched');
+        meaning.style.position = 'static';
+        showFeedback('correct');
+        gameState.coins += 10;
+        gameState.streak++;
+        
+        checkMeaningsComplete();
+      } else {
+        meaning.classList.add('wrong');
+        showFeedback('wrong');
+        gameState.streak = 0;
+        
+        setTimeout(() => {
+          meaning.classList.remove('wrong');
+          meaning.style.position = 'static';
+          meaningsContainer.appendChild(meaning);
+        }, 800);
+      }
+      
+      updateUI();
+    }
+    
+    function checkPiecesComplete() {
+      const correctPieces = document.querySelectorAll('.piece.correct');
+      const question = gameState.currentQuestionData;
+      const parts = question.answerBreak.split('/');
+      
+      if (correctPieces.length === parts.length) {
+        gameState.correctAnswers++;
+        gameState.score++;
+        hintText.textContent = "Excellent! All pieces placed correctly! Now match the meanings.";
+        showMeanings();
+      }
+    }
+    
+    function showMeanings() {
+      meaningsContainer.style.display = 'flex';
+      meaningsContainer.innerHTML = '<div style="width: 100%; text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 1.1rem;">Drag Meanings to Correct Boxes:</div>';
+      
+      const question = gameState.currentQuestionData;
+      const shuffledMeanings = [...question.meanings].sort(() => Math.random() - 0.5);
+      
+      shuffledMeanings.forEach((meaning, index) => {
+        const meaningElement = document.createElement('div');
+        meaningElement.className = 'meaning-item';
+        meaningElement.textContent = meaning;
+        meaningElement.dataset.meaning = meaning;
+        meaningElement.dataset.index = index;
+        
+        setupDraggableElement(meaningElement, 'meaning');
+        
+        meaningsContainer.appendChild(meaningElement);
+      });
+      
+      nextBtn.style.display = 'inline-block';
+      
+      setTimeout(() => {
+        meaningsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 300);
+    }
+    
+    function checkMeaningsComplete() {
+      const matchedMeanings = document.querySelectorAll('.meaning-item.matched');
+      const question = gameState.currentQuestionData;
+      
+      if (matchedMeanings.length === question.meanings.length) {
+        hintText.textContent = `Perfect! ${question.explanation}`;
+        gameState.coins += 20;
+        updateUI();
+      }
+    }
+    
+    function nextQuestion() {
+      gameState.currentQuestion++;
+      loadQuestion(gameState.currentQuestion);
+    }
+    
+    function showFeedback(type) {
+      const feedback = type === 'correct' ? feedbackCorrect : feedbackWrong;
+      feedback.style.display = 'block';
+      feedback.style.opacity = '1';
+      feedback.style.animation = 'pop 0.5s forwards';
+      
+      if (navigator.vibrate) {
+        navigator.vibrate(type === 'correct' ? 100 : 200);
+      }
+      
+      setTimeout(() => {
+        feedback.style.opacity = '0';
+        feedback.style.display = 'none';
+      }, 500);
+    }
+    
+    function setupTouchEvents() {
+      document.addEventListener('touchmove', (e) => {
+        if (e.scale !== 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      document.addEventListener('gesturestart', (e) => e.preventDefault());
+      document.addEventListener('gesturechange', (e) => e.preventDefault());
+      document.addEventListener('gestureend', (e) => e.preventDefault());
+      
+      let lastTap = 0;
+      document.addEventListener('touchend', (e) => {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+          e.preventDefault();
+        }
+        lastTap = currentTime;
+      }, { passive: false });
+    }
+    
+    function updateUI() {
+      const progress = ((gameState.currentQuestion) / gameState.selectedQuestions.length) * 100;
+      progressBar.style.width = `${progress}%`;
+      
+      coinCount.textContent = gameState.coins;
+      streakCount.textContent = gameState.streak;
+      scoreCount.textContent = `${gameState.score}/${gameState.selectedQuestions.length}`;
+    }
+    
+    function endGame() {
+      gameState.gameActive = false;
+      questionBox.style.display = 'none';
+      piecesContainer.style.display = 'none';
+      dropZones.style.display = 'none';
+      meaningsContainer.style.display = 'none';
+      nextBtn.style.display = 'none';
+      
+      const accuracy = gameState.selectedQuestions.length > 0 
+        ? Math.round((gameState.correctAnswers / gameState.selectedQuestions.length) * 100) 
+        : 0;
+      
+      document.getElementById('finalScore').textContent = gameState.score;
+      document.getElementById('totalQuestions').textContent = gameState.selectedQuestions.length;
+      document.getElementById('finalCoins').textContent = gameState.coins;
+      document.getElementById('finalStreak').textContent = gameState.streak;
+      document.getElementById('accuracy').textContent = `${accuracy}%`;
+      
+      endScreen.style.display = 'flex';
+      
+      setTimeout(() => {
+        endScreen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+    
+    window.addEventListener('DOMContentLoaded', initGame);
+    window.addEventListener('resize', adjustForMobile);
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        adjustForMobile();
+      }
+    });
+  </script>
+</body>
+</html>
